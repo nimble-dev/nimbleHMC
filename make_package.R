@@ -2,6 +2,10 @@
 library(devtools)
 library(nimble)
 
+## create github actions testing
+##library(usethis)
+##use_github_action_check_standard()
+
 setwd('~/github/nimble/nimbleHMC')
 
 document('nimbleHMC')
