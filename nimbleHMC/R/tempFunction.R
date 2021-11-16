@@ -13,6 +13,6 @@
 #' 
 #' @export
 tempFunction <- function(a) {
-    print(a+1)
-    return('success')
+    print('success')
+    return(a+1)
 }

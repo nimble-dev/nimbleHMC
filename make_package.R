@@ -20,6 +20,11 @@ q('no')
 
 library(nimbleHMC)
 
+library(usethis)
+getwd()
+usethis::use_github_action_check_standard()
+
+tempFunction
 ?tempFunction
 tempFunction(3)
 
