@@ -20,8 +20,8 @@ q('no')
 
 library(nimbleHMC)
 
-?temp
-temp(3)
+?tempFunction
+tempFunction(3)
 
 ?myTempSampler
 
