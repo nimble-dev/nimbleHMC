@@ -39,18 +39,9 @@ jobs:
           http-user-agent: ${{ matrix.config.http-user-agent }}
           use-public-rspm: true
 
-      - name: Setup package dependencies
-        run: |
-          install.packages('remotes')
-          saveRDS(remotes::dev_package_deps(pkgdir = './nimbleHMC/nimbleHMC', dependencies = TRUE),
-                                                   ".github/depends.Rds", version = 2)
-        shell: Rscript {0}
-
       - uses: r-lib/actions/setup-r-dependencies@v1
         with:
-          extra-packages: |
-            rcmdcheck
-            nimble
+          extra-packages: rcmdcheck
 
       - uses: r-lib/actions/check-r-package@v1
 
