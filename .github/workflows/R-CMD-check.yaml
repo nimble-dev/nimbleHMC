@@ -43,6 +43,17 @@ jobs:
         with:
           extra-packages: rcmdcheck
 
+      - name: Install nimbleHMC (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          RCMD INSTALL --install-tests nimbleHMC
+
+      - name: Install nimbleHMC
+        if: runner.os != 'Windows'
+        run: |
+          R CMD build nimbleHMC  # Is this needed? Is purpose of this to see if 'build' induces an error?
+          R CMD INSTALL --install-tests nimbleHMC
+
       - uses: r-lib/actions/check-r-package@v1
 
       - name: Show testthat output
