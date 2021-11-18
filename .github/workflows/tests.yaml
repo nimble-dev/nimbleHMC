@@ -75,7 +75,6 @@ jobs:
       - name: Install nimbleHMC (Windows)
         if: runner.os == 'Windows'
         run: |
-#         ### is this line totally ignored?
           RCMD INSTALL --install-tests nimbleHMC
 
 ### is this line totally ignored?
