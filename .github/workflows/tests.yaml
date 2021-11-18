@@ -44,14 +44,12 @@ jobs:
       - uses: r-lib/actions/setup-pandoc@v1
 
       - name: Install dependencies
-        run: |
-          source('install_requirements.R')  # Windows doesn't like running via ./install_requirements.R
+        run: source('install_requirements.R')
         shell: Rscript {0}
 
       - name: Install nimbleHMC (Windows)
         if: runner.os == 'Windows'
-        run: |
-          RCMD INSTALL --install-tests nimbleHMC
+        run: RCMD INSTALL --install-tests nimbleHMC
 
       - name: Install nimbleHMC
         if: runner.os != 'Windows'
@@ -60,8 +58,7 @@ jobs:
           R CMD INSTALL --install-tests nimbleHMC
 
       - name: Run tests
-        run: |
-          source('run_tests.R')           # Windows doesn't like running via ./run_tests.R
+        run: source('run_tests.R')
         shell: Rscript {0}
 
       - name: Show testthat output
