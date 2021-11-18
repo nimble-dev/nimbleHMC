@@ -22,11 +22,9 @@ system(paste0('R CMD install ', lastTarFile))
 
 q('no')
 
-library(nimbleHMC)
+1
 
-library(usethis)
-getwd()
-usethis::use_github_action_check_standard()
+library(nimbleHMC)
 
 tempFunction
 ?tempFunction
@@ -48,10 +46,14 @@ N <- 10
 constants <- list(N = N, x = 1:N)
 data <- list(y = 1:N)
 inits <- list(b0=0, b1=10, sigma=100)
+
 Rmodel <- nimbleModel(code, constants, data, inits)
+
 conf <- configureMCMC(Rmodel)
 conf$setSamplers()
 ####conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'RW_block')  ## XXXXXX MAKE 'HMC'
 conf$addSampler(target=c('b0','b1','sigma'), type='myTempSampler', scalarComponents=TRUE)
 conf$printSamplers()
 Rmcmc <- buildMCMC(conf)
+
+
