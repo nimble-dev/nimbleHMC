@@ -3,9 +3,9 @@
 requirements <- c(
     'igraph',
     'coda',
-    'testthat',
     'R6',
-    'nimble')     
+    'nimble',
+    'testthat')
 
 for (package in requirements) {
     if (!suppressPackageStartupMessages(require(package,
