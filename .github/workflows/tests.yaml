@@ -53,8 +53,7 @@ jobs:
 
       - name: Install nimbleHMC
         if: runner.os != 'Windows'
-        run: |
-          R CMD INSTALL --install-tests nimbleHMC
+        run: R CMD INSTALL --install-tests nimbleHMC
 
       - name: Run tests
         run: source('run_tests.R')
