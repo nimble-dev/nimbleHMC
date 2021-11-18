@@ -61,11 +61,6 @@ jobs:
         run: source('run_tests.R')
         shell: Rscript {0}
 
-      - name: Show testthat output
-        if: always()
-        run: find check -name 'testthat.Rout*' -exec cat '{}' \; || true
-        shell: bash
-
       - name: Upload check results
         if: failure()
         uses: actions/upload-artifact@main
