@@ -75,8 +75,10 @@ jobs:
       - name: Install nimbleHMC (Windows)
         if: runner.os == 'Windows'
         run: |
-          R CMD BUILD nimbleHMC  # Is this needed? Is purpose of this to see if 'build' induces an error?
+	  ### is this line totally ignored?
           RCMD INSTALL --install-tests nimbleHMC
+
+### is this line totally ignored?
 
       - name: Install nimbleHMC
         if: runner.os != 'Windows'
