@@ -26,11 +26,13 @@ q('no')
 
 library(nimbleHMC)
 
-tempFunction
-?tempFunction
-tempFunction(3)
-
+myTempSampler
 ?myTempSampler
+
+sampler_HMC
+?sampler_HMC
+?HMC
+?hmc
 
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
@@ -51,8 +53,10 @@ Rmodel <- nimbleModel(code, constants, data, inits)
 
 conf <- configureMCMC(Rmodel)
 conf$setSamplers()
-####conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'RW_block')  ## XXXXXX MAKE 'HMC'
-conf$addSampler(target=c('b0','b1','sigma'), type='myTempSampler', scalarComponents=TRUE)
+conf$addSampler(target = 'b0', type = 'myTempSampler')
+conf$addSampler(target = 'b1', type = 'myTempSampler')
+conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'RW_block')
+conf$addSampler(target = c('b0','b1','sigma'), type = 'HMC')
 conf$printSamplers()
 Rmcmc <- buildMCMC(conf)
 
