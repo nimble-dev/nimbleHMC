@@ -11,6 +11,9 @@ testFiles <-
          value = TRUE)
 
 for(test in testFiles) {
+    cat('===========================================================\n')
+    cat(paste0('Running test-', gsub('.*test-', '', test), '\n'))
+    cat('===========================================================\n')
     source(test)
 }
 
