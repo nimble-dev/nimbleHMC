@@ -120,6 +120,7 @@ sampler_langevin <- nimbleFunction(
 
 
 
+#' @export
 sampler_HMC_BASE <- nimbleFunctionVirtual(
     contains = sampler_BASE,
     methods = list(
