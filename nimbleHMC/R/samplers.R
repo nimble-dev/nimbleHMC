@@ -122,6 +122,7 @@ sampler_langevin <- nimbleFunction(
 
 #' @export
 sampler_HMC_BASE <- nimbleFunctionVirtual(
+    name = 'sampler_HMC_BASE',
     contains = sampler_BASE,
     methods = list(
         initializeWarmup        = function(MCMCniter = double(), MCMCchain = double()) { },
