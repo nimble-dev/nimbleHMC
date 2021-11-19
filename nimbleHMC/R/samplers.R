@@ -120,19 +120,6 @@ sampler_langevin <- nimbleFunction(
 
 
 
-#' @export
-sampler_HMC_BASE <- nimbleFunctionVirtual(
-    name = 'sampler_HMC_BASE',
-    contains = sampler_BASE,
-    methods = list(
-        initializeWarmup        = function(MCMCniter = double(), MCMCchain = double()) { },
-        getMaxTreeDepth         = function() { returnType(double()) },
-        getNumDivergences       = function() { returnType(double()) },
-        getNumTimesMaxTreeDepth = function() { returnType(double()) },
-        reset                   = function() { }
-    )
-)
-
 #' Hamiltonian Monte Carlo (HMC) Sampler
 #'
 #' The HMC sampler implements the No-U-Turn algorithm (NUTS; Hoffman and Gelman, 2014) for performing joint updates of multiple continuous-valued posterior dimensions.  This is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
@@ -193,7 +180,7 @@ sampler_HMC_BASE <- nimbleFunctionVirtual(
 #' Rmcmc <- buildMCMC(conf)
 sampler_HMC <- nimbleFunction(
     name = 'sampler_HMC',
-    contains = sampler_HMC_BASE,     ## note: different contains for HMC sampler
+    contains = sampler_BASE2,     ## note: sampler_BASE2 for HMC sampler
     setup = function(model, mvSaved, target, control) {
         ## control list extraction
         printTimesRan  <- extractControlElement(control, 'printTimesRan',  FALSE)
