@@ -433,7 +433,7 @@ sampler_HMC <- nimbleFunction(
                 return(btNL1)
             }
         },
-        initialize = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
+        before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(MCMCchain == 1) {
                 if(nimbleVerboseOption) print('HMC sampler is using ', nwarmup, ' warmup iterations')
@@ -450,11 +450,13 @@ sampler_HMC <- nimbleFunction(
             warmupIntervalsAdaptM <<- c(0, 1, 1, 1, 1, 1, 0)
             setSize(warmupSamples, 20*warmupBaseInterval, d)
         },
-        finalize = function() {
-            if(numDivergences == 1) print('HMC sampler encountered ', numDivergences, ' divergent path')
-            if(numDivergences  > 1) print('HMC sampler encountered ', numDivergences, ' divergent paths')
-            if(numTimesMaxTreeDepth == 1) print('HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time')
-            if(numTimesMaxTreeDepth  > 1) print('HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times')
+        after_chain = function() {
+            if(nimbleVerboseOption) {
+                if(numDivergences == 1) print('HMC sampler encountered ', numDivergences, ' divergent path')
+                if(numDivergences  > 1) print('HMC sampler encountered ', numDivergences, ' divergent paths')
+                if(numTimesMaxTreeDepth == 1) print('HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time')
+                if(numTimesMaxTreeDepth  > 1) print('HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times')
+            }
         },
         reset = function() {
             timesRan       <<- 0
