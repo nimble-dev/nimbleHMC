@@ -72,8 +72,8 @@ sampler_langevin <- nimbleFunction(
         timesRan <- 0
         timesAdapted <- 0
         ## checks
-        if(!nimbleOptions('experimentalEnableDerivs')) stop('must enable NIMBLE derivatives, set nimbleOptions(experimentalEnableDerivs = TRUE)')
-        if(any(model$isDiscrete(targetAsScalar)))      stop(paste0('langevin sampler can only operate on continuous-valued nodes:', paste0(targetAsScalar[model$isDiscrete(targetAsScalar)], collapse=', ')))
+        if(!nimbleOptions('experimentalEnableDerivs')) stop('must enable NIMBLE derivatives, set nimbleOptions(experimentalEnableDerivs = TRUE)', call. = FALSE)
+        if(any(model$isDiscrete(targetAsScalar)))      stop(paste0('langevin sampler can only operate on continuous-valued nodes:', paste0(targetAsScalar[model$isDiscrete(targetAsScalar)], collapse=', ')), call. = FALSE)
     },
     run = function() {
         q[1:d, 1] <<- values(model, target)         ## current position variables
