@@ -12,9 +12,9 @@ for(package in requirements) {
         install.packages(package, repos = 'http://cran.us.r-project.org')
 }
 
-## XXXXXXXXXXXXXXXXX remove below
+## XXXXXXXXXXXXXXXXXXX remove below
 install.packages('devtools', repos = 'http://cran.us.r-project.org')
 library(devtools)
 devtools::install_github('nimble-dev/nimble', ref = 'ADoak_without_HMC', subdir = 'packages/nimble')
-## XXXXXXXXXXXXXXXXx remove until here
+## XXXXXXXXXXXXXXXXXX remove until here
 
