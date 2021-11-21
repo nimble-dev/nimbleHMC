@@ -13,9 +13,9 @@ for(package in requirements) {
         install.packages(package, type = 'source')
 }
 
-## XXXXXXXXXXXXXXXXXXX remove below
+## XXXXXXXXXXXXXXXXX remove below
 install.packages('devtools', type = 'source')
 library(devtools)
 devtools::install_github('nimble-dev/nimble', ref = 'ADoak_without_HMC', subdir = 'packages/nimble')
-## XXXXXXXXXXXXXXXXXX remove until here
+## XXXXXXXXXXXXXXXX remove until here
 
