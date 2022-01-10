@@ -25,7 +25,7 @@ The HMC sampler accepts the following control list elements:
 
 \itemize{
 \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
-\item warnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). (default = 5)
+\item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). (default = 5)
 \item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 \item initialEpsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
 \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
