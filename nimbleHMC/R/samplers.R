@@ -135,7 +135,7 @@ sampler_langevin <- nimbleFunction(
 #' 
 #' \itemize{
 #' \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
-#' \item warnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). (default = 5)
+#' \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). (default = 5)
 #' \item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 #' \item initialEpsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
 #' \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
@@ -187,8 +187,8 @@ sampler_HMC <- nimbleFunction(
         printEpsilon   <- extractControlElement(control, 'printEpsilon',   FALSE)
         printJ         <- extractControlElement(control, 'printJ',         FALSE)
         printM         <- extractControlElement(control, 'printM',         FALSE)
-        messages       <- extractControlElement(control, 'messages',       TRUE)
-        warnings       <- extractControlElement(control, 'warnings',       5)
+        messages       <- extractControlElement(control, 'messages',       getNimbleOption('verbose'))
+        numWarnings    <- extractControlElement(control, 'numWarnings',    5)
         initialEpsilon <- extractControlElement(control, 'initialEpsilon', 0)
         gamma          <- extractControlElement(control, 'gamma',          0.05)
         t0             <- extractControlElement(control, 't0',             10)
@@ -218,7 +218,7 @@ sampler_HMC <- nimbleFunction(
         p <- numeric(d2);   pL <- numeric(d2);   pR <- numeric(d2);   p2 <- numeric(d2);      p3 <- numeric(d2)
         grad <- numeric(d2);   gradFirst <- numeric(d2);   gradSaveL <- numeric(d2);   gradSaveR <- numeric(d2)
         log2 <- log(2)
-        warningsOrig <- warnings
+        numWarningsOrig <- numWarnings
         nwarmupOrig <- nwarmup
         warmupIntervalLengths <- rep(0,7)            ## length 7 vector
         warmupIntervalsAdaptM <- rep(0,7)            ## length 7 vector
@@ -230,7 +230,6 @@ sampler_HMC <- nimbleFunction(
         sqrtM <- sqrt(M)
         numDivergences <- 0
         numTimesMaxTreeDepth <- 0
-        nimbleVerboseOption <- getNimbleOption('verbose')
         ## nested function and function list definitions
         qpNLDef <- nimbleList(q  = double(1), p  = double(1))
         btNLDef <- nimbleList(q1 = double(1), p1 = double(1), q2 = double(1), p2 = double(1), q3 = double(1), n = double(), s = double(), a = double(), na = double())
@@ -333,7 +332,7 @@ sampler_HMC <- nimbleFunction(
                              if(v ==  2) { gradSaveL <<- gradFirst                       }
                          } else { if(v ==  1) gradSaveR <<- grad
                                   if(v == -1) gradSaveL <<- grad }
-            if(warnings > 0) if(is.nan.vec(c(q2, p3))) { print('HMC sampler encountered a NaN value in leapfrog routine, with timesRan = ', timesRan); warnings <<- warnings - 1 }
+            if(numWarnings > 0) if(is.nan.vec(c(q2, p3))) { print('  [Warning] HMC sampler encountered a NaN value in leapfrog routine, with timesRan = ', timesRan); numWarnings <<- numWarnings - 1 }
             returnType(qpNLDef());   return(qpNLDef$new(q = q2, p = p3))
         },
         initializeEpsilon = function() {
@@ -345,14 +344,14 @@ sampler_HMC <- nimbleFunction(
             epsilon <<- 1
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
             while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
-                if(warnings > 0) { print('HMC sampler encountered NaN while initializing step-size; recommend better initial values')
-                                   print('reducing initial step-size'); warnings <<- warnings - 1 }
+                if(numWarnings > 0) { print('  [Warning] HMC sampler encountered NaN while initializing step-size; recommend better initial values')
+                                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
                 epsilon <<- epsilon / 1000                                ## my addition
                 qpNL <- leapfrog(q, p, epsilon, 0, 2)                     ## my addition
             }                                                             ## my addition
             qpLogH <- logH(q, p)
             a <- 2*nimStep(exp(logH(qpNL$q, qpNL$p) - qpLogH) - 0.5) - 1
-            if(is.nan(a)) if(warnings > 0) { print('HMC sampler caught acceptance prob = NaN in initializeEpsilon routine'); warnings <<- warnings - 1 }
+            if(is.nan(a)) if(numWarnings > 0) { print('  [Warning] HMC sampler caught acceptance prob = NaN in initializeEpsilon routine'); numWarnings <<- numWarnings - 1 }
             ## while(a * (logH(qpNL$q, qpNL$p) - qpLogH) > -a * log2) {   ## replaced by simplified expression:
             while(a * (logH(qpNL$q, qpNL$p) - qpLogH + log2) > 0) {
                 epsilon <<- epsilon * 2^a
@@ -369,7 +368,7 @@ sampler_HMC <- nimbleFunction(
             timesRanToNegativeKappa <- timesRan^(-kappa)
             logEpsilonBar <<- timesRanToNegativeKappa * logEpsilon + (1 - timesRanToNegativeKappa) * logEpsilonBar
             if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
-            if(warnings > 0) if(is.nan(epsilon)) { print('HMC sampler value of epsilon is NaN, with timesRan = ', timesRan); warnings <<- warnings - 1 }
+            if(numWarnings > 0) if(is.nan(epsilon)) { print('  [Warning] HMC sampler value of epsilon is NaN, with timesRan = ', timesRan); numWarnings <<- numWarnings - 1 }
             ## adapt M:
             if(warmupIntervalNumber < 8) {
                 warmupIntervalCount <<- warmupIntervalCount + 1
@@ -409,8 +408,8 @@ sampler_HMC <- nimbleFunction(
                 s <- nimStep(qpLogH - logu + deltaMax)
                 ## lowering the initial step size, and increasing the target acceptance rate may keep the step size small to avoid divergent paths.
                 if(s == 0) { numDivergences <<- numDivergences + 1 }
-                ##           if(warnings > 0) { print('HMC sampler encountered a divergent path on iteration ', timesRan, ', with divergence = ', logu - qpLogH)
-                ##                              warnings <<- warnings - 1 } }
+                ##           if(numWarnings > 0) { print('  [Warning] HMC sampler encountered a divergent path on iteration ', timesRan, ', with divergence = ', logu - qpLogH)
+                ##                                 numWarnings <<- numWarnings - 1 } }
                 a <- min(1, exp(qpLogH - logH0))
                 if(is.nan.vec(q) | is.nan.vec(p)) { n <- 0; s <- 0; a <- 0 }     ## my addition
                 return(btNLDef$new(q1 = q, p1 = p, q2 = q, p2 = p, q3 = q, n = n, s = s, a = a, na = 1))
@@ -436,10 +435,10 @@ sampler_HMC <- nimbleFunction(
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(MCMCchain == 1) {
-                if(nimbleVerboseOption) print('HMC sampler is using ', nwarmup, ' warmup iterations')
-                if(nwarmup <  80) stop('HMC sampler requires a minimum of 80 warmup iterations')
-                if(nwarmup < 200) print('A minimum of 200 warmup iterations is recommended for HMC sampler')
-                if(nwarmup > MCMCniter) print('Warning: Running fewer MCMC iterations than number of HMC warmup iterations')
+                if(messages) print('  [Note] HMC sampler is using ', nwarmup, ' warmup iterations')
+                if(nwarmup <  80) stop('  [Error] HMC sampler requires a minimum of 80 warmup iterations')
+                if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler')
+                if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations')
             }
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
@@ -451,11 +450,11 @@ sampler_HMC <- nimbleFunction(
             setSize(warmupSamples, 20*warmupBaseInterval, d)
         },
         after_chain = function() {
-            if(nimbleVerboseOption) {
-                if(numDivergences == 1) print('HMC sampler encountered ', numDivergences, ' divergent path')
-                if(numDivergences  > 1) print('HMC sampler encountered ', numDivergences, ' divergent paths')
-                if(numTimesMaxTreeDepth == 1) print('HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time')
-                if(numTimesMaxTreeDepth  > 1) print('HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times')
+            if(messages) {
+                if(numDivergences == 1) print('  [Note] HMC sampler encountered ', numDivergences, ' divergent path')
+                if(numDivergences  > 1) print('  [Note] HMC sampler encountered ', numDivergences, ' divergent paths')
+                if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time')
+                if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times')
             }
         },
         reset = function() {
@@ -466,7 +465,7 @@ sampler_HMC <- nimbleFunction(
             Hbar           <<- 0
             numDivergences <<- 0
             numTimesMaxTreeDepth <<- 0
-            warnings       <<- warningsOrig
+            numWarnings    <<- numWarningsOrig
             nwarmup        <<- nwarmupOrig
             M              <<- Morig
             sqrtM          <<- sqrt(M)
