@@ -180,7 +180,7 @@ sampler_langevin <- nimbleFunction(
 #' Rmcmc <- buildMCMC(conf)
 sampler_HMC <- nimbleFunction(
     name = 'sampler_HMC',
-    contains = sampler_BASE2,     ## note: sampler_BASE2 for HMC sampler
+    contains = sampler_BASE,
     setup = function(model, mvSaved, target, control) {
         ## control list extraction
         printTimesRan  <- extractControlElement(control, 'printTimesRan',  FALSE)
