@@ -38,6 +38,9 @@ The HMC sampler accepts the following control list elements:
 }
 }
 \examples{
+nimbleOptions(enableDerivs = TRUE)
+nimbleOptions(buildDerivs = TRUE)
+
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
     b1 ~ dnorm(0, 0.001)
