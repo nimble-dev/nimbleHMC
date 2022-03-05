@@ -1,6 +1,9 @@
 
 library(devtools)
-library(nimble)
+
+## NECESSARY:
+## NEED TO HAVE DONE "build" bash command while on correct
+## branch of nimble repository (currently ADoak_without_HMC)
 
 ## create github actions testing
 ##library(usethis)
@@ -23,10 +26,6 @@ system(paste0('R CMD install ', lastTarFile))
 q('no')
 
 1
-
-build(ADoak_without_HMC)  ## this should eventually change to ADoak ...
-##build(ADoak)            ## then change to devel ...
-##build(devel)            ## then no longer be necessary
 
 library(nimbleHMC)
 
@@ -78,7 +77,10 @@ Rmcmc <- buildMCMC(conf)
 Cmodel <- compileNimble(Rmodel)
 Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 
-printErrors()
+##Cmcmc <- compileNimble(Rmcmc, project = Rmodel, showCompilerOutput = TRUE)
+##printErrors()
 
 set.seed(0)
 samples <- runMCMC(Cmcmc, 10000)
+
+samplesSummary(samples)
