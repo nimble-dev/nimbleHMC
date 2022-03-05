@@ -1,7 +1,8 @@
 
 
 test_that('HMC sampler seems to work', {
-    nimbleOptions(experimentalEnableDerivs = TRUE)
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildDerivs = TRUE)
     nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     code <- nimbleCode({
         a[1] ~ dnorm(0, 1)
@@ -29,7 +30,8 @@ test_that('HMC sampler seems to work', {
 
 
 test_that('HMC sampler exact samples for different maxTreeDepths', {
-    nimbleOptions(experimentalEnableDerivs = TRUE)
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildDerivs = TRUE)
     nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     ##
     code <- nimbleCode({
@@ -76,7 +78,8 @@ test_that('HMC sampler exact samples for different maxTreeDepths', {
 
 
 test_that('HMC sampler error messages for transformations with non-constant bounds', {
-    nimbleOptions(experimentalEnableDerivs = TRUE)
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildDerivs = TRUE)
     nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     ##
     code <- nimbleCode({ x ~ dexp(1); y ~ dunif(1, x) })
@@ -124,7 +127,8 @@ test_that('HMC sampler error messages for transformations with non-constant boun
 
 
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
-    nimbleOptions(experimentalEnableDerivs = TRUE)
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildDerivs = TRUE)
     nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     ##
     code <- nimbleCode({
@@ -159,7 +163,8 @@ test_that('HMC sampler error messages for invalid M mass matrix arguments', {
 
 
 test_that('HMC sampler reports correct number of divergences and max tree depths', {
-    nimbleOptions(experimentalEnableDerivs = TRUE)
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildDerivs = TRUE)
     nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     ##
     code <- nimbleCode({
