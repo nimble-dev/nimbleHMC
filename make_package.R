@@ -32,6 +32,9 @@ sampler_HMC
 ?HMC
 ?hmc
 
+##nimbleOptions(enableDerivs = TRUE)
+##nimbleOptions(buildDerivs = TRUE)
+
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
     b1 ~ dnorm(0, 0.001)

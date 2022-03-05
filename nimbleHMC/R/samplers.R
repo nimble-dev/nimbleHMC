@@ -27,6 +27,9 @@
 #' @author Daniel Turek
 #' 
 #' @examples
+#' nimbleOptions(enableDerivs = TRUE)
+#' nimbleOptions(buildDerivs = TRUE)
+#' 
 #' code <- nimbleCode({
 #'     b0 ~ dnorm(0, 0.001)
 #'     b1 ~ dnorm(0, 0.001)
@@ -157,6 +160,9 @@ sampler_langevin <- nimbleFunction(
 #' @author Daniel Turek
 #' 
 #' @examples
+#' nimbleOptions(enableDerivs = TRUE)
+#' nimbleOptions(buildDerivs = TRUE)
+#' 
 #' code <- nimbleCode({
 #'     b0 ~ dnorm(0, 0.001)
 #'     b1 ~ dnorm(0, 0.001)
