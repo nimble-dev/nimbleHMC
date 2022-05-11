@@ -217,9 +217,9 @@ sampler_HMC <- nimbleFunction(
         d <- my_parameterTransform$getTransformedLength()
         d2 <- max(d, 2) ## for pre-allocating vectors
         nimDerivs_wrt <- 1:d
-        makeUpdateNodes_return <- makeUpdateNodes(targetNodes, calcNodes, model)
-        nimDerivs_updateNodes   <- makeUpdateNodes_return$updateNodes
-        nimDerivs_constantNodes <- makeUpdateNodes_return$constantNodes
+        derivsInfo_return <- makeDerivsInfo(model, targetNodes, calcNodes)
+        nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
+        nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
         timesRan <- 0;   epsilon <- 0;   mu <- 0;   logEpsilonBar <- 0;   Hbar <- 0
         q <- numeric(d2);   qL <- numeric(d2);   qR <- numeric(d2);   qDiff <- numeric(d2);   qNew <- numeric(d2)
