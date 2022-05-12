@@ -5,7 +5,7 @@
 Provides derivative-based MCMC sampling algorithms for use in conjunction with the nimble package.  These include:
 
 - Hamiltonian Monte Carlo (HMC-NUTS) sampler
-- Langevin sampler
+- Langevin sampler (*under development*)
 
 See the [nimble website](https://r-nimble.org/) for more information
 and examples.
