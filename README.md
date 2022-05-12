@@ -15,3 +15,12 @@ The nimbleHMC package must be used with nimble version XXXX or
 higher. To check the current version number of nimble use `packageVersion("nimble")`. 
 -->
 
+The nimbleHMC package must be used with nimble the `ADoak` branch of
+the `nimble` package.  To install this version of `nimble` and the
+`nimbleHMC` package, use:
+
+```
+library(devtools)
+install_github("nimble-dev/nimble", ref = "ADoak", subdir = "packages/nimble")
+install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC")
+```
