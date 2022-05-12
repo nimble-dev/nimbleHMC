@@ -10,6 +10,8 @@ Provides derivative-based MCMC sampling algorithms for use in conjunction with t
 See the [nimble website](https://r-nimble.org/) for more information
 and examples.
 
-The nimbleHMC package must be used with nimble version XXXX or
-higher. To check the current version number of nimble use `packageVersion("nimble")`.
+<!--
+The nimbleHMC package must be used with nimble version XXXX or 
+higher. To check the current version number of nimble use `packageVersion("nimble")`. 
+-->
 
