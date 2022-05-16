@@ -28,7 +28,6 @@
 #' 
 #' @examples
 #' nimbleOptions(enableDerivs = TRUE)
-#' nimbleOptions(buildDerivs = TRUE)
 #' 
 #' code <- nimbleCode({
 #'     b0 ~ dnorm(0, 0.001)
@@ -45,7 +44,7 @@
 #' data <- list(y = 1:N)
 #' inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
 #' 
-#' Rmodel <- nimbleModel(code, constants, data, inits)
+#' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 #' 
 #' conf <- configureMCMC(Rmodel, nodes = NULL)
 #' 
@@ -75,9 +74,9 @@ sampler_langevin <- nimbleFunction(
         timesRan <- 0
         timesAdapted <- 0
         ## checks
-        if(!nimbleOptions('enableDerivs')) stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
-        if(!nimbleOptions('buildDerivs'))  stop('must enable NIMBLE derivatives, set nimbleOptions(buildDerivs = TRUE)',  call. = FALSE)
-        if(any(model$isDiscrete(targetAsScalar)))      stop(paste0('langevin sampler can only operate on continuous-valued nodes:', paste0(targetAsScalar[model$isDiscrete(targetAsScalar)], collapse=', ')), call. = FALSE)
+        if(!isTRUE(nimbleOptions('enableDerivs'))) stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
+        if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE in model.',  call. = FALSE)
+        if(any(model$isDiscrete(targetAsScalar)))    stop(paste0('langevin sampler can only operate on continuous-valued nodes:', paste0(targetAsScalar[model$isDiscrete(targetAsScalar)], collapse=', ')), call. = FALSE)
     },
     run = function() {
         q[1:d, 1] <<- values(model, target)         ## current position variables
@@ -161,7 +160,6 @@ sampler_langevin <- nimbleFunction(
 #' 
 #' @examples
 #' nimbleOptions(enableDerivs = TRUE)
-#' nimbleOptions(buildDerivs = TRUE)
 #' 
 #' code <- nimbleCode({
 #'     b0 ~ dnorm(0, 0.001)
@@ -178,7 +176,7 @@ sampler_langevin <- nimbleFunction(
 #' data <- list(y = 1:N)
 #' inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
 #' 
-#' Rmodel <- nimbleModel(code, constants, data, inits)
+#' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 #' 
 #' conf <- configureMCMC(Rmodel, nodes = NULL)
 #' 
@@ -242,8 +240,8 @@ sampler_HMC <- nimbleFunction(
         qpNLDef <- nimbleList(q  = double(1), p  = double(1))
         btNLDef <- nimbleList(q1 = double(1), p1 = double(1), q2 = double(1), p2 = double(1), q3 = double(1), n = double(), s = double(), a = double(), na = double())
         ## checks
-        if(!nimbleOptions('enableDerivs')) stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
-        if(!nimbleOptions('buildDerivs'))  stop('must enable NIMBLE derivatives, set nimbleOptions(buildDerivs = TRUE)',  call. = FALSE)
+        if(!isTRUE(nimbleOptions('enableDerivs'))) stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
+        if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE in model',  call. = FALSE)
         if(initialEpsilon < 0) stop('HMC sampler initialEpsilon must be positive', call. = FALSE)
         if(!all(M > 0)) stop('HMC sampler M must contain all positive elements', call. = FALSE)
         if(d == 1) if(length(M) != 2) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
@@ -482,7 +480,7 @@ sampler_HMC <- nimbleFunction(
             warmupIntervalCount  <<- 0
         }
     ),
-    enableDerivs = list(
+    buildDerivs = list(
         inverseTransformStoreCalculate = list(),
         gradient_aux = list()
     )
