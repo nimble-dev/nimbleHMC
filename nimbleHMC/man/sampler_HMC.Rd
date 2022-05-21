@@ -39,7 +39,6 @@ The HMC sampler accepts the following control list elements:
 }
 \examples{
 nimbleOptions(enableDerivs = TRUE)
-nimbleOptions(buildDerivs = TRUE)
 
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
@@ -56,7 +55,7 @@ constants <- list(N = N, x = 1:N)
 data <- list(y = 1:N)
 inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
 
-Rmodel <- nimbleModel(code, constants, data, inits)
+Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 
 conf <- configureMCMC(Rmodel, nodes = NULL)
 

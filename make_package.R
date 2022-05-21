@@ -39,13 +39,9 @@ sampler_HMC
 ?hmc
 
 nimbleOptions('enableDerivs')
-nimbleOptions('buildDerivs')
 
-nimbleOptions(enableDerivs = TRUE)
-nimbleOptions(buildDerivs = TRUE)
-
-nimbleOptions('enableDerivs')
-nimbleOptions('buildDerivs')
+##nimbleOptions(enableDerivs = TRUE)
+##nimbleOptions('enableDerivs')
 
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
@@ -62,7 +58,7 @@ constants <- list(N = N, x = 1:N)
 data <- list(y = 1:N)
 inits <- list(b0=0, b1=10, sigma=100)
 
-Rmodel <- nimbleModel(code, constants, data, inits)
+Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 
 conf <- configureMCMC(Rmodel)
 
@@ -84,3 +80,4 @@ set.seed(0)
 samples <- runMCMC(Cmcmc, 10000)
 
 samplesSummary(samples)
+
