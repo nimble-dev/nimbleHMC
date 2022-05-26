@@ -63,7 +63,7 @@ Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 conf <- configureMCMC(Rmodel)
 
 conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'RW_block')
-conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'HMC')
+addHMC(conf, nodes = c('b0', 'b1', 'sigma'))
 
 conf$printSamplers(byType = TRUE)
 conf$printSamplers()
@@ -78,6 +78,9 @@ Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 
 set.seed(0)
 samples <- runMCMC(Cmcmc, 10000)
-
 samplesSummary(samples)
+
+out <- nimbleHMC(Rmodel, niter = 2000, nchains = 2, WAIC = TRUE)
+str(out$samples)
+out$WAIC
 
