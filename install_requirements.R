@@ -41,10 +41,10 @@ for(package in requirements) {
 #### XXXXXXXXXXXXXXXX remove until here
 
 
-print('CCCCC')
 
 
 ## XXXXXX remove this:
+print('CCCCC')
 a <- library(igraph, lib.loc = library_install_path)
 a <- library(coda, lib.loc = library_install_path)
 a <- library(R6, lib.loc = library_install_path)
