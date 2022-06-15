@@ -35,7 +35,7 @@ for(package in requirements) {
 }
 
 ## XXXXXXXXXXXXXXXXX remove below
-install.packages('devtools', type = 'source')
+install.packages('devtools')
 library(devtools)
 devtools::install_github('nimble-dev/nimble', ref = 'ADoak', subdir = 'packages/nimble')
 ## XXXXXXXXXXXXXXXX remove until here
