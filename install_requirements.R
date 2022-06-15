@@ -4,7 +4,7 @@ library_install_path <- .libPaths()[1L]
 
 ## XXXXXX remove this:
 print('RUNNING INSTALL_REQUIREMENTS.R')
-print(paste0('library_install_path:', library_install_path))
+print(paste0('library_install_path: ', library_install_path))
 print('BBBB')
 ##
 ###install.packages('igraph')
