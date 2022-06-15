@@ -17,14 +17,10 @@ test_that('HMC sampler seems to work', {
     conf <- configureMCMC(Rmodel, nodes = NULL)
     conf$addSampler('a', 'HMC', control = list(nwarmup = 1000))
     Rmcmc <- buildMCMC(conf)
-    print('about to compile model')   ## XXXXXXX
     Cmodel <- compileNimble(Rmodel)
-    print('done with compile model')   ## XXXXXXX
-    print('about to compile mcmc')   ## XXXXXXX
     Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
-    print('done with compile mcmc')   ## XXXXXXX
     set.seed(0)
-    samples <- runMCMC(Cmcmc, 10000)
+    samples <- runMCMC(Cmcmc, niter = 100000, nburnin = 20000)
     ##
     #### this is temporary: XXXXXXXXXXXXXXXx
     print('dim(samples):')
@@ -37,9 +33,8 @@ test_that('HMC sampler seems to work', {
     print(apply(samples, 2, sd))
     #### XXXXXXXXXXXXXXXXXXXXXX
     ##
-    expect_true(all(round(as.numeric(samples[1000,]), 5) == c(-0.11556, 0.88505, 2.89503)))
-    expect_true(all(round(as.numeric(apply(samples, 2, mean)), 7) == c(0.4136721, 1.8417534, 3.2569954)))
-    expect_true(all(round(as.numeric(apply(samples, 2, sd)), 7) == c(0.9268822, 1.2033593, 1.3179108)))
+    expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.000001))
+    expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.000001))
 })
 
 
