@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-library_install_path <- '/home/runner/work/_temp/Library'
+library_install_path <- '/home/runner/work/_temp/Library/'
 
 ## XXXXXX remove this:
 print('RUNNING INSTALL_REQUIREMENTS.R')
