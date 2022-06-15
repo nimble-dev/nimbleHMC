@@ -13,11 +13,10 @@ testFiles <-
          list.files('nimbleHMC/tests/testthat', full.names = TRUE),
          value = TRUE)
 
-### XXXX uncomment below:
-####for(test in testFiles) {
-####    cat('===========================================================\n')
-####    cat(paste0('Running test-', gsub('.*test-', '', test), '\n'))
-####    cat('===========================================================\n')
-####    source(test)
-####}
+for(test in testFiles) {
+    cat('===========================================================\n')
+    cat(paste0('Running test-', gsub('.*test-', '', test), '\n'))
+    cat('===========================================================\n')
+    source(test)
+}
 
