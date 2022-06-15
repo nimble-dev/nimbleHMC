@@ -193,3 +193,4 @@ test_that('HMC sampler reports correct number of divergences and max tree depths
 
 
 
+
