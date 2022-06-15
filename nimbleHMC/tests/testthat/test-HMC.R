@@ -27,9 +27,14 @@ test_that('HMC sampler seems to work', {
     samples <- runMCMC(Cmcmc, 10000)
     ##
     #### this is temporary: XXXXXXXXXXXXXXXx
+    print('dim(samples):')
     print(dim(samples))
+    print('samples[1000,]:')
     print(as.numeric(samples[1000,]))
-    print(round(as.numeric(samples[1000,]), 5))
+    print('mean:')
+    print(apply(samples, 2, mean))
+    print('sd:')
+    print(apply(samples, 2, sd))
     #### XXXXXXXXXXXXXXXXXXXXXX
     ##
     expect_true(all(round(as.numeric(samples[1000,]), 5) == c(-0.11556, 0.88505, 2.89503)))
