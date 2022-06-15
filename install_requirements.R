@@ -45,10 +45,14 @@ for(package in requirements) {
 
 ## XXXXXX remove this:
 print('CCCCC')
-a <- library(igraph, lib.loc = library_install_path)
-a <- library(coda, lib.loc = library_install_path)
-a <- library(R6, lib.loc = library_install_path)
-a <- library(testthat, lib.loc = library_install_path)
+###a <- library(igraph, lib.loc = library_install_path)
+###a <- library(coda, lib.loc = library_install_path)
+###a <- library(R6, lib.loc = library_install_path)
+###a <- library(testthat, lib.loc = library_install_path)
+a <- library(igraph)
+a <- library(coda)
+a <- library(R6)
+a <- library(testthat)
 print('loaded packages:')
 print(a)
 
