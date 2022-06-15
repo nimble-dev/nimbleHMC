@@ -15,10 +15,16 @@ test_that('HMC sampler seems to work', {
     Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
     Rmodel$calculate()
     conf <- configureMCMC(Rmodel, nodes = NULL)
-    conf$addSampler('a', 'HMC', control = list(nwarmup = 1000))
+    ### PUT THIS BACK IN:
+    ###conf$addSampler('a', 'HMC', control = list(nwarmup = 1000))
+    conf$addSampler('a', 'RW_block')
     Rmcmc <- buildMCMC(conf)
+    print('about to compile model')   ## XXXXXXX
     Cmodel <- compileNimble(Rmodel)
+    print('done with compile model')   ## XXXXXXX
+    print('about to compile mcmc')   ## XXXXXXX
     Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+    print('done with compile mcmc')   ## XXXXXXX
     set.seed(0)
     samples <- runMCMC(Cmcmc, 10000)
     ##
