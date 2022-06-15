@@ -27,10 +27,10 @@ requirements <- c(
     'testthat')
 
 for(package in requirements) {
-    if(!suppressPackageStartupMessages(require(package, character.only = TRUE)))
-        ##install.packages(package, repos = 'http://cran.us.r-project.org')
-        install.packages(package, type = 'source')
-        ##install.packages(package)
+    ##if(!suppressPackageStartupMessages(require(package, character.only = TRUE)))
+    ##install.packages(package, repos = 'http://cran.us.r-project.org')
+    ##install.packages(package, type = 'source')
+    install.packages(package)
 }
 
 ####### XXXXXXXXX uncomment below:
