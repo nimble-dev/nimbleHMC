@@ -3,17 +3,15 @@
 ### XXXX remove this:
 print('RUNNING RUN_TESTS.R')
 
-### XXXX uncomment below:
-####library(methods)
-####library(testthat)
-####library(nimble)
-####library(nimbleHMC)
+library(methods)
+library(testthat)
+library(nimble)
+library(nimbleHMC)
 
-### XXXX uncomment below:
-###testFiles <-
-###    grep('test-.+\\.R$',
-###         list.files('nimbleHMC/tests/testthat', full.names = TRUE),
-###         value = TRUE)
+testFiles <-
+    grep('test-.+\\.R$',
+         list.files('nimbleHMC/tests/testthat', full.names = TRUE),
+         value = TRUE)
 
 ### XXXX uncomment below:
 ####for(test in testFiles) {
