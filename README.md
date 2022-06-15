@@ -21,6 +21,6 @@ the `nimble` package.  To install this version of `nimble` and the
 
 ```
 library(devtools)
-install_github("nimble-dev/nimble", ref = "ADoak", subdir = "packages/nimble")
+install_github("nimble-dev/nimble", ref = "AD_rc0", subdir = "packages/nimble")
 install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC")
 ```
