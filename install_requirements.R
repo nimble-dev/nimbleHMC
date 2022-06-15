@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 
-library_install_path <- '/home/runner/work/_temp/Library/'
+library_install_path <- .libPaths()[1L]
 
 ## XXXXXX remove this:
 print('RUNNING INSTALL_REQUIREMENTS.R')
-install.packages('igraph', lib = library_install_path)
+print('library_install_path:')
+print(library_install_path)
+install.packages('igraph')
 a <- library(igraph, lib.loc = library_install_path)
 print('installed igraph:')
 print(a)
