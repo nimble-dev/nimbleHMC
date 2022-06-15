@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
 
-library_install_path <- .libPaths()[1L]
+## XXX REMOVE:
+######library_install_path <- .libPaths()[1L]
 
 ## XXXXXX remove this:
-print('RUNNING INSTALL_REQUIREMENTS.R')
-print(paste0('library_install_path: ', library_install_path))
-print('BBBB')
+###print('RUNNING INSTALL_REQUIREMENTS.R')
+###print(paste0('library_install_path: ', library_install_path))
+###print('BBBB')
 ##
 ###install.packages('igraph')
 ###a <- library(igraph, lib.loc = library_install_path)
@@ -33,12 +34,11 @@ for(package in requirements) {
     install.packages(package)
 }
 
-####### XXXXXXXXX uncomment below:
-#### XXXXXXXXXXXXXXXXX remove below
-##install.packages('devtools', type = 'source')
-##library(devtools)
-##devtools::install_github('nimble-dev/nimble', ref = 'ADoak', subdir = 'packages/nimble')
-#### XXXXXXXXXXXXXXXX remove until here
+## XXXXXXXXXXXXXXXXX remove below
+install.packages('devtools', type = 'source')
+library(devtools)
+devtools::install_github('nimble-dev/nimble', ref = 'ADoak', subdir = 'packages/nimble')
+## XXXXXXXXXXXXXXXX remove until here
 
 
 
@@ -53,6 +53,7 @@ a <- library(igraph)
 a <- library(coda)
 a <- library(R6)
 a <- library(testthat)
+a <- library(nimble)
 print('loaded packages:')
 print(a)
 
