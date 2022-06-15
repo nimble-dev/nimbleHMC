@@ -2,7 +2,8 @@
 
 ## XXXXXX remove this:
 print('RUNNING INSTALL_REQUIREMENTS.R')
-a <- install.packages('igraph')
+install.packages('igraph')
+a <- library(igraph)
 print('installed igraph:')
 print(a)
 
