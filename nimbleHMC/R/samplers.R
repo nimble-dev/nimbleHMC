@@ -20,8 +20,6 @@
 #' 
 #' @import nimble
 #' 
-#' @export
-#' 
 #' @aliases Langevin langevin
 #' 
 #' @author Daniel Turek
