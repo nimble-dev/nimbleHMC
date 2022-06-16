@@ -45,7 +45,7 @@ jobs:
       - name: Install nimbleHMC (Windows)
         if: runner.os == 'Windows'
         run: RCMD INSTALL --install-tests nimbleHMC
-       
+
       - name: Install nimbleHMC
         if: runner.os != 'Windows'
         run: R CMD INSTALL --install-tests nimbleHMC

@@ -73,8 +73,8 @@ test_that('HMC sampler error messages for transformations with non-constant boun
     conf$addSampler('y', 'HMC')
     expect_error(Rmcmc <- buildMCMC(conf))
 })
- 
- 
+
+
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     nimbleOptions(enableDerivs = TRUE)
     nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)

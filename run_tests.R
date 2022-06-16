@@ -1,8 +1,5 @@
 #!/usr/bin/env Rscript
 
-### XXXX remove this:
-print('RUNNING RUN_TESTS.R')
-
 library(methods)
 library(testthat)
 library(nimble)

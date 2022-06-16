@@ -1,6 +1,5 @@
 #!/usr/bin/env Rscript
 
-
 requirements <- c(
     'igraph',
     'coda',
