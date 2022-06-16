@@ -22,117 +22,59 @@ test_that('HMC sampler seems to work', {
     set.seed(0)
     samples <- runMCMC(Cmcmc, niter = 100000, nburnin = 20000)
     ##
-    #### this is temporary: XXXXXXXXXXXXXXXx
-    print('dim(samples):')
-    print(dim(samples))
-    print('samples[1000,]:')
-    print(as.numeric(samples[1000,]))
-    print('mean:')
-    print(apply(samples, 2, mean))
-    print('sd:')
-    print(apply(samples, 2, sd))
-    #### XXXXXXXXXXXXXXXXXXXXXX
-    ##
     expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.01))
     expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.01))
 })
 
 
-####test_that('HMC sampler exact samples for different maxTreeDepths', {
-####    nimbleOptions(enableDerivs = TRUE)
-####    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-####    ##
-####    code <- nimbleCode({
-####        sigma ~ dunif(0, 100)
-####        a ~ dnorm(0, 0.01)
-####        y1 ~ dnorm(a, sd = sigma)
-####        y2 ~ dnorm(a, sd = 2*sigma)
-####    })
-####    constants <- list()
-####    data <- list(y1 = 1, y2 = 10)
-####    inits <- list(sigma = 1, a = 0)
-####    ##
-####    Rmodel1 <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-####    conf1 <- configureMCMC(Rmodel1)
-####    conf1$removeSamplers(c('sigma', 'a'))
-####    conf1$addSampler(c('sigma', 'a'), type = 'HMC', control = list(nwarmup = 1000))
-####    Rmcmc1 <- buildMCMC(conf1)
-####    ##
-####    Rmodel2 <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-####    conf2 <- configureMCMC(Rmodel2)
-####    conf2$removeSamplers(c('sigma', 'a'))
-####    conf2$addSampler(c('sigma', 'a'), type = 'HMC',
-####                     control = list(nwarmup = 1000, maxTreeDepth = 4))
-####    Rmcmc2 <- buildMCMC(conf2)
-####    ##
-####    Rmodel3 <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-####    conf3 <- configureMCMC(Rmodel3)
-####    conf3$removeSamplers('sigma')
-####    conf3$addSampler('sigma', type = 'HMC', control = list(nwarmup = 1000))
-####    Rmcmc3 <- buildMCMC(conf3)
-####    ##
-####    compiledList <- compileNimble(list(model1=Rmodel1, mcmc1=Rmcmc1, model2=Rmodel2, mcmc2=Rmcmc2, model3=Rmodel3, mcmc3=Rmcmc3))
-####    Cmodel1 <- compiledList$model1; Cmcmc1 <- compiledList$mcmc1
-####    Cmodel2 <- compiledList$model2; Cmcmc2 <- compiledList$mcmc2
-####    Cmodel3 <- compiledList$model3; Cmcmc3 <- compiledList$mcmc3
-####    ##
-####    set.seed(0);   samples1 <- runMCMC(Cmcmc1, 10000)
-####    expect_true(all(round(as.numeric(samples1[10000,]),6) == c(-4.153855, 33.602766)))
-####    set.seed(0);   samples2 <- runMCMC(Cmcmc2, 10000)
-####    expect_true(all(round(as.numeric(samples2[10000,]),6) == c(-6.563781, 93.015175)))
-####    set.seed(0);   samples3 <- runMCMC(Cmcmc3, 10000)
-####    expect_true(all(round(as.numeric(samples3[10000,]),6) == c(-6.187742, 8.602518)))
-####})
-#### 
-#### 
-####test_that('HMC sampler error messages for transformations with non-constant bounds', {
-####    nimbleOptions(enableDerivs = TRUE)
-####    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-####    ##
-####    code <- nimbleCode({ x ~ dexp(1); y ~ dunif(1, x) })
-####    Rmodel <- nimbleModel(code, inits = list(x = 10), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf))
-####    ##
-####    code <- nimbleCode({ x ~ dexp(1); y ~ dunif(x, 10) })
-####    Rmodel <- nimbleModel(code, inits = list(x = 1), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf))
-####    ##
-####    code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), 0, x) })
-####    Rmodel <- nimbleModel(code, inits = list(x = 1), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf))
-####    ##
-####    code <- nimbleCode({ x <- 2+c; y ~ T(dnorm(0, 1), 0, x) })
-####    Rmodel <- nimbleModel(code, constants = list(c = 1), inits = list(y = 1), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
-####    ##
-####    code <- nimbleCode({ x <- 3; y ~ T(dnorm(0, 1), 1, x) })
-####    Rmodel <- nimbleModel(code, inits = list(y = 2), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
-####    ##
-####    code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), 1, x) })
-####    Rmodel <- nimbleModel(code, inits = list(x = 3, y = 2), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf))
-####    ##
-####    code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), x, 10) })
-####    Rmodel <- nimbleModel(code, inits = list(x = 1, y = 2), buildDerivs = TRUE)
-####    conf <- configureMCMC(Rmodel, nodes = NULL)
-####    conf$addSampler('y', 'HMC')
-####    expect_error(Rmcmc <- buildMCMC(conf))
-####})
-#### 
-#### 
+test_that('HMC sampler error messages for transformations with non-constant bounds', {
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
+    ##
+    code <- nimbleCode({ x ~ dexp(1); y ~ dunif(1, x) })
+    Rmodel <- nimbleModel(code, inits = list(x = 10), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf))
+    ##
+    code <- nimbleCode({ x ~ dexp(1); y ~ dunif(x, 10) })
+    Rmodel <- nimbleModel(code, inits = list(x = 1), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf))
+    ##
+    code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), 0, x) })
+    Rmodel <- nimbleModel(code, inits = list(x = 1), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf))
+    ##
+    code <- nimbleCode({ x <- 2+c; y ~ T(dnorm(0, 1), 0, x) })
+    Rmodel <- nimbleModel(code, constants = list(c = 1), inits = list(y = 1), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
+    ##
+    code <- nimbleCode({ x <- 3; y ~ T(dnorm(0, 1), 1, x) })
+    Rmodel <- nimbleModel(code, inits = list(y = 2), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
+    ##
+    code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), 1, x) })
+    Rmodel <- nimbleModel(code, inits = list(x = 3, y = 2), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf))
+    ##
+    code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), x, 10) })
+    Rmodel <- nimbleModel(code, inits = list(x = 1, y = 2), buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    conf$addSampler('y', 'HMC')
+    expect_error(Rmcmc <- buildMCMC(conf))
+})
+ 
+ 
 ####test_that('HMC sampler error messages for invalid M mass matrix arguments', {
 ####    nimbleOptions(enableDerivs = TRUE)
 ####    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
