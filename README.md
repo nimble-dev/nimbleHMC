@@ -15,12 +15,12 @@ The nimbleHMC package must be used with nimble version XXXX or
 higher. To check the current version number of nimble use `packageVersion("nimble")`. 
 -->
 
-The `nimbleHMC` package must be used with nimble the `"AD_rc0"` branch of
+The `nimbleHMC` package must be used with nimble the `"AD-rc0"` branch of
 the `nimble` package.  To install this version of `nimble` and the
 `nimbleHMC` package, use:
 
 ```
 library(devtools)
-install_github("nimble-dev/nimble", ref = "AD_rc0", subdir = "packages/nimble")
+install_github("nimble-dev/nimble", ref = "AD-rc0", subdir = "packages/nimble")
 install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC")
 ```
