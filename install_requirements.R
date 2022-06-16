@@ -8,14 +8,13 @@ requirements <- c(
     'testthat')
 
 for(package in requirements) {
-    if(!suppressPackageStartupMessages(require(package, character.only = TRUE)))
-        ##install.packages(package, repos = 'http://cran.us.r-project.org')
-        install.packages(package, type = 'source')
+    install.packages(package)
 }
 
 ## XXXXXXXXXXXXXXXXX remove below
-install.packages('devtools', type = 'source')
+install.packages('devtools')
 library(devtools)
-devtools::install_github('nimble-dev/nimble', ref = 'ADoak_without_HMC', subdir = 'packages/nimble')
+devtools::install_github('nimble-dev/nimble', ref = 'ADoak', subdir = 'packages/nimble')
 ## XXXXXXXXXXXXXXXX remove until here
+
 
