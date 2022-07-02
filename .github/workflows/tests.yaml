@@ -20,7 +20,7 @@ jobs:
           - {os: macOS-latest,    r: 'release'}
           ##- {os: windows-latest,  r: 'release'}
           ##- {os: ubuntu-latest,   r: 'devel', http-user-agent: 'release'}
-          ##- {os: ubuntu-latest,   r: 'release'}
+          - {os: ubuntu-20.04,   r: 'release'}
           ##- {os: ubuntu-latest,   r: 'oldrel-1'}
 
     env:
@@ -37,6 +37,15 @@ jobs:
           use-public-rspm: true
 
       - uses: r-lib/actions/setup-pandoc@v1
+
+      - name: Install system dependencies
+        if: runner.os == 'Linux'
+        run: |
+          while read -r cmd
+          do
+            eval sudo $cmd
+          done < <(Rscript -e 'writeLines(remotes::system_requirements("ubuntu", "20.04", "./nimbleHMC"))')
+          sudo apt-get install libcurl4-openssl-dev  # needed for R pkg curl -> covr
 
       - name: Install dependencies
         run: source('install_requirements.R')
