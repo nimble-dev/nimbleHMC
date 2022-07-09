@@ -1,4 +1,11 @@
-
+test_that("compilation works", {
+    print(list.files(file.path(tempdir(),'nimble_generatedCode')))
+    code <- nimbleCode({
+        y~dnorm(0,1)
+    })
+    m <- nimbleModel(code)
+    cm <- compileNimble(m)
+})
 
 test_that('HMC sampler seems to work', {
     nimbleOptions(enableDerivs = TRUE)
