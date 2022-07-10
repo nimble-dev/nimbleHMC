@@ -29,7 +29,7 @@ q('no')
 
 library(nimbleHMC)
 
-sampler_langevin
+sampler_langevin   ## no longer exported
 ?sampler_langevin
 ?langevin
 
@@ -37,6 +37,8 @@ sampler_HMC
 ?sampler_HMC
 ?HMC
 ?hmc
+
+citation('nimbleHMC')
 
 nimbleOptions('enableDerivs')
 
