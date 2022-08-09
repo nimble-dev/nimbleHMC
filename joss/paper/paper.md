@@ -25,6 +25,7 @@ affiliations:
    index: 2
 date: 13 August 2022
 bibliography: paper.bib
+output: pdf_document
 ---
 
 
