@@ -42,7 +42,7 @@ system('open paper.pdf')
 
 Markov chain Monte Carlo (MCMC) algorithms are widely used for
 fitting hierarchical (graphical) models to observed data, and more
-generally for simulating from high-dimensional probability
+generally, for simulating from high-dimensional probability
 distributions.  MCMC is the predominant tool used in Bayesian
 analyses, where the distribution of interest (the "target
 distribution") is defined as the posterior
@@ -71,7 +71,7 @@ There exist numerous software packages
 which provide implementations of MCMC for mainstream use such as
 `nimble` [@de2017programming], `jags` [@plummer2003jags], `pyMC`
 [@fonnesbeck2015pymc], and `Stan` [@carpenter2017stan].  Each such package provides a
-language for specifying general higherarchical model structures, and
+language for specifying general hierarchical model structures, and
 supplying data.  Following specification of the problem, each package generates an
 MCMC algorithm which specifically samples from the target posterior
 distribution of the specified model, and executes this algorithm to
@@ -89,20 +89,20 @@ uniquely provides the ability to specify which samplers
 are applied to each model dimension.  Prior to generating an
 executable MCMC algorithm, `nimble` has the intermediate stage of MCMC
 configuration.  At configuration time, users may select any
-valid assignment of samplers to each unosberved model
+valid assignment of samplers to each unobserved model
 dimension, mixing and matching between those samplers provided with
 `nimble`. The base `nimble` package provides a variety of non-derivative-based samplers, including random walk Metropolis-Hastings [@robert1999metropolis],
 slice sampling [@neal2003slice], conjugate samplers
-[@george1993conjugate], and many others.  After configruation is finished, an MCMC
+[@george1993conjugate], and many others.  After configuration is finished, an MCMC
 algorithm is generated according to the sampler assignments therein,
-and executed to generate a sequence of samples..
+and executed to generate a sequence of samples.
 
 The `nimbleHMC` package provides an implementation of HMC sampling which
 is compatible for use within `nimble`.  Specifically, `nimbleHMC`
 implements the No-U-Turn variety of HMC [HMC-NUTS; @hoffman2014no],
 which removes the necessity of hand-specifying tuning parameters of
 the HMC sampler.  Using
-`nimbleHMC`, HMC samplers can be be assigned to any subset of
+`nimbleHMC`, HMC samplers can be assigned to any subset of
 continuous-valued model dimensions at the time of `nimble`'s MCMC
 configuration, which may be used in combination with any other
 samplers provided with the base `nimble` package.
@@ -194,19 +194,19 @@ MCMC engines is clearly documented.
 # Statement of need
 
 HMC is recognized as a state-of-the-art MCMC sampling strategy,
-capable of efficiently generating samples with strong  inferential
+capable of efficiently generating samples with strong inferential
 power.  A testimony to this, packages such as
 `Stan` have built software exclusively around the use of HMC sampling.
 As a result, however, such software is unable to operate on models with discrete (non-continuous)
-valued dimensions, a results of the non-applicability of HMC.  Models with
+valued dimensions, a result of the non-applicability of HMC.  Models with
 discrete-valued dimensions arise in a range of common statistical motifs
 including hidden Markov models, finite mixture models, and generally in
 the presence of unobserved categorical data, among others
-[@bartolucci2022discrete].  In constrast, other mainstream MCMC packages such as
+[@bartolucci2022discrete].  In contrast, other mainstream MCMC packages such as
 `WinBUGS`, `OpenBUGS` and `jags` have the ability to sample discrete model dimensions,
 but do not implement HMC.  This leaves a gap, as there is no support
 for applying HMC sampling to continuous-valued dimensions of
-hierchical models which also contain discrete dimensions.
+hierarchical models which also contain discrete dimensions.
 
 It is an open question what MCMC algorithm, or which combination of
 samplers, will optimize the fitting of any particular hierarchical model and dataset.
@@ -218,19 +218,19 @@ metric is called MCMC efficiency [@turek2017automated], but what assignment of s
 maximizes this metric is a difficult and open question
 [@ponisio2020one].  For that reason, the ability to mix-and-match
 samplers from among as large a pool of candidates as possible is
-important from both practical and a theoretical standpoints.
+important from both practical and theoretical standpoints.
 Indeed, there even exist packages such as `compareMCMCs`
 [@de2022comparemcmcs], the purpose of which is to compare the relative
 performance of distinct MCMC algorithms.
 
 The `nimble` package uniquely provides the ability to custom-specify the
 assignment of MCMC sampling algorithms, which allows the exploration and the
-study of efficiency approachs to MCMC.  No existing software to date
-can operate on discrete model dimensions *and*  offers the option of
+study of efficient approaches to MCMC.  No existing software to date
+can operate on discrete model dimensions *and* offers the option of
 HMC sampling.  Here, the `nimbleHMC` package augments the `nimble`
 package by providing an HMC sampler suitable for use within `nimble`'s
 MCMC.  This fills the gap, allowing HMC samplers to operate alongside the
-existing continuous and discrete sampling algorithms avaialble in `nimble`.
+existing continuous and discrete sampling algorithms available in `nimble`.
 
 
 
@@ -273,6 +273,8 @@ presenting scientific results based on MCMC.
 -->
 
 
+
+<!--
 # Mathematics
 
 Single dollars ($) are required for inline mathematics e.g. $f(x) = e^{\pi/x}$
@@ -298,6 +300,7 @@ format.
 
 If you want to cite a software repository URL (e.g. something on GitHub without a preferred
 citation) then you can do it with the example BibTeX entry below for @fidgit.
+-->
 
 <!--
 For a quick reference, the following citation commands can be used: 
@@ -308,10 +311,11 @@ For a quick reference, the following citation commands can be used:
 -->
 
 
-# Figures
 
 <!--
-Figures can be included like this: 
+# Figures
+
+ Figures can be included like this: 
 ![Caption for example figure.\label{fig:example}](figure.png) 
 and referenced from text using \autoref{fig:example}. 
 
@@ -319,11 +323,11 @@ Figure sizes can be customized by adding an optional second parameter:
 ![Caption for example figure.](figure.png){ width=20% }
 -->
 
-
+<!--
 # Acknowledgements
-
 We acknowledge contributions from Brigitta Sipocz, Syrtis Major, and Semyeong
 Oh, and support from Kathryn Johnston during the genesis of this project.
+-->
 
 # References
 
