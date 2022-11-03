@@ -34,7 +34,7 @@ devtools::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC", INSTALL_o
 ```
 
 
-### Automatic Differentiation in `nimble`
+### Automatic Differentiation
 
 `nimbleHMC` makes use of the automatic differentiation (AD) feature of `nimble`, which is currently available as a beta release.  See [nimble AD beta release](https://r-nimble.org/ad-beta) for more information about models and algorithms that make use of the AD features of `nimble`.
 
