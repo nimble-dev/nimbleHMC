@@ -38,7 +38,17 @@ devtools::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC", INSTALL_o
 
 `nimbleHMC` makes use of the automatic differentiation (AD) feature of `nimble`, which is currently available as a beta release.  See [nimble AD beta release](https://r-nimble.org/ad-beta) for more information about models and algorithms that make use of the AD features of `nimble`.
 
-For using HMC on models that include user-defined distributions, you will need to include the argument `buildDerivs = TRUE` in the definition of your distribution, as:
+In order to use HMC sampling (and other derivative-based algorithms), derivatives need to be enabled for `nimble` using the setting:
+```
+nimbleOptions(enableDerivs = TRUE)
+```
+
+For using HMC sampling on a model, derivative calculations need to be built into for the model object.  This is accomplished using the `buildDerivs = TRUE` argument in the call to `nimbleModel` as:
+```
+nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+```
+
+For using HMC sampling on models that include user-defined distributions, you will need to include the argument `buildDerivs = TRUE` in the definition of your distribution, as:
 
 ```
 dmy_distribution <- nimbleFunction(
