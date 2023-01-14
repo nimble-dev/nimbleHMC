@@ -270,7 +270,7 @@ buildHMC <- function(model, nodes = character(), control = list(), print = TRUE,
 #' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{buildMCMC}} \code{\link{runMCMC}}
 #' 
 #' @author Daniel Turek
-#' 
+#'
 #' @export
 nimbleHMC <- function(code,
                       constants = list(),
@@ -293,7 +293,7 @@ nimbleHMC <- function(code,
     if(missing(code) && missing(model)) stop('must provide either code or model argument')
     if(!samples && !summary && !WAIC) stop('no output specified, use samples = TRUE, summary = TRUE, or WAIC = TRUE')
     if(!missing(code) && inherits(code, 'modelBaseClass')) model <- code   ## let's handle it, if model object is provided as un-named first argument
-    Rmodel <- mcmc_createModelObject(code, constants, data, inits, dimensions, model, nchains, setSeed, check)
+    Rmodel <- mcmc_createModelObject(model, inits, nchains, setSeed, code, constants, data, dimensions, check, buildDerivs = TRUE)
     Rmcmc <- buildHMC(Rmodel, monitors = monitors, thin = thin, enableWAIC = WAIC, print = FALSE)
     compiledList <- compileNimble(Rmodel, Rmcmc)    ## only one compileNimble() call
     Cmcmc <- compiledList$Rmcmc
