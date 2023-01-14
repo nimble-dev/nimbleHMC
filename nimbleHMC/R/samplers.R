@@ -119,6 +119,110 @@ sampler_langevin <- nimbleFunction(
     )
 )
 
+## TODO: add parameter transform as in HMC
+## TODO: add history stuff and use of extractControlElement and staged calcNodes; see sampler_RW
+sampler_pMALA <- nimbleFunction(
+    name = 'sampler_pMALA',
+    contains = sampler_BASE,
+    setup = function(model, mvSaved, target, control) {
+        ## control list extraction
+        scale         <- if(!is.null(control$scale))         control$scale         else 1      ## step-size multiplier
+        adaptive      <- if(!is.null(control$adaptive))      control$adaptive      else TRUE
+        adaptInterval <- if(!is.null(control$adaptInterval)) control$adaptInterval else 50
+        propCov       <- if(!is.null(control$propCov)) control$propCov       else 'identity'
+        diagonal      <- if(!is.null(control$diagonal))      control$diagonal      else FALSE
+        adaptFactorExponent <- extractControlElement(control, 'adaptFactorExponent', 0.8)
+        if(diagonal) stop("pMALA sampler: diagonal version not yet implemented.")
+        ## diagonal version is basically Neal algo above but with different adaptation, so might do it in the algo above.
+        ## (a) adapt scalar scale with acc rate; (b) adapt variance not sd, and use running mean not empirical mean
+        
+        ## node list generation
+        targetAsScalar <- model$expandNodeNames(target, returnScalarComponents = TRUE)
+        calcNodes <- model$getDependencies(target)
+        ## numeric value generation
+        scaleOriginal <- scale
+        d <- length(targetAsScalar)
+        q <- matrix(0, nrow = d, ncol = 1)
+        p <- matrix(0, nrow = d, ncol = 1)
+        grad <- matrix(0, nrow = d, ncol = 1)
+        empirSamp <- matrix(0, nrow = d, ncol = adaptInterval)
+        runningSum <- matrix(0, nrow = d, ncol = 1)
+        mu <- matrix(0, nrow = d, ncol = 1)
+        if(is.character(propCov) && propCov == 'identity')     propCov <- diag(d)
+        propCovOriginal <- propCov
+        chol_propCov <- chol(propCov)
+        tchol_propCov <- t(chol_propCov)
+        timesRan <- 0
+        timesAccepted <- 0
+        timesAdapted <- 0
+        optimalAR <- 0.57
+        ## checks
+        if(!nimbleOptions('experimentalEnableDerivs')) stop('must enable NIMBLE derivatives, set nimbleOptions(experimentalEnableDerivs = TRUE)')
+        if(any(model$isDiscrete(targetAsScalar)))      stop(paste0('langevin sampler can only operate on continuous-valued nodes:', paste0(targetAsScalar[model$isDiscrete(targetAsScalar)], collapse=', ')))
+        if(!inherits(propCov, 'matrix'))        stop('propCov must be a matrix\n')
+        if(!inherits(propCov[1,1], 'numeric'))  stop('propCov matrix must be numeric\n')
+        if(!all(dim(propCov) == d))           stop('propCov matrix must have dimension ', d, 'x', d, '\n')
+        if(!isSymmetric(propCov))             stop('propCov matrix must be symmetric')
+    },
+    run = function() {
+        q[1:d, 1] <<- values(model, target)         ## current position variables
+        for(i in 1:d)   p[i, 1] <<- rnorm(1, 0, 1)  ## randomly draw momentum variables
+        currentH <- model$getLogProb(calcNodes) - sum(p^2)/2
+        p <<- p + (scale/2) * (tchol_propCov %*% jacobian(q))       ## initial half step for p
+        q <<- q + scale * (chol_propCov %*% p)                      ## full step for q
+        p <<- p + (scale/2) * (tchol_propCov %*% jacobian(q))       ## final half step for p
+        propH <- model$calculate(calcNodes) - sum(p^2)/2
+        jump <- decide(propH - currentH)
+        if(jump) nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
+        else     nimCopy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
+        if(adaptive)
+            adaptiveProcedure(jump)
+    },
+    methods = list(
+        jacobian = function(q = double(2)) {
+            values(model, target) <<- q[1:d, 1]
+            derivsOutput <- nimDerivs(model$calculate(calcNodes), order = 1, wrt = target)
+            grad[1:d, 1] <<- derivsOutput$jacobian[1, 1:d]
+            returnType(double(2))
+            return(grad)
+        },
+        adaptiveProcedure = function(jump = logical()) {
+            ## adapts leapfrog step-size per Livingstone and Zanella (https://arxiv.org/abs/1908.11812)
+            timesRan <<- timesRan + 1
+            if(jump)     timesAccepted <<- timesAccepted + 1
+            empirSamp[1:d, timesRan] <<- values(model, target) 
+            runningSum <<- runningSum + empirSamp[1:d, timesRan]  
+            if(timesRan %% adaptInterval == 0) {
+                acceptanceRate <- timesAccepted / timesRan
+                timesAdapted <<- timesAdapted + 1
+                gamma1 <- 1/((timesAdapted + 3)^adaptFactorExponent)
+                scale <<- scale * exp(gamma1 * (acceptanceRate - optimalAR))
+                mu <<- mu + gamma1 * (runningSum / timesRan - mu)
+                for(i in 1:timesRan)
+                    empirSamp[ , i] <<- empirSamp[ , i] - mu
+                empirCov <- (empirSamp %*% t(empirSamp)) / (timesRan-1)
+                propCov <<- propCov + gamma1 * (empirCov - propCov)
+                chol_propCov <<- chol(propCov)
+                tchol_propCov <<- t(chol_propCov)
+                timesRan <<- 0
+                timesAccepted <<- 0
+                runningSum <<- matrix(0, nrow = d, ncol = 1)
+            }
+        },
+        reset = function() {
+            scale <<- scaleOriginal
+            propCov <<- propCovOriginal
+            chol_propCov <<- chol(propCov)
+            tchol_propCov <<- t(chol_propCov)
+            timesRan      <<- 0
+            timesAccepted <<- 0
+            timesAdapted  <<- 0
+            mu <<- matrix(0, nrow = d, ncol = 1)
+            runningSum <<- matrix(0, nrow = d, ncol = 1)
+        }
+    )
+)
+
 
 
 #' Hamiltonian Monte Carlo (HMC) Sampler
