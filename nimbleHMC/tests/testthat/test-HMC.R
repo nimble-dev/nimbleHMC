@@ -108,7 +108,130 @@ test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     conf$addSampler('x[1:3]', 'HMC', M = c(1,2,3))
     expect_no_error(Rmcmc <- buildMCMC(conf))
 })
- 
+
+
+## copied from 'Dirichlet-multinomial conjugacy' test in test-mcmc.R
+test_that('HMC for Dirichlet-multinomial', {
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
+    ##
+    set.seed(0)
+    n <- 100
+    alpha <- c(10, 30, 15, 60, 1)
+    K <- length(alpha)
+    p <- c(.12, .24, .09, .54, .01)
+    y <- rmulti(1, n, p)
+    ##
+    code <- nimbleCode({
+        y[1:K] ~ dmulti(p[1:K], n);
+        p[1:K] ~ ddirch(alpha[1:K]);
+        for(i in 1:K) {
+            alpha[i] ~ dgamma(.001, .001);
+        }
+    })
+    constants <- list(K = K, n = n)
+    inits <- list(p = rep(1/K, K), alpha = rep(K, K))
+    data <- list(y = y)
+    ##
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    ##
+    conf <- configureMCMC(Rmodel, nodes = NULL, monitors = 'p')
+    addHMC(conf, 'alpha')
+    addHMC(conf, 'p')
+    Rmcmc <- buildMCMC(conf)
+    ##
+    compiledList <- compileNimble(list(model=Rmodel, mcmc=Rmcmc))
+    Cmcmc <- compiledList$mcmc
+    ##
+    set.seed(0)
+    samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
+    ##
+    expect_equal(as.numeric(apply(samples, 2, mean)), p, tol = .05)
+})
+
+
+## copied from 'block sampler on MVN node' test in test-mcmc.R
+test_that('HMC on MVN node', {
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
+    ##
+    code <- nimbleCode({
+        mu[1] <- 10
+        mu[2] <- 20
+        mu[3] <- 30
+        x[1:3] ~ dmnorm(mu[1:3], prec = Q[1:3,1:3])
+    })
+    Q <- matrix(c(1.0,0.2,-1.0,0.2,4.04,1.6,-1.0,1.6,10.81), nrow=3)
+    constants <- list(Q = Q)
+    data <- list()
+    inits <- list(x = c(10, 20, 30))
+    ##
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    Rmcmc <- buildHMC(Rmodel)
+    ##
+    compiledList <- compileNimble(list(model=Rmodel, mcmc=Rmcmc))
+    Cmcmc <- compiledList$mcmc
+    ##
+    set.seed(0)
+    samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
+    ##
+    expect_equal(as.numeric(apply(samples, 2, mean)), c(10,20,30), tol = .001)
+    expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .006)
+})
+
+
+## copied from 'test of conjugate Wishart' test in test-mcmc.R
+test_that('HMC on conjugate Wishart', {
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
+    ##
+    set.seed(0)
+    trueCor <- matrix(c(1, .3, .7, .3, 1, -0.2, .7, -0.2, 1), 3)
+    covs <- c(3, 2, .5)
+    trueCov <- diag(sqrt(covs)) %*% trueCor %*% diag(sqrt(covs))
+    Omega <- solve(trueCov)
+    n <- 20
+    R <- diag(rep(1,3))
+    mu <- 1:3
+    Y <- mu + t(chol(trueCov)) %*% matrix(rnorm(3*n), ncol = n)
+    M <- 3
+    code <- nimbleCode({
+        for(i in 1:n) {
+            Y[i, 1:M] ~ dmnorm(mu[1:M], Omega[1:M,1:M])
+        }
+        Omega[1:M,1:M] ~ dwish(R[1:M,1:M], 4)
+    })
+    constants <- list(n = n, M = M, mu = mu, R = R)
+    data <- list(Y = t(Y))
+    inits <- list(Omega = diag(M))
+    ##
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    Rmcmc <- buildHMC(Rmodel)
+    ##
+    compiledList <- compileNimble(list(model=Rmodel, mcmc=Rmcmc))
+    Cmcmc <- compiledList$mcmc
+    ##
+    set.seed(0)
+    samples <- runMCMC(Cmcmc, niter = 1000)
+    ##
+    newDf <- 4 + n
+    newR <- R + tcrossprod(Y- mu)
+    OmegaTrueMean <- newDf * solve(newR)
+    wishRV <- array(0, c(M, M, 10000))
+    for(i in 1:10000) {
+        z <- t(chol(solve(newR))) %*% matrix(rnorm(3*newDf), ncol = newDf)
+        wishRV[ , , i] <- tcrossprod(z)
+    }
+    OmegaSimTrueSDs <- apply(wishRV, c(1,2), sd)
+    ##
+    expect_equal(as.numeric(apply(samples, 2, mean)), as.numeric(OmegaTrueMean), tol = 0.2)
+    expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.04)
+})
+
+
+
+
+
  
 ####test_that('HMC sampler reports correct number of divergences and max tree depths', {
 ####    nimbleOptions(enableDerivs = TRUE)
