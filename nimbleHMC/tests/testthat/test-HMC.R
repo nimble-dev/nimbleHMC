@@ -53,13 +53,13 @@ test_that('HMC sampler error messages for transformations with non-constant boun
     Rmodel <- nimbleModel(code, constants = list(c = 1), inits = list(y = 1), buildDerivs = TRUE)
     conf <- configureMCMC(Rmodel, nodes = NULL)
     conf$addSampler('y', 'HMC')
-    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
+    expect_no_error(Rmcmc <- buildMCMC(conf))
     ##
     code <- nimbleCode({ x <- 3; y ~ T(dnorm(0, 1), 1, x) })
     Rmodel <- nimbleModel(code, inits = list(y = 2), buildDerivs = TRUE)
     conf <- configureMCMC(Rmodel, nodes = NULL)
     conf$addSampler('y', 'HMC')
-    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
+    expect_no_error(Rmcmc <- buildMCMC(conf), NA)
     ##
     code <- nimbleCode({ x ~ dexp(1); y ~ T(dnorm(0, 1), 1, x) })
     Rmodel <- nimbleModel(code, inits = list(x = 3, y = 2), buildDerivs = TRUE)
@@ -86,7 +86,7 @@ test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     ##
     conf <- configureMCMC(Rmodel, nodes = NULL)
     conf$addSampler('x[1]', 'HMC', M = 4)
-    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
+    expect_no_error(Rmcmc <- buildMCMC(conf))
     ##
     conf <- configureMCMC(Rmodel, nodes = NULL)
     conf$addSampler('x[1]', 'HMC', M = 0)
@@ -106,7 +106,7 @@ test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     ##
     conf <- configureMCMC(Rmodel, nodes = NULL)
     conf$addSampler('x[1:3]', 'HMC', M = c(1,2,3))
-    expect_error(Rmcmc <- buildMCMC(conf), NA)   ## means: expect_no_error
+    expect_no_error(Rmcmc <- buildMCMC(conf))
 })
  
  
