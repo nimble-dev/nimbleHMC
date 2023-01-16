@@ -192,7 +192,7 @@ sampler_HMC <- nimbleFunction(
         printJ         <- extractControlElement(control, 'printJ',         FALSE)
         printM         <- extractControlElement(control, 'printM',         FALSE)
         messages       <- extractControlElement(control, 'messages',       getNimbleOption('verbose'))
-        numWarnings    <- extractControlElement(control, 'numWarnings',    5)
+        numWarnings    <- extractControlElement(control, 'numWarnings',    0)
         initialEpsilon <- extractControlElement(control, 'initialEpsilon', 0)
         gamma          <- extractControlElement(control, 'gamma',          0.05)
         t0             <- extractControlElement(control, 't0',             10)
