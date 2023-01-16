@@ -9,7 +9,8 @@ Maintainer: Daniel Turek <danielturek@gmail.com>
 Description: Provides gradient-based MCMC sampling algorithms which are suitable for use with the MCMC engine provided by the NIMBLE R package.  This includes Hamiltonian Monte Carlo (HMC) and (under development) Langevin samplers.
 Depends: R (>= 3.5.0), nimble (>= 1.0.0)
 Suggests: testthat
-License: GPL (>= 3)
+License: GPL (>= 3) + file LICENSE
+Copyright: See COPYRIGHTS file.
 Encoding: UTF-8
 LazyData: false
 RoxygenNote: 7.2.3
