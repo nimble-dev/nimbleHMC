@@ -1,4 +1,3 @@
-#' @import methods
 
 #' Langevin Sampler
 #'
