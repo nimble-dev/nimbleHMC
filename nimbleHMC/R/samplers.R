@@ -223,7 +223,8 @@ sampler_HMC <- nimbleFunction(
         p <- numeric(d2);   pL <- numeric(d2);   pR <- numeric(d2);   p2 <- numeric(d2);      p3 <- numeric(d2)
         grad <- numeric(d2);   gradFirst <- numeric(d2);   gradSaveL <- numeric(d2);   gradSaveR <- numeric(d2)
         log2 <- log(2)
-        numWarningsOrig <- numWarnings
+        warningCodes <- array(0, c(max(numWarnings,1), 2))
+        warningInd <- 0
         nwarmupOrig <- nwarmup
         warmupIntervalLengths <- rep(0,7)            ## length 7 vector
         warmupIntervalsAdaptM <- rep(0,7)            ## length 7 vector
@@ -338,7 +339,7 @@ sampler_HMC <- nimbleFunction(
                              if(v ==  2) { gradSaveL <<- gradFirst                       }
                          } else { if(v ==  1) gradSaveR <<- grad
                                   if(v == -1) gradSaveL <<- grad }
-            if(numWarnings > 0) if(is.nan.vec(c(q2, p3))) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan); numWarnings <<- numWarnings - 1 }
+            if(warningInd < numWarnings) if(is.nan.vec(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
             returnType(qpNLDef());   return(qpNLDef$new(q = q2, p = p3))
         },
         initializeEpsilon = function() {
@@ -350,14 +351,14 @@ sampler_HMC <- nimbleFunction(
             epsilon <<- 1
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
             while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
-                if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
-                                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
+                ##if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
+                ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
                 epsilon <<- epsilon / 1000                                ## my addition
                 qpNL <- leapfrog(q, p, epsilon, 0, 2)                     ## my addition
             }                                                             ## my addition
             qpLogH <- logH(q, p)
             a <- 2*nimStep(exp(logH(qpNL$q, qpNL$p) - qpLogH) - 0.5) - 1
-            if(is.nan(a)) if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') caught acceptance prob = NaN in initializeEpsilon routine'); numWarnings <<- numWarnings - 1 }
+            if(warningInd < numWarnings) if(is.nan(a)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 2; warningCodes[warningInd,2] <<- timesRan } ## message code 2: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') caught acceptance prob = NaN in initializeEpsilon routine')
             ## while(a * (logH(qpNL$q, qpNL$p) - qpLogH) > -a * log2) {   ## replaced by simplified expression:
             while(a * (logH(qpNL$q, qpNL$p) - qpLogH + log2) > 0) {
                 epsilon <<- epsilon * 2^a
@@ -374,7 +375,7 @@ sampler_HMC <- nimbleFunction(
             timesRanToNegativeKappa <- timesRan^(-kappa)
             logEpsilonBar <<- timesRanToNegativeKappa * logEpsilon + (1 - timesRanToNegativeKappa) * logEpsilonBar
             if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
-            if(numWarnings > 0) if(is.nan(epsilon)) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan); numWarnings <<- numWarnings - 1 }
+            if(warningInd < numWarnings) if(is.nan(epsilon)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 3; warningCodes[warningInd,2] <<- timesRan } ## message code 3: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan)
             ## adapt M:
             if(warmupIntervalNumber < 8) {
                 warmupIntervalCount <<- warmupIntervalCount + 1
@@ -441,10 +442,10 @@ sampler_HMC <- nimbleFunction(
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(MCMCchain == 1) {
-                if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations')
-                if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations'); stop() }
-                if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ')')
-                if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ')')
+                if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+                if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations.'); stop() }
+                if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ').')
+                if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ').')
             }
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
@@ -457,10 +458,20 @@ sampler_HMC <- nimbleFunction(
         },
         after_chain = function() {
             if(messages) {
-                if(numDivergences == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path')
-                if(numDivergences  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths')
-                if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time')
-                if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times')
+                if(numDivergences == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
+                if(numDivergences  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
+                if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
+                if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
+                numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
+                numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
+            }
+            if(warningInd > 0) {
+                for(i in 1:warningInd) {
+                    if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initializeEpsilon routine.')
+                    if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
+                }
+                warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
             }
         },
         reset = function() {
@@ -471,7 +482,7 @@ sampler_HMC <- nimbleFunction(
             Hbar           <<- 0
             numDivergences <<- 0
             numTimesMaxTreeDepth <<- 0
-            numWarnings    <<- numWarningsOrig
+            warningInd     <<- 0
             nwarmup        <<- nwarmupOrig
             M              <<- Morig
             sqrtM          <<- sqrt(M)
