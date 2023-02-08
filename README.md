@@ -16,11 +16,11 @@ higher. To check the current version number of nimble use `packageVersion("nimbl
 
 ### Installation
 
-The `nimbleHMC` package must be used with nimble the `AD-rc0` branch of the `nimble` package.  To install this version of `nimble` and the `nimbleHMC` package, use:
+The `nimbleHMC` package must be used with nimble the `AD-rc1` branch of the `nimble` package.  To install this version of `nimble` and the `nimbleHMC` package, use:
 ```
-library(devtools)
-install_github("nimble-dev/nimble", ref = "AD-rc0", subdir = "packages/nimble")
-install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC")
+library(remotes)
+remotes::install_github("nimble-dev/nimble", ref = "AD-rc1", subdir = "packages/nimble")
+remotes::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC")
 ```
 
 For errors during installation of `nimbleHMC` occuring on Windows machines, relating to either of the following error messages:
@@ -30,7 +30,7 @@ Error: loading failed for 'i386'
 ```
 try installing the `nimbleHMC` package using:
 ```
-devtools::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC", INSTALL_opts=c("--no-multiarch"))
+remotes::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC", INSTALL_opts=c("--no-multiarch"))
 ```
 
 
