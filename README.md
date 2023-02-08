@@ -20,7 +20,7 @@ The `nimbleHMC` package must be used with nimble the `AD-rc1` branch of the `nim
 ```
 library(remotes)
 remotes::install_github("nimble-dev/nimble", ref = "AD-rc1", subdir = "packages/nimble")
-remotes::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC")
+remotes::install_github("nimble-dev/nimbleHMC", ref="AD-rc1", subdir = "nimbleHMC")
 ```
 
 For errors during installation of `nimbleHMC` occuring on Windows machines, relating to either of the following error messages:
@@ -30,7 +30,7 @@ Error: loading failed for 'i386'
 ```
 try installing the `nimbleHMC` package using:
 ```
-remotes::install_github("nimble-dev/nimbleHMC", subdir = "nimbleHMC", INSTALL_opts=c("--no-multiarch"))
+remotes::install_github("nimble-dev/nimbleHMC", ref="AD-rc1", subdir = "nimbleHMC", INSTALL_opts=c("--no-multiarch"))
 ```
 
 
