@@ -26,6 +26,31 @@ test_that('HMC sampler seems to work', {
     expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.01))
 })
 
+test_that('HMC sampler on subset of nodes', {
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
+    code <- nimbleCode({
+        a[1] ~ dnorm(0, 1)
+        a[2] ~ dnorm(a[1]+1, 1)
+        a[3] ~ dnorm(a[2]+1, 1)
+        d ~ dnorm(a[3], sd=2)
+    })
+    constants <- list()
+    data <- list(d = 5)
+    inits <- list(a = rep(0, 3))
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    Rmodel$calculate()
+    conf <- configureMCMC(Rmodel, nodes = 'a[2]')
+    conf$addSampler(c('a[1]','a[3]'), 'HMC', control = list(nwarmup = 1000))
+    Rmcmc <- buildMCMC(conf)
+    Cmodel <- compileNimble(Rmodel)
+    Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+    set.seed(1)
+    samples <- runMCMC(Cmcmc, 100000)
+    ##
+    expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.01))
+    expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.01))
+})
 
 test_that('HMC sampler error messages for transformations with non-constant bounds', {
     nimbleOptions(enableDerivs = TRUE)
@@ -229,7 +254,83 @@ test_that('HMC on conjugate Wishart', {
 })
 
 
+test_that('HMC on LKJ', {
+    nimbleOptions(enableDerivs = TRUE)
+    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
 
+    R <- matrix(c(
+        1, 0.9, .3, -.5, .1,
+        0.9, 1, .15, -.3, .1,
+        .3, .15, 1, .3, .1,
+        -.5, -.3, .3, 1, .1,
+        .1,.1,.1,.1, 1)
+      , 5, 5)
+
+    U <- chol(R)
+
+    sds <- c(5, 4, 3, 2, 1)
+
+    set.seed(1)
+    Sigma <- diag(sds)%*%R%*%diag(sds)
+
+    n <- 100
+    p <- 5
+    y <- t(t(chol(Sigma))%*%matrix(rnorm(p*n),p,n))
+
+    uppertri_mult_diag <- nimbleFunction(
+        run = function(mat = double(2), vec = double(1)) {
+            returnType(double(2))
+            p <- length(vec)
+            out <- matrix(nrow = p, ncol = p, init = FALSE)
+            for(i in 1:p)
+                out[ , i] <- mat[ , i] * vec[i]
+            return(out)
+        },
+        buildDerivs = list(run = list(ignore = 'i'))
+    )
+    temporarilyAssignInGlobalEnv(uppertri_mult_diag)
+
+    code <- nimbleCode({
+        for(i in 1:n)
+            y[i, 1:p] ~ dmnorm(mu[1:p], cholesky = U[1:p, 1:p], prec_param = 0)
+        U[1:p,1:p] <- uppertri_mult_diag(Ustar[1:p, 1:p], sds[1:p])
+        Ustar[1:p,1:p] ~ dlkj_corr_cholesky(1.3, p)
+    })
+    m <- nimbleModel(code, constants = list(n = n, p = p, mu = rep(0, p)),
+                     data = list(y = y), inits = list(sds = sds, Ustar = U),
+                     buildDerivs = TRUE)
+    cm <- compileNimble(m)
+
+    conf <- configureMCMC(m, nodes = NULL)
+    conf$addSampler('Ustar', 'HMC')
+    mcmc <- buildMCMC(conf)
+    cmcmc <- compileNimble(mcmc, project = m)
+
+    out <- runMCMC(cmcmc, 10000)
+    outSigma <- matrix(0, nrow(out), p*p)
+    for(i in 1:nrow(outSigma))
+        outSigma[i,] <- t(matrix(out[i,], p, p)) %*% matrix(out[i,],p,p)
+    
+    stan_means <- c(1.00000000, 0.87580832, 0.41032781, -0.56213296, 0.09006483, 0.87580832,
+                    1.00000000, 0.18682787, -0.33699708, 0.12656145, 0.41032781, 0.18682787,
+                    1.00000000, 0.11984278, 0.10919301, -0.56213296, -0.33699708, 0.11984278,
+                    1.00000000, 0.10392069, 0.09006483, 0.12656145, 0.10919301, 0.10392069,
+                    1.00000000)
+    stan_sds <- c(0.000000e+00, 1.789045e-02, 6.244945e-02, 5.393811e-02, 7.928870e-02,
+                  1.789045e-02, 0.000000e+00, 8.376820e-02, 7.448420e-02, 8.411652e-02,
+                  6.244945e-02, 8.376820e-02, 8.600611e-17, 8.132228e-02, 9.242809e-02,
+                  5.393811e-02, 7.448420e-02, 8.132228e-02, 8.711701e-17, 8.605078e-02,
+                  7.928870e-02, 8.411652e-02, 9.242809e-02, 8.605078e-02, 1.227811e-16)
+    
+    nim_means_block <- apply(outSigma[1001:nrow(out), ], 2, mean)
+    nim_sds_block <- apply(outSigma[1001:nrow(out), ], 2, sd)
+    
+    cols <- matrix(1:(p*p), p, p)
+    cols <- cols[upper.tri(cols)]
+    
+    expect_lt(max(abs(stan_means[cols] - nim_means_block[cols])),  0.005)
+    expect_lt(max(abs(stan_sds[cols] - nim_sds_block[cols])), 0.005)
+})
 
 
  
