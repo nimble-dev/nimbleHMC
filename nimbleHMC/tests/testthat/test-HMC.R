@@ -1,8 +1,15 @@
+nimbleOptions(enableDerivs = TRUE)
 
+temporarilyAssignInGlobalEnv <- function(value, replace = FALSE) {
+    name <- deparse(substitute(value))
+    assign(name, value, envir = .GlobalEnv)
+    if(!replace) {
+        rmCommand <- substitute(remove(name, envir = .GlobalEnv))
+        do.call('on.exit', list(rmCommand, add = TRUE), envir = parent.frame())
+    }
+}
 
 test_that('HMC sampler seems to work', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     code <- nimbleCode({
         a[1] ~ dnorm(0, 1)
         a[2] ~ dnorm(a[1]+1, 1)
@@ -27,8 +34,6 @@ test_that('HMC sampler seems to work', {
 })
 
 test_that('HMC sampler on subset of nodes', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
     code <- nimbleCode({
         a[1] ~ dnorm(0, 1)
         a[2] ~ dnorm(a[1]+1, 1)
@@ -53,9 +58,6 @@ test_that('HMC sampler on subset of nodes', {
 })
 
 test_that('HMC sampler error messages for transformations with non-constant bounds', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-    ##
     code <- nimbleCode({ x ~ dexp(1); y ~ dunif(1, x) })
     Rmodel <- nimbleModel(code, inits = list(x = 10), buildDerivs = TRUE)
     conf <- configureMCMC(Rmodel, nodes = NULL)
@@ -101,9 +103,6 @@ test_that('HMC sampler error messages for transformations with non-constant boun
 
 
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-    ##
     code <- nimbleCode({
         for(i in 1:5)    x[i] ~ dnorm(0, 1)
     })
@@ -137,9 +136,6 @@ test_that('HMC sampler error messages for invalid M mass matrix arguments', {
 
 ## copied from 'Dirichlet-multinomial conjugacy' test in test-mcmc.R
 test_that('HMC for Dirichlet-multinomial', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-    ##
     set.seed(0)
     n <- 100
     alpha <- c(10, 30, 15, 60, 1)
@@ -177,9 +173,6 @@ test_that('HMC for Dirichlet-multinomial', {
 
 ## copied from 'block sampler on MVN node' test in test-mcmc.R
 test_that('HMC on MVN node', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-    ##
     code <- nimbleCode({
         mu[1] <- 10
         mu[2] <- 20
@@ -207,9 +200,6 @@ test_that('HMC on MVN node', {
 
 ## copied from 'test of conjugate Wishart' test in test-mcmc.R
 test_that('HMC on conjugate Wishart', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-    ##
     set.seed(0)
     trueCor <- matrix(c(1, .3, .7, .3, 1, -0.2, .7, -0.2, 1), 3)
     covs <- c(3, 2, .5)
@@ -255,9 +245,6 @@ test_that('HMC on conjugate Wishart', {
 
 
 test_that('HMC on LKJ', {
-    nimbleOptions(enableDerivs = TRUE)
-    nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-
     R <- matrix(c(
         1, 0.9, .3, -.5, .1,
         0.9, 1, .15, -.3, .1,
