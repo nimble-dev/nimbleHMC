@@ -216,7 +216,7 @@ sampler_HMC <- nimbleFunction(
         d <- my_parameterTransform$getTransformedLength()
         d2 <- max(d, 2) ## for pre-allocating vectors
         nimDerivs_wrt <- 1:d
-        derivsInfo_return <- makeDerivsInfo(model, targetNodes, calcNodes)
+        derivsInfo_return <- makeModelDerivsInfo(model, targetNodes, calcNodes)
         nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
