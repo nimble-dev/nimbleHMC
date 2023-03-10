@@ -355,5 +355,79 @@ test_that('HMC on LKJ', {
 ####})
 
 
+test_that('testing HMC configuration functions', {
+    ##
+    code <- nimbleCode({
+        a[1] ~ dnorm(0, 1)
+        a[2] ~ dnorm(a[1]+1, 1)
+        a[3] ~ dnorm(a[2]+1, 1)
+        d ~ dnorm(a[3], sd=2)
+    })
+    constants <- list()
+    data <- list(d = 5)
+    inits <- list(a = rep(0, 3))
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    ##
+    ## addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE, print = TRUE) {}
+    ##
+    conf <- configureMCMC(Rmodel)
+    addHMC(conf, nodes = 'a[1]')
+    samp <- conf$getSamplers('a[1]')
+    expect_equal(length(samp), 2)
+    expect_equal(samp[[1]]$name, 'conjugate_dnorm_dnorm_additive')
+    expect_equal(samp[[2]]$name, 'HMC')
+    ##
+    addHMC(conf, nodes = c('a[1]', 'a[3]'), replace = TRUE)
+    expect_equal(length(conf$getSamplers()), 2)
+    samp <- conf$getSamplers('a[1]')
+    expect_equal(length(samp), 1)
+    expect_equal(samp[[1]]$name, 'HMC')
+    samp <- conf$getSamplers('a[3]')
+    expect_equal(length(samp), 1)
+    expect_equal(samp[[1]]$name, 'HMC')
+    ##
+    addHMC(conf, nodes = 'a', replace = TRUE)
+    expect_equal(length(conf$getSamplers()), 1)
+    expect_equal(length(conf$getSamplers('a[1]')), 1)
+    expect_equal(length(conf$getSamplers('a[2]')), 1)
+    expect_equal(length(conf$getSamplers('a[3]')), 1)
+    ##
+    ## configureHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {}
+    ##
+    conf <- configureHMC(Rmodel)
+    samp <- conf$getSamplers()
+    expect_equal(length(samp), 1)
+    expect_equal(samp[[1]]$name, 'HMC')
+    expect_equal(samp[[1]]$target, c('a[1]', 'a[2]', 'a[3]'))
+    ##
+    conf <- configureHMC(Rmodel, nodes = c('a[1]', 'a[3]'))
+    samp <- conf$getSamplers()
+    expect_equal(length(samp), 1)
+    expect_equal(samp[[1]]$name, 'HMC')
+    expect_equal(samp[[1]]$target, c('a[1]', 'a[3]'))
+    ##
+    conf <- configureHMC(Rmodel, nodes = NULL)
+    samp <- conf$getSamplers()
+    expect_equal(length(samp), 0)
+    ##
+    ## buildHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {}
+    ##
+    Rmcmc <- buildHMC(Rmodel)
+    samplers <- Rmcmc$samplerFunctions$contentsList
+    expect_equal(length(samplers), 1)
+    expect_equal(as.character(class(samplers[[1]])), 'sampler_HMC')
+    expect_equal(samplers[[1]]$targetNodes, c('a[1]', 'a[2]', 'a[3]'))
+    ##
+    Rmcmc <- buildHMC(Rmodel, nodes = c('a[1]', 'a[3]'))
+    samplers <- Rmcmc$samplerFunctions$contentsList
+    expect_equal(length(samplers), 1)
+    expect_equal(as.character(class(samplers[[1]])), 'sampler_HMC')
+    expect_equal(samplers[[1]]$targetNodes, c('a[1]', 'a[3]'))
+    ##
+    Rmcmc <- buildHMC(Rmodel, nodes = NULL)
+    samplers <- Rmcmc$samplerFunctions$contentsList
+    expect_equal(length(samplers), 0)
+    ##
+})
 
 
