@@ -56,7 +56,7 @@ sampler_langevin <- nimbleFunction(
     name = 'sampler_langevin',
     contains = sampler_BASE,
     setup = function(model, mvSaved, target, control) {
-        stop('langevin sampler not updated yet')  ## XXXXXXXXXXXXXXXXXXXXXX
+        stop('The Langevin sampler is not yet fully implemented.')  ## XXXXXXXXXXXXXX
         ## control list extraction
         scale         <- if(!is.null(control$scale))         control$scale         else 1      ## step-size multiplier
         adaptive      <- if(!is.null(control$adaptive))      control$adaptive      else TRUE
