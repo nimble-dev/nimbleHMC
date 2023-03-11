@@ -213,6 +213,8 @@ sampler_HMC <- nimbleFunction(
         targetNodesToPrint <- paste(targetNodes, collapse = ', ')
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
+        ## check for discrete nodes (early, before parameterTransform is specialized)
+        if(any(model$isDiscrete(targetNodesAsScalars))) stop(paste0('HMC sampler cannot operate on discrete-valued nodes: ', paste0(targetNodesAsScalars[model$isDiscrete(targetNodesAsScalars)], collapse = ', ')))
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
         d <- my_parameterTransform$getTransformedLength()
