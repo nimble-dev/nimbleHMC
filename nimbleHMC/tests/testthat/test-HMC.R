@@ -431,3 +431,25 @@ test_that('testing HMC configuration functions', {
 })
 
 
+test_that('error trap discrete latent nodes', {
+    code <- nimbleCode({
+        y ~ dnorm(z, 1)
+        z ~ dpois(mu)
+        y2 ~ dnorm(z2, 1)
+        z2 ~ dbinom(p, 5)
+        mu ~ dnorm(0, 1)
+        p ~ dunif(0, 1)
+    })
+    data <- list(y = 0.1, y2 = 0.3)
+    inits <- list(z = 2, z2 = 3, mu = 0, p = .3)
+    Rmodel <- nimbleModel(code, data = data, inits = inits, buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    addHMC(conf, nodes = 'mu')
+    buildMCMC(conf)
+    addHMC(conf, nodes = 'z')
+    expect_error(buildMCMC(conf), "cannot operate on discrete")
+    addHMC(conf, nodes = 'z2')
+    expect_error(buildMCMC(conf), "cannot operate on discrete")
+    addHMC(conf, nodes = c('mu','z'))
+    expect_error(buildMCMC(conf), "cannot operate on discrete")
+})
