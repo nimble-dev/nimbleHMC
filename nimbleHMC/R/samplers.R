@@ -1,4 +1,6 @@
 
+
+
 #' Langevin Sampler
 #'
 #' The langevin sampler implements a special case of Hamiltonian Monte Carlo (HMC) sampling where only a single leapfrog step is taken on each sampling iteration, and the leapfrog step-size is adapted to match the scale of the posterior distribution (independently for each dimension being sampled).  The single leapfrog step is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space (Neal, 2011).  Langevin sampling can operate on one or more continuous-valued posterior dimensions.  This sampling technique is also known as Langevin Monte Carlo (LMC), and the Metropolis-Adjusted Langevin Algorithm (MALA).
@@ -19,6 +21,7 @@
 #' }
 #' 
 #' @import nimble
+#' @import methods
 #' 
 #' @aliases Langevin langevin
 #' 
@@ -53,7 +56,7 @@ sampler_langevin <- nimbleFunction(
     name = 'sampler_langevin',
     contains = sampler_BASE,
     setup = function(model, mvSaved, target, control) {
-        stop('langevin sampler not updated yet')  ## XXXXXXXXXXXXXXXXXXXXXX
+        stop('The Langevin sampler is not yet fully implemented.')  ## XXXXXXXXXXXXXX
         ## control list extraction
         scale         <- if(!is.null(control$scale))         control$scale         else 1      ## step-size multiplier
         adaptive      <- if(!is.null(control$adaptive))      control$adaptive      else TRUE
@@ -136,7 +139,7 @@ sampler_langevin <- nimbleFunction(
 #' 
 #' \itemize{
 #' \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
-#' \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). (default = 5)
+#' \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered).  See additional details below.  (default = 0)
 #' \item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 #' \item initialEpsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
 #' \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
@@ -147,6 +150,8 @@ sampler_langevin <- nimbleFunction(
 #' \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
 #' \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
 #' }
+#'
+#' NaN vales may be encountered in the course of the HMC leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
 #' 
 #' @import nimble
 #' 
@@ -191,7 +196,7 @@ sampler_HMC <- nimbleFunction(
         printJ         <- extractControlElement(control, 'printJ',         FALSE)
         printM         <- extractControlElement(control, 'printM',         FALSE)
         messages       <- extractControlElement(control, 'messages',       getNimbleOption('verbose'))
-        numWarnings    <- extractControlElement(control, 'numWarnings',    5)
+        numWarnings    <- extractControlElement(control, 'numWarnings',    0)
         initialEpsilon <- extractControlElement(control, 'initialEpsilon', 0)
         gamma          <- extractControlElement(control, 'gamma',          0.05)
         t0             <- extractControlElement(control, 't0',             10)
@@ -208,12 +213,14 @@ sampler_HMC <- nimbleFunction(
         targetNodesToPrint <- paste(targetNodes, collapse = ', ')
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
+        ## check for discrete nodes (early, before parameterTransform is specialized)
+        if(any(model$isDiscrete(targetNodesAsScalars))) stop(paste0('HMC sampler cannot operate on discrete-valued nodes: ', paste0(targetNodesAsScalars[model$isDiscrete(targetNodesAsScalars)], collapse = ', ')))
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
         d <- my_parameterTransform$getTransformedLength()
         d2 <- max(d, 2) ## for pre-allocating vectors
         nimDerivs_wrt <- 1:d
-        derivsInfo_return <- makeDerivsInfo(model, targetNodes, calcNodes)
+        derivsInfo_return <- makeModelDerivsInfo(model, targetNodes, calcNodes)
         nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
@@ -222,7 +229,8 @@ sampler_HMC <- nimbleFunction(
         p <- numeric(d2);   pL <- numeric(d2);   pR <- numeric(d2);   p2 <- numeric(d2);      p3 <- numeric(d2)
         grad <- numeric(d2);   gradFirst <- numeric(d2);   gradSaveL <- numeric(d2);   gradSaveR <- numeric(d2)
         log2 <- log(2)
-        numWarningsOrig <- numWarnings
+        warningCodes <- array(0, c(max(numWarnings,1), 2))
+        warningInd <- 0
         nwarmupOrig <- nwarmup
         warmupIntervalLengths <- rep(0,7)            ## length 7 vector
         warmupIntervalsAdaptM <- rep(0,7)            ## length 7 vector
@@ -337,7 +345,7 @@ sampler_HMC <- nimbleFunction(
                              if(v ==  2) { gradSaveL <<- gradFirst                       }
                          } else { if(v ==  1) gradSaveR <<- grad
                                   if(v == -1) gradSaveL <<- grad }
-            if(numWarnings > 0) if(is.nan.vec(c(q2, p3))) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan); numWarnings <<- numWarnings - 1 }
+            if(warningInd < numWarnings) if(is.nan.vec(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
             returnType(qpNLDef());   return(qpNLDef$new(q = q2, p = p3))
         },
         initializeEpsilon = function() {
@@ -349,14 +357,14 @@ sampler_HMC <- nimbleFunction(
             epsilon <<- 1
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
             while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
-                if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
-                                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
+                ##if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
+                ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
                 epsilon <<- epsilon / 1000                                ## my addition
                 qpNL <- leapfrog(q, p, epsilon, 0, 2)                     ## my addition
             }                                                             ## my addition
             qpLogH <- logH(q, p)
             a <- 2*nimStep(exp(logH(qpNL$q, qpNL$p) - qpLogH) - 0.5) - 1
-            if(is.nan(a)) if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') caught acceptance prob = NaN in initializeEpsilon routine'); numWarnings <<- numWarnings - 1 }
+            if(warningInd < numWarnings) if(is.nan(a)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 2; warningCodes[warningInd,2] <<- timesRan } ## message code 2: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') caught acceptance prob = NaN in initializeEpsilon routine')
             ## while(a * (logH(qpNL$q, qpNL$p) - qpLogH) > -a * log2) {   ## replaced by simplified expression:
             while(a * (logH(qpNL$q, qpNL$p) - qpLogH + log2) > 0) {
                 epsilon <<- epsilon * 2^a
@@ -373,7 +381,7 @@ sampler_HMC <- nimbleFunction(
             timesRanToNegativeKappa <- timesRan^(-kappa)
             logEpsilonBar <<- timesRanToNegativeKappa * logEpsilon + (1 - timesRanToNegativeKappa) * logEpsilonBar
             if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
-            if(numWarnings > 0) if(is.nan(epsilon)) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan); numWarnings <<- numWarnings - 1 }
+            if(warningInd < numWarnings) if(is.nan(epsilon)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 3; warningCodes[warningInd,2] <<- timesRan } ## message code 3: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan)
             ## adapt M:
             if(warmupIntervalNumber < 8) {
                 warmupIntervalCount <<- warmupIntervalCount + 1
@@ -440,10 +448,10 @@ sampler_HMC <- nimbleFunction(
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(MCMCchain == 1) {
-                if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations')
-                if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations'); stop() }
-                if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ')')
-                if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ')')
+                if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+                if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations.'); stop() }
+                if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ').')
+                if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ').')
             }
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
@@ -456,10 +464,20 @@ sampler_HMC <- nimbleFunction(
         },
         after_chain = function() {
             if(messages) {
-                if(numDivergences == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path')
-                if(numDivergences  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths')
-                if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time')
-                if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times')
+                if(numDivergences == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
+                if(numDivergences  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
+                if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
+                if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
+                numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
+                numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
+            }
+            if(warningInd > 0) {
+                for(i in 1:warningInd) {
+                    if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initializeEpsilon routine.')
+                    if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
+                }
+                warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
             }
         },
         reset = function() {
@@ -470,7 +488,7 @@ sampler_HMC <- nimbleFunction(
             Hbar           <<- 0
             numDivergences <<- 0
             numTimesMaxTreeDepth <<- 0
-            numWarnings    <<- numWarningsOrig
+            warningInd     <<- 0
             nwarmup        <<- nwarmupOrig
             M              <<- Morig
             sqrtM          <<- sqrt(M)
