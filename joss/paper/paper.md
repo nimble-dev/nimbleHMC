@@ -1,5 +1,5 @@
 ---
-title: "nimbleHMC: An R package for Hamiltonian Monte Carlo sampling in nimble"
+title: "`nimbleHMC:` An `R` package for Hamiltonian Monte Carlo sampling in `nimble`"
 tags:
   - R
   - MCMC
@@ -72,17 +72,17 @@ which provide implementations of MCMC for mainstream use such as
 `nimble` [@de2017programming], `jags` [@plummer2003jags], `pyMC`
 [@fonnesbeck2015pymc], and `Stan` [@carpenter2017stan].  Each such package provides a
 language for specifying general hierarchical model structures, and
-supplying data.  Following specification of the problem, each package generates an
-MCMC algorithm which specifically samples from the target posterior
-distribution of the specified model, and executes this algorithm to
-generate a sequence of samples from this distribution.
+supplying data.  Given a hierarchical model and associated data, each package generates an
+MCMC algorithm customized to generate samples from the posterior
+distribution of the specified model, which is then executed to
+generate a large number of samples.
 These packages differ, however, in their approaches to sampler assignment for each
 unobserved model dimension.  As sampling techniques vary in terms of
 computational demands and the quality of the samples produced, the
 effectiveness of the MCMC algorithms may vary depending on the
 software used, and the particular model at hand.  Each software
 package provides a valid, but distinct approach for assigning samplers
-to define the MCMC algorithm.
+to define an MCMC algorithm.
 
 Among general-purpose MCMC software packages, `nimble`
 uniquely provides the ability to specify which samplers
@@ -90,12 +90,16 @@ are applied to each model dimension.  Prior to generating an
 executable MCMC algorithm, `nimble` has the intermediate stage of MCMC
 configuration.  At configuration time, users may select any
 valid assignment of samplers to each unobserved model
-dimension, mixing and matching between those samplers provided with
-`nimble`. The base `nimble` package provides a variety of non-derivative-based samplers, including random walk Metropolis-Hastings [@robert1999metropolis],
-slice sampling [@neal2003slice], conjugate samplers
-[@george1993conjugate], and many others.  After configuration is finished, an MCMC
-algorithm is generated according to the sampler assignments therein,
-and executed to generate a sequence of samples.
+dimension, selecting among the suite of samplers provided with
+`nimble`. The base `nimble` package provides a variety of
+non-derivative-based sampling options,
+including random walk Metropolis-Hastings sampling [@robert1999metropolis],
+slice sampling [@neal2003slice], elliptical slice sampling
+[@murray2010elliptical], automated factor slice sampling [@tibbits2014automated],
+conjugate sampling [@george1993conjugate], and many others.  After
+sampler configuration is complete, an MCMC
+algorithm is generated according to the specified sampler assignments,
+and executed to generate a sequence of posterior samples.
 
 The `nimbleHMC` package provides an implementation of HMC sampling which
 is compatible for use within `nimble`.  Specifically, `nimbleHMC`
