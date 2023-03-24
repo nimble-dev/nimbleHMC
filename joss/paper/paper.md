@@ -35,6 +35,9 @@ output: pdf_document
 #### JOSS submission info:
 https://joss.readthedocs.io/en/latest/submitting.html
 
+#### actually making the submission to JOSS:
+https://joss.theoj.org/papers/new
+
 #### build and open manuscript locally:
 system("osascript -e 'tell application \"Acrobat\" to quit'")
 setwd('~/github/nimble/nimbleHMC/joss/paper')
@@ -92,7 +95,7 @@ language for specifying general hierarchical model structures, and
 supplying data.  Given a hierarchical model and associated data, each package generates an
 MCMC algorithm customized to generate samples from the posterior
 distribution of the specified model, which is then executed to
-generate a large number of samples.
+generate samples from the target posterior distribution.
 These packages differ, however, in their approaches to sampler assignment for each
 unobserved model dimension.  As sampling techniques vary in terms of
 computational demands and the quality of the samples produced, the
@@ -140,7 +143,7 @@ specific dataset is the well-studied European Dipper \emph{Cinclus cinclus)} dat
 capture-recapture
 [\emph{e.g.}, @lebreton1992modeling; @turek2016efficient].  This
 example is selected to involve both continuous-valued parameters to undergo HMC
-sampling and discrete latent states which cannot be sampled via HMC.
+sampling and discrete dimensions which cannot be sampled via HMC.
 This combination is not supported by software other than `nimbleHMC`.
 
 Here, individual birds are captured, tagged, and potentially recaptured on
@@ -237,7 +240,7 @@ the model parameters.  We use the
 `replaceSamplers` method to replace current samplers operating on
 $p$, $\phi_1$ and $\phi_2$ instead with the `HMC` sampler provided in
 the `nimbleHMC` package.  The `printSamplers` method is used to
-display the the modified sampler assignments.
+display the modified sampler assignments.
 
 ```
 conf$replaceSamplers(target = c("phi", "p"), type = "HMC")
@@ -250,7 +253,7 @@ conf$printSamplers(byType = TRUE)
 ```
 
 Now we build an executable MCMC algorithm using `buildMCMC`, and
-compile the model object and MCMC algorithm to C++ for fast execuction.
+compile the model object and MCMC algorithm to C++ for fast execution.
 
 ```
 Rmcmc <- buildMCMC(conf)
@@ -259,7 +262,7 @@ Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 ```
 
 The compiled MCMC algorithm is executed using `runMCMC`.  We execute
-the MCMC for a single chains of 20,000 iterations, and discard the initial 10,000 samples
+the MCMC for a single chain of 20,000 iterations, and discard the initial 10,000 samples
 as burn-in.
 
 ```
