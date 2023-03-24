@@ -1,7 +1,8 @@
 ---
-title: "`nimbleHMC:` An `R` package for Hamiltonian Monte Carlo sampling in `nimble`"
+title: "nimbleHMC: An R package for Hamiltonian Monte Carlo sampling in nimble"
 tags:
   - R
+  - hierarchical model
   - Markov chain Monte Carlo
   - Hamiltonian Monte Carlo
   - nimble
@@ -9,14 +10,14 @@ authors:
   - name: Daniel Turek
     orcid: 0000-0002-1453-1908
     corresponding: true
-    equal-contrib: true
+    equal-contrib: false
     affiliation: 1
   - name: Perry de Valpine
     orcid: 0000-0002-8329-6796
-    equal-contrib: true 
+    equal-contrib: false
     affiliation: 2 
   - name: Christopher J. Paciorek
-    equal-contrib: true 
+    equal-contrib: false
     affiliation: 2 
 affiliations:
  - name: CHANGE MY AFFILIATION, USA
