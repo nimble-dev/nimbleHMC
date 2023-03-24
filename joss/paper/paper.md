@@ -30,7 +30,11 @@ output: pdf_document
 
 
 
-<!-- 
+<!--
+#### JOSS submission info:
+https://joss.readthedocs.io/en/latest/submitting.html
+
+#### build and open manuscript locally:
 system("osascript -e 'tell application \"Acrobat\" to quit'")
 setwd('~/github/nimble/nimbleHMC/joss/paper')
 f <- 'paper.md'
@@ -38,6 +42,7 @@ library(rmarkdown)
 rmarkdown::render(f, output_format = 'pdf_document')
 system('open paper.pdf')
 
+#### make the samplesPlot for paper:
 basicMCMCplots::samplesPlot(samples,
                             legend.location = 'topleft',
                             width=4.5, height=2,
@@ -160,9 +165,9 @@ extends the hierarchical modelling language from `WinBUGS` and `jags`.
 Flat uniform priors on the interval $[0,1]$ are assigned for all parameters.  We
 use binary-valued latent states $x_{i,t}$ to represent the true alive (1) or dead (0)
 state of individual $i$ on year $t$.  Doing so allows the survival
-process to be modelled as $x_{i,t+1} \sim \text{Bernoulli}(\phi_{f_t} \cdot
+process to be modelled as $x_{i,t+1}~\sim~\text{Bernoulli}(\phi_{f_t} \cdot
 x_{i,t})$ where $f_t$ indicates the flood/non-flood history of year
-$t$, and observations are modelled as $y_{i,t} \sim \text{Bernoulli}(p \cdot x_{i,t})$.
+$t$, and observations are modelled as $y_{i,t}~\sim~\text{Bernoulli}(p \cdot x_{i,t})$.
 
 ```
 library(nimbleHMC) 
