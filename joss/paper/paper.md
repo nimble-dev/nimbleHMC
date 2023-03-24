@@ -2,8 +2,8 @@
 title: "`nimbleHMC:` An `R` package for Hamiltonian Monte Carlo sampling in `nimble`"
 tags:
   - R
-  - MCMC
-  - HMC
+  - Markov chain Monte Carlo
+  - Hamiltonian Monte Carlo
   - nimble
 authors:
   - name: Daniel Turek
@@ -19,11 +19,11 @@ authors:
     equal-contrib: true 
     affiliation: 2 
 affiliations:
- - name: Williams College, USA
+ - name: CHANGE MY AFFILIATION, USA
    index: 1
  - name: University of California, USA
    index: 2
-date: 23 March 2023
+date: DAY MONTH YEAR
 bibliography: paper.bib
 output: pdf_document
 ---
