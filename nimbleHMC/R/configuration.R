@@ -7,7 +7,7 @@
 #' Add a Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object
 #'
 #' @param conf A nimble MCMC configuration object, as returned by `configureMCMC`.
-#' @param nodes A character vector of stochastic node names to sample by HMC. If an empty character vector is provided (the default), then all non-data nodes will be sampled.
+#' @param nodes A character vector of continuous-valued stochastic node names to sample by HMC. If an empty character vector is provided (the default), then an HMC sampler will be applied to all continuous-valued non-data stochastic nodes.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.
 #' @param control Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`.  See `help(sampler_HMC)` for details.
 #' @param replace Logical argument.  If `TRUE`, any existing samplers operating on the specified nodes will be removed, prior to adding the HMC sampler.  Default value is `FALSE`.
 #' @param print Logical argument whether to print the newly added HMC sampler.  Default value is `TRUE`.
@@ -58,7 +58,14 @@
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
 addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE, print = TRUE) {
-    if(identical(nodes, character()))   nodes <- conf$model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
+    if(identical(nodes, character())) {
+        nodes <- conf$model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
+        nodes <- nodes[!conf$model$isDiscrete(nodes)]
+        if(length(nodes) == 0) stop('model contains no continuous-valued stochastic non-data nodes', call. = FALSE)
+    }
+    nodesExpanded <- conf$model$expandNodeNames(nodes)
+    discreteNodes <- nodesExpanded[conf$model$isDiscrete(nodesExpanded)]
+    if(length(discreteNodes))   stop(paste0('HMC sampler cannot be applied to discrete nodes: ', paste0(discreteNodes, collapse = ', ')), call. = FALSE)
     if(replace)   conf$removeSamplers(nodes)
     conf$addSampler(target = nodes, type = 'HMC', control = control, print = print)
     return(invisible(conf))
@@ -72,7 +79,7 @@ addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE,
 #' Create a nimble MCMC configuration object containing only an HMC sampler
 #'
 #' @param model A nimble model, as returned by `nimbleModel`
-#' @param nodes A character vector of stochastic node names to sample by HMC. If an empty character vector is provided (the default), then all non-data nodes will be sampled.
+#' @param nodes A character vector of stochastic node names to sample by HMC. If an empty character vector is provided (the default), then an HMC sampler will be applied to all continuous-valued non-data stochastic nodes.  An error results if this argument contains any discrete-valued nodes.
 #' @param control Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`.  See `help(sampler_HMC)` for details.
 #' @param print Logical argument specifying whether to print the montiors and samplers.  Default is TRUE.
 #' @param ... Other arguments that will be passed to `configureMCMC`
