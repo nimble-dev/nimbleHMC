@@ -64,8 +64,10 @@ addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE,
         if(length(nodes) == 0) stop('model contains no continuous-valued stochastic non-data nodes', call. = FALSE)
     }
     nodesExpanded <- conf$model$expandNodeNames(nodes)
-    discreteNodes <- nodesExpanded[conf$model$isDiscrete(nodesExpanded)]
-    if(length(discreteNodes))   stop(paste0('HMC sampler cannot be applied to discrete nodes: ', paste0(discreteNodes, collapse = ', ')), call. = FALSE)
+    if(length(nodesExpanded)) {
+        discreteNodes <- nodesExpanded[conf$model$isDiscrete(nodesExpanded)]
+        if(length(discreteNodes))   stop(paste0('HMC sampler cannot be applied to discrete nodes: ', paste0(discreteNodes, collapse = ', ')), call. = FALSE)
+    }
     if(replace)   conf$removeSamplers(nodes)
     conf$addSampler(target = nodes, type = 'HMC', control = control, print = print)
     return(invisible(conf))
