@@ -2,26 +2,26 @@
 % Please edit documentation in R/configuration.R
 \name{buildHMC}
 \alias{buildHMC}
-\title{Create HMC}
+\title{Build HMC}
 \usage{
 buildHMC(model, nodes = character(), control = list(), print = TRUE, ...)
 }
 \arguments{
 \item{model}{A nimble model, as returned by `nimbleModel`}
 
-\item{nodes}{A character vector of stochastic node names to sample by HMC. If an empty character vector is provided (the default), then all non-data nodes will be sampled.}
+\item{nodes}{A character vector of stochastic node names to be sampled. If an empty character vector is provided (the default), then all stochastic non-data nodes will be sampled.  An HMC sampler will be applied to all continuous-valued non-data nodes, and nimble's default sampler will be assigned for all discrete-valued nodes.}
 
-\item{control}{Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`.  See `help(sampler_HMC)` for details.}
+\item{control}{Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`, and also as the control argument for any samplers assigned to discrete-valued nodes.  See `help(sampler_HMC)` or `help(samplers)` for details.}
 
 \item{print}{Logical argument specifying whether to print the montiors and samplers.  Default is TRUE.}
 
-\item{...}{Other arguments that will be passed to `configureHMC` and from there to `configureMCMC`}
+\item{...}{Other arguments that will be passed to `configureHMC`.}
 }
 \description{
-Create a nimble MCMC object containing only an HMC sampler
+Build an MCMC algorithm which applies HMC sampling to continuous-valued dimensions
 }
 \details{
-This is the most direct way to create an HMC in nimble.  Use this if you don't need to modify the MCMC configuration before or after adding an HMC sampler.
+This is the most direct way to create an MCMC algorithm using HMC sampling in nimble.  This will create a compilable, executable MCMC algorithm, with HMC sampling assigned to all continuous-valued model dimensions, and nimble's default sampler assigned to all discrete-valued dimensions.  The `nodes` argument can be used to control which model nodes are assigned samplers.  Use this if you don't otherwise need to modify the MCMC configuration.
 }
 \examples{
 nimbleOptions(enableDerivs = TRUE)
