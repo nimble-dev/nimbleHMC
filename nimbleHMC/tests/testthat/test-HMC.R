@@ -504,3 +504,4 @@ test_that('correctly assign samplers for discrete and continuous nodes', {
     expect_equal(length(Rmcmc$samplerFunctions$contentsList), 0)
 })
 
+
