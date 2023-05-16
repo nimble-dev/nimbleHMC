@@ -16,10 +16,10 @@ higher. To check the current version number of nimble use `packageVersion("nimbl
 
 ### Installation
 
-The `nimbleHMC` package must be used with nimble the `ADoak` branch of the `nimble` package.  To install this version of `nimble` and the `nimbleHMC` package, use:
+The `nimbleHMC` package must be used with nimble the `devel` branch of the `nimble` package.  To install this version of `nimble` and the `nimbleHMC` package, use:
 ```
 library(remotes)
-remotes::install_github("nimble-dev/nimble", ref = "ADoak", subdir = "packages/nimble")
+remotes::install_github("nimble-dev/nimble", ref = "devel", subdir = "packages/nimble")
 remotes::install_github("nimble-dev/nimbleHMC", ref="master", subdir = "nimbleHMC")
 ```
 

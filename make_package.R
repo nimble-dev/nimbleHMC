@@ -3,7 +3,7 @@ library(devtools)
 
 ## NECESSARY:
 ## NEED TO HAVE DONE "build" bash command while on correct
-## branch of nimble repository (currently: ADoak)
+## branch of nimble repository (currently: devel)
 
 ## create github actions testing
 ##library(usethis)
