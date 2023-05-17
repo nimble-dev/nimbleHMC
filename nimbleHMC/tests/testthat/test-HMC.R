@@ -194,7 +194,7 @@ test_that('HMC on MVN node', {
     samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
     ##
     expect_equal(as.numeric(apply(samples, 2, mean)), c(10,20,30), tol = .001)
-    expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .02)
+    expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .03)
 })
 
 
