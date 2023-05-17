@@ -318,8 +318,8 @@ hmc_determineNodeLists <- function(model) {
     ppNodes <- model$getNodeNames(predictiveOnly = TRUE)   ## stochastic only, already
     stochNodes <- model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
     isDiscreteBool <- model$isDiscrete(stochNodes)
-    stochContNodes <- [!isDiscreteBool]
-    stochDiscNodes <- [ isDiscreteBool]
+    stochContNodes <- stochNodes[!isDiscreteBool]
+    stochDiscNodes <- stochNodes[ isDiscreteBool]
     return(list(postPred  = ppNodes,
                 stochCont = stochContNodes,
                 stochDisc = stochDiscNodes))
