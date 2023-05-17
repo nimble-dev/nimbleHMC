@@ -1,7 +1,5 @@
 
 
-
-
 #' Add HMC sampler
 #'
 #' Add a Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object
@@ -75,7 +73,6 @@ addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE,
 
 
 
-
 #' Configure HMC
 #'
 #' Create a nimble MCMC configuration object which applies HMC sampling to continuous-valued dimensions
@@ -127,19 +124,25 @@ addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE,
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
 configureHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {
+    nodesProvided <- !identical(nodes, character())
+    if(nodesProvided) {
+        nodes <- model$expandNodeNames(nodes, returnScalarComponents = TRUE)
+        isDiscreteBool <- model$isDiscrete(nodes)
+        stochContNodes <- nodes[!isDiscreteBool]
+        stochDiscNodes <- nodes[ isDiscreteBool]
+    } else {
+        nodeLists <- hmc_determineNodeLists(model)
+        stochContNodes <- nodeLists$stochCont
+        stochDiscNodes <- nodeLists$stochDisc
+        postPredNodes  <- nodeLists$postPred
+    }
     conf <- configureMCMC(model, nodes = NULL, print = FALSE, ...)
-    if(identical(nodes, character()))   nodes <- conf$model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
-    isDiscreteBool <- model$isDiscrete(nodes)
-    addHMC(conf = conf, nodes = nodes[!isDiscreteBool], control = control, print = FALSE)
-    conf$addSampler(    nodes = nodes[ isDiscreteBool], control = control, print = FALSE, default = TRUE)
+    addHMC(conf = conf, nodes = stochContNodes, control = control, print = FALSE)
+    conf$addSampler(    nodes = stochDiscNodes, control = control, print = FALSE, default = TRUE)
+    if(!nodesProvided)   conf$addSampler(nodes = postPredNodes, control = control, print = FALSE, default = TRUE)
     if(print)   conf$show()
     return(invisible(conf))
 }
-
-
-
-
-
 
 
 #' Build HMC
@@ -190,11 +193,6 @@ buildHMC <- function(model, nodes = character(), control = list(), print = TRUE,
     conf <- configureHMC(model = model, nodes = nodes, control = control, print = print, ...)
     return(buildMCMC(conf))
 }
-
-
-
-
-
 
 
 #' Builds and executes NIMBLE's HMC sampler
@@ -315,5 +313,15 @@ nimbleHMC <- function(code,
 }
 
 
-
+## create the lists of model nodes for use in HMC configuration functions
+hmc_determineNodeLists <- function(model) {
+    ppNodes <- model$getNodeNames(predictiveOnly = TRUE)   ## stochastic only, already
+    stochNodes <- model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
+    isDiscreteBool <- model$isDiscrete(stochNodes)
+    stochContNodes <- [!isDiscreteBool]
+    stochDiscNodes <- [ isDiscreteBool]
+    return(list(postPred  = ppNodes,
+                stochCont = stochContNodes,
+                stochDisc = stochDiscNodes))
+}
 
