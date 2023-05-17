@@ -138,8 +138,8 @@ configureHMC <- function(model, nodes = character(), control = list(), print = T
     }
     conf <- configureMCMC(model, nodes = NULL, print = FALSE, ...)
     addHMC(conf = conf, nodes = stochContNodes, control = control, print = FALSE)
-    conf$addSampler(    nodes = stochDiscNodes, control = control, print = FALSE, default = TRUE)
-    if(!nodesProvided)   conf$addSampler(nodes = postPredNodes, control = control, print = FALSE, default = TRUE)
+    conf$addSampler(target = stochDiscNodes, control = control, print = FALSE, default = TRUE)
+    if(!nodesProvided)   conf$addSampler(target = postPredNodes, control = control, print = FALSE, default = TRUE)
     if(print)   conf$show()
     return(invisible(conf))
 }
