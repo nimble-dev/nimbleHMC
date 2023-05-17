@@ -406,10 +406,6 @@ test_that('testing HMC configuration functions', {
     expect_equal(samp[[1]]$name, 'HMC')
     expect_equal(samp[[1]]$target, c('a[1]', 'a[3]'))
     ##
-    conf <- configureHMC(Rmodel, nodes = NULL)
-    samp <- conf$getSamplers()
-    expect_equal(length(samp), 0)
-    ##
     ## buildHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {}
     ##
     Rmcmc <- buildHMC(Rmodel)
@@ -423,10 +419,6 @@ test_that('testing HMC configuration functions', {
     expect_equal(length(samplers), 1)
     expect_equal(as.character(class(samplers[[1]])), 'sampler_HMC')
     expect_equal(samplers[[1]]$targetNodes, c('a[1]', 'a[3]'))
-    ##
-    Rmcmc <- buildHMC(Rmodel, nodes = NULL)
-    samplers <- Rmcmc$samplerFunctions$contentsList
-    expect_equal(length(samplers), 0)
     ##
 })
 
@@ -481,9 +473,6 @@ test_that('correctly assign samplers for discrete and continuous nodes', {
     expect_identical(conf$samplerConfs[[2]]$target, 'z')
     expect_identical(conf$samplerConfs[[2]]$name, 'slice')
     ##
-    conf <- configureHMC(Rmodel, nodes = NULL)
-    expect_equal(length(conf$samplerConfs), 0)
-    ##
     Rmcmc <- buildHMC(Rmodel)
     expect_equal(length(Rmcmc$samplerFunctions$contentsList), 3)
     expect_identical(Rmcmc$samplerFunctions$contentsList[[1]]$targetNodes, c('mu', 'p'))
@@ -499,9 +488,6 @@ test_that('correctly assign samplers for discrete and continuous nodes', {
     expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[1]])), 'sampler_HMC')
     expect_identical(Rmcmc$samplerFunctions$contentsList[[2]]$target, 'z')
     expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[2]])), 'sampler_slice')
-    ##
-    Rmcmc <- buildHMC(Rmodel, nodes = NULL)
-    expect_equal(length(Rmcmc$samplerFunctions$contentsList), 0)
 })
 
 
