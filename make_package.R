@@ -29,9 +29,10 @@ q('no')
 
 library(nimbleHMC)
 
-sampler_langevin   ## no longer exported
-?sampler_langevin
-?langevin
+library(help=nimbleHMC)
+sampler_langevin   ## no longer exported, no documentation either
+?sampler_langevin  ## no longer exported, no documentation either
+?langevin          ## no longer exported, no documentation either
 
 sampler_HMC
 ?sampler_HMC
