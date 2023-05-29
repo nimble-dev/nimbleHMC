@@ -22,6 +22,8 @@
 #'
 #' @export
 #'
+#' @return Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
+#'
 #' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{sampler_HMC}} \code{\link{configureMCMC}} \code{\link{addSampler}}
 #' 
 #' @examples
@@ -93,6 +95,8 @@ addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE,
 #'
 #' @export
 #'
+#' @return An object of class `MCMCconf`.
+#'
 #' @seealso \code{\link{addHMC}} \code{\link{buildHMC}} \code{\link{sampler_HMC}} \code{\link{configureMCMC}} \code{\link{addSampler}}
 #' 
 #' @examples
@@ -160,6 +164,8 @@ configureHMC <- function(model, nodes = character(), control = list(), print = T
 #' This is the most direct way to create an MCMC algorithm using HMC sampling in nimble.  This will create a compilable, executable MCMC algorithm, with HMC sampling assigned to all continuous-valued model dimensions, and nimble's default sampler assigned to all discrete-valued dimensions.  The `nodes` argument can be used to control which model nodes are assigned samplers.  Use this if you don't otherwise need to modify the MCMC configuration.
 #'
 #' @export
+#'
+#' @return An object of class `MCMC`.
 #'
 #' @author Daniel Turek
 #' 

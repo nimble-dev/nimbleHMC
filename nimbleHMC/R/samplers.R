@@ -157,6 +157,8 @@ sampler_langevin <- nimbleFunction(
 #' @import nimble
 #' 
 #' @export
+#'
+#' @return A object of class `sampler_HMC`.
 #' 
 #' @aliases HMC hmc
 #' 
