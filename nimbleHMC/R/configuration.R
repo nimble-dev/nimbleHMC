@@ -267,7 +267,7 @@ buildHMC <- function(model, nodes = character(), control = list(), print = TRUE,
 #' 
 #' @examples
 #' 
-#' \dontrun{
+#' \donttest{
 #' code <- nimbleCode({
 #'     mu ~ dnorm(0, sd = 1000)
 #'     sigma ~ dunif(0, 1000)
