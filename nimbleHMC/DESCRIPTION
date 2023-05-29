@@ -6,7 +6,7 @@ Authors@R: c(person("Daniel", "Turek", role = c("aut", "cre"), email = "danieltu
 	     person("Perry", "de Valpine", role = "aut"),
 	     person("Christopher", "Paciorek", role = "aut"))
 Maintainer: Daniel Turek <danielturek@gmail.com>
-Description: Provides gradient-based MCMC sampling algorithms which are suitable for use with the MCMC engine provided by the NIMBLE R package.  This includes Hamiltonian Monte Carlo (HMC) and (under development) Langevin samplers.
+Description: Provides gradient-based MCMC sampling algorithms for use with the MCMC engine provided by the 'nimble' package.  This includes Hamiltonian Monte Carlo (HMC) and (under development) Langevin samplers.  In additon, convenience functions are provided for generating and modifying MCMC configuration objects which employ HMC sampling.
 Depends: R (>= 3.5.0), nimble (>= 1.0.0)
 Imports: methods
 Suggests: testthat
