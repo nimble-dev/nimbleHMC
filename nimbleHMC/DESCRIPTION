@@ -6,7 +6,7 @@ Authors@R: c(person("Daniel", "Turek", role = c("aut", "cre"), email = "danieltu
 	     person("Perry", "de Valpine", role = "aut"),
 	     person("Christopher", "Paciorek", role = "aut"))
 Maintainer: Daniel Turek <danielturek@gmail.com>
-Description: Provides gradient-based MCMC sampling algorithms for use with the MCMC engine provided by the 'nimble' package.  This includes Hamiltonian Monte Carlo (HMC) and (under development) Langevin samplers.  In additon, convenience functions are provided for generating and modifying MCMC configuration objects which employ HMC sampling.
+Description: Provides gradient-based MCMC sampling algorithms for use with the MCMC engine provided by the 'nimble' package.  This includes Hamiltonian Monte Carlo (HMC) and (under development) Langevin samplers.  The HMC sampler dynamically determines step size and number of leapfrog steps using the No-U-Turn (NUTS) algorithm as described in Hoffman and Gelman (2014) <arXiv:1111.4246>.  In additon, convenience functions are provided for generating and modifying MCMC configuration objects which employ HMC sampling.
 Depends: R (>= 3.5.0), nimble (>= 1.0.0)
 Imports: methods
 Suggests: testthat
