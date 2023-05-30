@@ -23,6 +23,9 @@ addHMC(
 
 \item{print}{Logical argument whether to print the newly added HMC sampler.  Default value is `TRUE`.}
 }
+\value{
+Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
+}
 \description{
 Add a Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object
 }

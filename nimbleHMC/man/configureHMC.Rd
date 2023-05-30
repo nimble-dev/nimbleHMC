@@ -17,6 +17,9 @@ configureHMC(model, nodes = character(), control = list(), print = TRUE, ...)
 
 \item{...}{Other arguments that will be passed to `configureMCMC`}
 }
+\value{
+An object of class `MCMCconf`.
+}
 \description{
 Create a nimble MCMC configuration object which applies HMC sampling to continuous-valued dimensions
 }

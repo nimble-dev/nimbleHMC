@@ -17,6 +17,9 @@ buildHMC(model, nodes = character(), control = list(), print = TRUE, ...)
 
 \item{...}{Other arguments that will be passed to `configureHMC`.}
 }
+\value{
+An object of class `MCMC`.
+}
 \description{
 Build an MCMC algorithm which applies HMC sampling to continuous-valued dimensions
 }
