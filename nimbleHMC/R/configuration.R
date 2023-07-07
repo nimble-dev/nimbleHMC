@@ -5,7 +5,7 @@
 #' Add a Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object
 #'
 #' @param conf A nimble MCMC configuration object, as returned by `configureMCMC`.
-#' @param nodes A character vector of continuous-valued stochastic node names to sample by HMC. If an empty character vector is provided (the default), then an HMC sampler will be applied to all continuous-valued non-data stochastic nodes.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.
+#' @param nodes A character vector of continuous-valued stochastic node names to sample by HMC.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.
 #' @param control Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`.  See `help(sampler_HMC)` for details.
 #' @param replace Logical argument.  If `TRUE`, any existing samplers operating on the specified nodes will be removed, prior to adding the HMC sampler.  Default value is `FALSE`.
 #' @param print Logical argument whether to print the newly added HMC sampler.  Default value is `TRUE`.
@@ -58,11 +58,7 @@
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
 addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE, print = TRUE) {
-    if(identical(nodes, character())) {
-        nodes <- conf$model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
-        nodes <- nodes[!conf$model$isDiscrete(nodes)]
-        if(length(nodes) == 0) stop('model contains no continuous-valued stochastic non-data nodes', call. = FALSE)
-    }
+    if(identical(nodes, character()))  return()
     nodesExpanded <- conf$model$expandNodeNames(nodes)
     if(length(nodesExpanded)) {
         discreteNodes <- nodesExpanded[conf$model$isDiscrete(nodesExpanded)]
@@ -323,9 +319,14 @@ nimbleHMC <- function(code,
 hmc_determineNodeLists <- function(model) {
     ppNodes <- model$getNodeNames(predictiveOnly = TRUE)   ## stochastic only, already
     stochNodes <- model$getNodeNames(stochOnly = TRUE, includeData = FALSE, includePredictive = FALSE)
-    isDiscreteBool <- model$isDiscrete(stochNodes)
-    stochContNodes <- stochNodes[!isDiscreteBool]
-    stochDiscNodes <- stochNodes[ isDiscreteBool]
+    if(length(stochNodes) > 0) {
+        isDiscreteBool <- model$isDiscrete(stochNodes)
+        stochContNodes <- stochNodes[!isDiscreteBool]
+        stochDiscNodes <- stochNodes[ isDiscreteBool]
+    } else {
+        stochContNodes <- character()
+        stochDiscNodes <- character()
+    }
     return(list(postPred  = ppNodes,
                 stochCont = stochContNodes,
                 stochDisc = stochDiscNodes))

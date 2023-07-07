@@ -185,7 +185,9 @@ test_that('HMC on MVN node', {
     inits <- list(x = c(10, 20, 30))
     ##
     Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-    Rmcmc <- buildHMC(Rmodel)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    addHMC(conf, 'x')
+    Rmcmc <- buildMCMC(conf)
     ##
     compiledList <- compileNimble(list(model=Rmodel, mcmc=Rmcmc))
     Cmcmc <- compiledList$mcmc
