@@ -15,7 +15,7 @@ addHMC(
 \arguments{
 \item{conf}{A nimble MCMC configuration object, as returned by `configureMCMC`.}
 
-\item{nodes}{A character vector of continuous-valued stochastic node names to sample by HMC. If an empty character vector is provided (the default), then an HMC sampler will be applied to all continuous-valued non-data stochastic nodes.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.}
+\item{nodes}{A character vector of continuous-valued stochastic node names to sample by HMC.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.}
 
 \item{control}{Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`.  See `help(sampler_HMC)` for details.}
 
