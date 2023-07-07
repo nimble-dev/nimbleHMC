@@ -1,3 +1,7 @@
+#                            CHANGES IN VERSION 0.1.1 (July 2023)
+
+- Fix bug in `configureHMC` for sampler assignment to posterior predictive nodes.
+
 #                            VERSION 0.1.0 (May 2023)
 
 Initial release of `nimbleHMC` package.  Initial version provides:

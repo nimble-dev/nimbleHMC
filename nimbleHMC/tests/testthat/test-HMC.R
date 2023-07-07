@@ -490,4 +490,23 @@ test_that('correctly assign samplers for discrete and continuous nodes', {
     expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[2]])), 'sampler_slice')
 })
 
+test_that('configureHMC correctly assign samplers for posterior-predictive nodes', {
+    code <- nimbleCode({
+        mu ~ dnorm(0,1)
+        sd ~ dunif(0, 10)
+        y ~ dnorm(mu, sd = sd)
+        pp ~ dnorm(mu, sd = sd)
+    })
+    constants <- list()
+    data <- list(y = 0)
+    inits <- list(mu = 0, sd = 1, pp = 0)
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    conf <- configureHMC(Rmodel)
+    ##
+    expect_true(length(conf$samplerConfs) == 2)
+    expect_true(conf$samplerConfs[[1]]$name == 'HMC')
+    expect_identical(conf$samplerConfs[[1]]$target, c('mu', 'sd'))
+    expect_true(conf$samplerConfs[[2]]$name == 'posterior_predictive')
+    expect_identical(conf$samplerConfs[[2]]$target, 'pp')
+})
 

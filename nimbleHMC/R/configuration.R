@@ -322,7 +322,7 @@ nimbleHMC <- function(code,
 ## create the lists of model nodes for use in HMC configuration functions
 hmc_determineNodeLists <- function(model) {
     ppNodes <- model$getNodeNames(predictiveOnly = TRUE)   ## stochastic only, already
-    stochNodes <- model$getNodeNames(stochOnly = TRUE, includeData = FALSE)
+    stochNodes <- model$getNodeNames(stochOnly = TRUE, includeData = FALSE, includePredictive = FALSE)
     isDiscreteBool <- model$isDiscrete(stochNodes)
     stochContNodes <- stochNodes[!isDiscreteBool]
     stochDiscNodes <- stochNodes[ isDiscreteBool]
