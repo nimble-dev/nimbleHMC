@@ -1,57 +1,58 @@
 
 
 
-#' Langevin Sampler
-#'
-#' The langevin sampler implements a special case of Hamiltonian Monte Carlo (HMC) sampling where only a single leapfrog step is taken on each sampling iteration, and the leapfrog step-size is adapted to match the scale of the posterior distribution (independently for each dimension being sampled).  The single leapfrog step is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space (Neal, 2011).  Langevin sampling can operate on one or more continuous-valued posterior dimensions.  This sampling technique is also known as Langevin Monte Carlo (LMC), and the Metropolis-Adjusted Langevin Algorithm (MALA).
-#'
-#' @param model An uncompiled nimble model object on which the MCMC will operate.
-#' @param mvSaved A nimble \code{modelValues} object to be used to store MCMC samples.
-#' @param target A character vector of node names on which the sampler will operate.
-#' @param control A named list that controls the precise behavior of the sampler.  The default values for control list elements are specified in the setup code of the sampler.  A description of the possible control list elements appear in the details section.
-#'
-#' @details
-#'
-#' The Langevin sampler accepts the following control list elements:
-#'
-#' \itemize{
-#' \item scale. An optional multiplier, to scale the step-size of the leapfrog steps. If adaptation is turned off, this uniquely determines the leapfrog step-size (default = 1)
-#' \item adaptive. A logical argument, specifying whether the sampler will adapt the leapfrog step-size (scale) throughout the course of MCMC execution. The scale is adapted independently for each dimension being sampled. (default = TRUE)
-#' \item adaptInterval. The interval on which to perform adaptation. (default = 200)
-#' }
-#' 
-#' @import nimble
-#' @import methods
-#' 
-#' @aliases Langevin langevin
-#' 
-#' @author Daniel Turek
-#' 
-#' @examples
-#' nimbleOptions(enableDerivs = TRUE)
-#' 
-#' code <- nimbleCode({
-#'     b0 ~ dnorm(0, 0.001)
-#'     b1 ~ dnorm(0, 0.001)
-#'     sigma ~ dunif(0, 10000)
-#'     for(i in 1:N) {
-#'         mu[i] <- b0 + b1 * x[i]
-#'         y[i] ~ dnorm(mu[i], sd = sigma)
-#'     }
-#' })
-#' 
-#' N <- 10
-#' constants <- list(N = N, x = 1:N)
-#' data <- list(y = 1:N)
-#' inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
-#' 
-#' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-#' 
-#' conf <- configureMCMC(Rmodel, nodes = NULL)
-#' 
-#' conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'HMC')
-#' 
-#' Rmcmc <- buildMCMC(conf)
+## #' Langevin Sampler
+## #'
+## #' The langevin sampler implements a special case of Hamiltonian Monte Carlo (HMC) sampling where only a single leapfrog step is taken on each sampling iteration, and the leapfrog step-size is adapted to match the scale of the posterior distribution (independently for each dimension being sampled).  The single leapfrog step is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space (Neal, 2011).  Langevin sampling can operate on one or more continuous-valued posterior dimensions.  This sampling technique is also known as Langevin Monte Carlo (LMC), and the Metropolis-Adjusted Langevin Algorithm (MALA).
+## #'
+## #' @param model An uncompiled nimble model object on which the MCMC will operate.
+## #' @param mvSaved A nimble \code{modelValues} object to be used to store MCMC samples.
+## #' @param target A character vector of node names on which the sampler will operate.
+## #' @param control A named list that controls the precise behavior of the sampler.  The default values for control list elements are specified in the setup code of the sampler.  A description of the possible control list elements appear in the details section.
+## #'
+## #' @details
+## #'
+## #' The Langevin sampler accepts the following control list elements:
+## #'
+## #' \itemize{
+## #' \item scale. An optional multiplier, to scale the step-size of the leapfrog steps. If adaptation is turned off, this uniquely determines the leapfrog step-size (default = 1)
+## #' \item adaptive. A logical argument, specifying whether the sampler will adapt the leapfrog step-size (scale) throughout the course of MCMC execution. The scale is adapted independently for each dimension being sampled. (default = TRUE)
+## #' \item adaptInterval. The interval on which to perform adaptation. (default = 200)
+## #' }
+## #' 
+## #' @import nimble
+## #' @import methods
+## #' 
+## #' @aliases Langevin langevin
+## #' 
+## #' @author Daniel Turek
+## #' 
+## #' @examples
+## #' nimbleOptions(enableDerivs = TRUE)
+## #' 
+## #' code <- nimbleCode({
+## #'     b0 ~ dnorm(0, 0.001)
+## #'     b1 ~ dnorm(0, 0.001)
+## #'     sigma ~ dunif(0, 10000)
+## #'     for(i in 1:N) {
+## #'         mu[i] <- b0 + b1 * x[i]
+## #'         y[i] ~ dnorm(mu[i], sd = sigma)
+## #'     }
+## #' })
+## #' 
+## #' N <- 10
+## #' constants <- list(N = N, x = 1:N)
+## #' data <- list(y = 1:N)
+## #' inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
+## #' 
+## #' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+## #' 
+## #' conf <- configureMCMC(Rmodel, nodes = NULL)
+## #' 
+## #' conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'HMC')
+## #' 
+## #' Rmcmc <- buildMCMC(conf)
+
 sampler_langevin <- nimbleFunction(
     name = 'sampler_langevin',
     contains = sampler_BASE,
@@ -156,6 +157,8 @@ sampler_langevin <- nimbleFunction(
 #' @import nimble
 #' 
 #' @export
+#'
+#' @return A object of class `sampler_HMC`.
 #' 
 #' @aliases HMC hmc
 #' 

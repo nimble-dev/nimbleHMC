@@ -17,6 +17,9 @@ sampler_HMC(model, mvSaved, target, control)
 
 \item{control}{A named list that controls the precise behavior of the sampler.  The default values for control list elements are specified in the setup code of the sampler.  A description of the possible control list elements appear in the details section.}
 }
+\value{
+A object of class `sampler_HMC`.
+}
 \description{
 The HMC sampler implements the No-U-Turn algorithm (NUTS; Hoffman and Gelman, 2014) for performing joint updates of multiple continuous-valued posterior dimensions.  This is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
 }

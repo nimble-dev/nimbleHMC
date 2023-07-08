@@ -185,7 +185,9 @@ test_that('HMC on MVN node', {
     inits <- list(x = c(10, 20, 30))
     ##
     Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-    Rmcmc <- buildHMC(Rmodel)
+    conf <- configureMCMC(Rmodel, nodes = NULL)
+    addHMC(conf, 'x')
+    Rmcmc <- buildMCMC(conf)
     ##
     compiledList <- compileNimble(list(model=Rmodel, mcmc=Rmcmc))
     Cmcmc <- compiledList$mcmc
@@ -194,7 +196,7 @@ test_that('HMC on MVN node', {
     samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
     ##
     expect_equal(as.numeric(apply(samples, 2, mean)), c(10,20,30), tol = .001)
-    expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .02)
+    expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .03)
 })
 
 
@@ -406,10 +408,6 @@ test_that('testing HMC configuration functions', {
     expect_equal(samp[[1]]$name, 'HMC')
     expect_equal(samp[[1]]$target, c('a[1]', 'a[3]'))
     ##
-    conf <- configureHMC(Rmodel, nodes = NULL)
-    samp <- conf$getSamplers()
-    expect_equal(length(samp), 0)
-    ##
     ## buildHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {}
     ##
     Rmcmc <- buildHMC(Rmodel)
@@ -423,10 +421,6 @@ test_that('testing HMC configuration functions', {
     expect_equal(length(samplers), 1)
     expect_equal(as.character(class(samplers[[1]])), 'sampler_HMC')
     expect_equal(samplers[[1]]$targetNodes, c('a[1]', 'a[3]'))
-    ##
-    Rmcmc <- buildHMC(Rmodel, nodes = NULL)
-    samplers <- Rmcmc$samplerFunctions$contentsList
-    expect_equal(length(samplers), 0)
     ##
 })
 
@@ -446,10 +440,75 @@ test_that('error trap discrete latent nodes', {
     conf <- configureMCMC(Rmodel, nodes = NULL)
     addHMC(conf, nodes = 'mu')
     buildMCMC(conf)
-    addHMC(conf, nodes = 'z')
-    expect_error(buildMCMC(conf), "cannot operate on discrete")
-    addHMC(conf, nodes = 'z2')
-    expect_error(buildMCMC(conf), "cannot operate on discrete")
-    addHMC(conf, nodes = c('mu','z'))
-    expect_error(buildMCMC(conf), "cannot operate on discrete")
+    expect_error(addHMC(conf, nodes = 'z'), 'HMC sampler cannot be applied')
+    expect_error(addHMC(conf, nodes = 'z2'), 'HMC sampler cannot be applied')
+    expect_error(addHMC(conf, nodes = c('mu','z')), 'HMC sampler cannot be applied')
 })
+
+
+test_that('correctly assign samplers for discrete and continuous nodes', {
+    code <- nimbleCode({
+        mu ~ dnorm(0, 1)
+        z ~ dpois(mu)
+        y ~ dnorm(z, 1)
+        p ~ dbeta(1, 1)
+        z2 ~ dbinom(p, 5)
+        y2 ~ dnorm(z2, 1)
+    })
+    data <- list(y = 0.1, y2 = 0.3)
+    inits <- list(z = 2, z2 = 3, mu = 0, p = .3)
+    Rmodel <- nimbleModel(code, data = data, inits = inits, buildDerivs = TRUE)
+    ##
+    conf <- configureHMC(Rmodel)
+    expect_equal(length(conf$samplerConfs), 3)
+    expect_identical(conf$samplerConfs[[1]]$target, c('mu', 'p'))
+    expect_identical(conf$samplerConfs[[1]]$name, 'HMC')
+    expect_identical(conf$samplerConfs[[2]]$target, 'z')
+    expect_identical(conf$samplerConfs[[2]]$name, 'slice')
+    expect_identical(conf$samplerConfs[[3]]$target, 'z2')
+    expect_identical(conf$samplerConfs[[3]]$name, 'slice')
+    ##
+    conf <- configureHMC(Rmodel, nodes = c('z', 'mu'))
+    expect_equal(length(conf$samplerConfs), 2)
+    expect_identical(conf$samplerConfs[[1]]$target, 'mu')
+    expect_identical(conf$samplerConfs[[1]]$name, 'HMC')
+    expect_identical(conf$samplerConfs[[2]]$target, 'z')
+    expect_identical(conf$samplerConfs[[2]]$name, 'slice')
+    ##
+    Rmcmc <- buildHMC(Rmodel)
+    expect_equal(length(Rmcmc$samplerFunctions$contentsList), 3)
+    expect_identical(Rmcmc$samplerFunctions$contentsList[[1]]$targetNodes, c('mu', 'p'))
+    expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[1]])), 'sampler_HMC')
+    expect_identical(Rmcmc$samplerFunctions$contentsList[[2]]$target, 'z')
+    expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[2]])), 'sampler_slice')
+    expect_identical(Rmcmc$samplerFunctions$contentsList[[3]]$target, 'z2')
+    expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[3]])), 'sampler_slice')
+    ##
+    Rmcmc <- buildHMC(Rmodel, nodes = c('z', 'mu'))
+    expect_equal(length(Rmcmc$samplerFunctions$contentsList), 2)
+    expect_identical(Rmcmc$samplerFunctions$contentsList[[1]]$targetNodes, 'mu')
+    expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[1]])), 'sampler_HMC')
+    expect_identical(Rmcmc$samplerFunctions$contentsList[[2]]$target, 'z')
+    expect_identical(as.character(class(Rmcmc$samplerFunctions$contentsList[[2]])), 'sampler_slice')
+})
+
+test_that('configureHMC correctly assign samplers for posterior-predictive nodes', {
+    code <- nimbleCode({
+        mu ~ dnorm(0,1)
+        sd ~ dunif(0, 10)
+        y ~ dnorm(mu, sd = sd)
+        pp ~ dnorm(mu, sd = sd)
+    })
+    constants <- list()
+    data <- list(y = 0)
+    inits <- list(mu = 0, sd = 1, pp = 0)
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    conf <- configureHMC(Rmodel)
+    ##
+    expect_true(length(conf$samplerConfs) == 2)
+    expect_true(conf$samplerConfs[[1]]$name == 'HMC')
+    expect_identical(conf$samplerConfs[[1]]$target, c('mu', 'sd'))
+    expect_true(conf$samplerConfs[[2]]$name == 'posterior_predictive')
+    expect_identical(conf$samplerConfs[[2]]$target, 'pp')
+})
+

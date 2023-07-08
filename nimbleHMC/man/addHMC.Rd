@@ -15,13 +15,16 @@ addHMC(
 \arguments{
 \item{conf}{A nimble MCMC configuration object, as returned by `configureMCMC`.}
 
-\item{nodes}{A character vector of stochastic node names to sample by HMC. If an empty character vector is provided (the default), then all non-data nodes will be sampled.}
+\item{nodes}{A character vector of continuous-valued stochastic node names to sample by HMC.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.}
 
 \item{control}{Optional named list of control parameters to be passed as the `control` argument to `sampler_HMC`.  See `help(sampler_HMC)` for details.}
 
 \item{replace}{Logical argument.  If `TRUE`, any existing samplers operating on the specified nodes will be removed, prior to adding the HMC sampler.  Default value is `FALSE`.}
 
 \item{print}{Logical argument whether to print the newly added HMC sampler.  Default value is `TRUE`.}
+}
+\value{
+Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
 }
 \description{
 Add a Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object

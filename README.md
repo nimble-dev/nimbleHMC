@@ -14,34 +14,35 @@ The nimbleHMC package must be used with nimble version XXXX or
 higher. To check the current version number of nimble use `packageVersion("nimble")`. 
 -->
 
-### Installation
+### Package Requirements
 
-The `nimbleHMC` package must be used with nimble the `AD-rc1` branch of the `nimble` package.  To install this version of `nimble` and the `nimbleHMC` package, use:
-```
+`nimbleHMC` must be used with version `1.0.0` or higher of the `nimble` package.
+
+<!--
 library(remotes)
-remotes::install_github("nimble-dev/nimble", ref = "AD-rc1", subdir = "packages/nimble")
-remotes::install_github("nimble-dev/nimbleHMC", ref="AD-rc1", subdir = "nimbleHMC")
-```
+remotes::install_github("nimble-dev/nimble", ref = "devel", subdir = "packages/nimble")
+remotes::install_github("nimble-dev/nimbleHMC", ref="master", subdir = "nimbleHMC")
 
 For errors during installation of `nimbleHMC` occuring on Windows machines, relating to either of the following error messages:
-```
+
 Error: package 'nimble' is not installed for 'arch = i386'
 Error: loading failed for 'i386'
-```
+
 try installing the `nimbleHMC` package using:
-```
-remotes::install_github("nimble-dev/nimbleHMC", ref="AD-rc1", subdir = "nimbleHMC", INSTALL_opts=c("--no-multiarch"))
-```
+
+remotes::install_github("nimble-dev/nimbleHMC", ref="master", subdir = "nimbleHMC", INSTALL_opts=c("--no-multiarch"))
+-->
+
 
 
 ### Automatic Differentiation
 
 `nimbleHMC` makes use of the automatic differentiation (AD) feature of `nimble`, which is currently available as a beta release.  See [nimble AD beta release](https://r-nimble.org/ad-beta) for more information about models and algorithms that make use of the AD features of `nimble`.
 
+<!--
 In order to use HMC sampling (and other derivative-based algorithms), derivatives need to be enabled for `nimble` using the setting:
-```
 nimbleOptions(enableDerivs = TRUE)
-```
+-->
 
 For using HMC sampling on a model, derivative calculations need to be built into for the model object.  This is accomplished using the `buildDerivs = TRUE` argument in the call to `nimbleModel` as:
 ```

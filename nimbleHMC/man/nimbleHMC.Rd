@@ -94,7 +94,7 @@ The \code{niter} argument specifies the number of pre-thinning MCMC iterations, 
 }
 \examples{
 
-\dontrun{
+\donttest{
 code <- nimbleCode({
     mu ~ dnorm(0, sd = 1000)
     sigma ~ dunif(0, 1000)

@@ -3,7 +3,7 @@ library(devtools)
 
 ## NECESSARY:
 ## NEED TO HAVE DONE "build" bash command while on correct
-## branch of nimble repository (currently: ADoak)
+## branch of nimble repository (currently: devel)
 
 ## create github actions testing
 ##library(usethis)
@@ -27,11 +27,13 @@ q('no')
 
 1
 
+
 library(nimbleHMC)
 
-sampler_langevin   ## no longer exported
-?sampler_langevin
-?langevin
+library(help=nimbleHMC)
+sampler_langevin   ## no longer exported, no documentation either
+?sampler_langevin  ## no longer exported, no documentation either
+?langevin          ## no longer exported, no documentation either
 
 sampler_HMC
 ?sampler_HMC
