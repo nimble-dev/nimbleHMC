@@ -20,11 +20,11 @@ authors:
     equal-contrib: false
     affiliation: 2 
 affiliations:
- - name: CHANGE MY AFFILIATION, USA
+ - name: Lafayette College, USA
    index: 1
  - name: University of California, USA
    index: 2
-date: DAY MONTH YEAR
+date: 11 July 2023
 bibliography: paper.bib
 output: pdf_document
 ---
@@ -238,7 +238,7 @@ conf <- configureMCMC(Rmodel)
 Now we customize the MCMC configuration object to instead use HMC sampling for
 the model parameters.  We use the
 `replaceSamplers` method to replace current samplers operating on
-$p$, $\phi_1$ and $\phi_2$ instead with the `HMC` sampler provided in
+$\phi_1$, $\phi_2$ and $p$ instead with the `HMC` sampler provided in
 the `nimbleHMC` package.  The `printSamplers` method is used to
 display the modified sampler assignments.
 
@@ -251,6 +251,11 @@ conf$printSamplers(byType = TRUE)
 ## binary sampler (848)
 ##   - x[]  (848 elements)
 ```
+
+We note that alternatively, the convenience function `configureHMC(Rmodel)`
+may be used to create an identical MCMC configuration.  This will apply
+HMC sampling to $\phi_1$, $\phi_2$ and $p$, and the default binary
+sampler for descrete-valued variables.
 
 Now we build an executable MCMC algorithm using `buildMCMC`, and
 compile the model object and MCMC algorithm to C++ for fast execution.
