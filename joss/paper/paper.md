@@ -38,6 +38,11 @@ https://joss.readthedocs.io/en/latest/submitting.html
 #### actually making the submission to JOSS:
 https://joss.theoj.org/papers/new
 
+#### commands for JOSS editorialbot:
+@editorialbot check references
+@editorialbot generate pdf
+@editorialbot check repository
+
 #### build and open manuscript locally:
 system("osascript -e 'tell application \"Acrobat\" to quit'")
 setwd('~/github/nimble/nimbleHMC/joss/paper')
