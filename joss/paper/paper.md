@@ -31,35 +31,6 @@ output: pdf_document
 
 
 
-<!--
-#### JOSS submission info:
-https://joss.readthedocs.io/en/latest/submitting.html
-
-#### actually making the submission to JOSS:
-https://joss.theoj.org/papers/new
-
-#### commands for JOSS editorialbot:
-@editorialbot check references
-@editorialbot generate pdf
-@editorialbot check repository
-
-#### build and open manuscript locally:
-system("osascript -e 'tell application \"Acrobat\" to quit'")
-setwd('~/github/nimble/nimbleHMC/joss/paper')
-f <- 'paper.md'
-library(rmarkdown)
-rmarkdown::render(f, output_format = 'pdf_document')
-system('open paper.pdf')
-
-#### make the samplesPlot for paper:
-basicMCMCplots::samplesPlot(samples,
-                            legend.location = 'topleft',
-                            width=4.5, height=2,
-                            file='~/github/nimble/nimbleHMC/joss/paper/samplesPlot.pdf')
--->
-
-
-
 
 
 
