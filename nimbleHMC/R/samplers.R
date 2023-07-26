@@ -324,9 +324,9 @@ sampler_HMC <- nimbleFunction(
             return(lp)
         },
         calcLogProb = function(qArg = double(1)) {
-          ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)
-          returnType(double())
-          return(ans)
+            ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)
+            returnType(double())
+            return(ans)
         },
         gradient_aux = function(qArg = double(1)) {
             derivsOutput <- nimDerivs(calcLogProb(qArg), order = 1, wrt = nimDerivs_wrt, model = model, updateNodes = nimDerivs_updateNodes, constantNodes = nimDerivs_constantNodes)
@@ -505,9 +505,9 @@ sampler_HMC <- nimbleFunction(
         }
     ),
     buildDerivs = list(
-      inverseTransformStoreCalculate = list(),
-      calcLogProb = list(),
-      gradient_aux = list()
+        inverseTransformStoreCalculate = list(),
+        calcLogProb = list(),
+        gradient_aux = list()
     )
 )
 
