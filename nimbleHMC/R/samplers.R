@@ -189,6 +189,10 @@ sampler_langevin <- nimbleFunction(
 #' conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'HMC')
 #' 
 #' Rmcmc <- buildMCMC(conf)
+#'
+#' @references
+#'
+#' Hoffman, Matthew D., and Gelman, Andrew (2014). The No-U-Turn Sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. \emph{Journal of Machine Learning Research}, 15(1): 1593-1623.
 sampler_HMC <- nimbleFunction(
     name = 'sampler_HMC',
     contains = sampler_BASE,
