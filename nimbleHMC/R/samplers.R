@@ -448,7 +448,7 @@ sampler_HMC <- nimbleFunction(
                                   btNL1$q2 <- btNL2$q2;   btNL1$p2 <- btNL2$p2 }
                     nSum <- btNL1$n + btNL2$n
                     if(nSum > 0)   if(runif(1) < btNL2$n / nSum)   btNL1$q3 <- btNL2$q3
-                    qDiff <<- btNL1$q2-btNL1$q1
+                    qDiff <<- btNL1$q2 - btNL1$q1
                     btNL1$a  <- btNL1$a  + btNL2$a
                     btNL1$na <- btNL1$na + btNL2$na
                     btNL1$s  <- btNL2$s * nimStep(inprod(qDiff, btNL1$p1)) * nimStep(inprod(qDiff, btNL1$p2))
