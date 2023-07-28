@@ -505,4 +505,558 @@ sampler_HMC <- nimbleFunction(
     )
 )
 
+#' @export
+sampler_NUTS <- nimbleFunction(
+  name = 'sampler_NUTS',
+  contains = nimble::sampler_BASE,
+  setup = function(model, mvSaved, target, control) {
+    ## control list extraction
+    printTimesRan  <- extractControlElement(control, 'printTimesRan',  FALSE)
+    printEpsilon   <- extractControlElement(control, 'printEpsilon',   FALSE)
+    printJ         <- extractControlElement(control, 'printJ',         FALSE)
+    printM         <- extractControlElement(control, 'printM',         FALSE)
+    messages       <- extractControlElement(control, 'messages',       getNimbleOption('verbose'))
+    numWarnings    <- extractControlElement(control, 'numWarnings',    0)
+    initialEpsilon <- extractControlElement(control, 'initialEpsilon', 0)
+    gamma          <- extractControlElement(control, 'gamma',          0.05)
+    t0             <- extractControlElement(control, 't0',             10)
+    kappa          <- extractControlElement(control, 'kappa',          0.75)
+    delta          <- extractControlElement(control, 'delta',          0.8)
+    deltaMax       <- extractControlElement(control, 'deltaMax',       1000)
+    M              <- extractControlElement(control, 'M',              -1)
+    nwarmup        <- extractControlElement(control, 'nwarmup',        -1)
+    maxTreeDepth   <- extractControlElement(control, 'maxTreeDepth',   10)
+    adaptWindow   <- extractControlElement(control, 'adaptWindow',    25)
+    initBuffer    <- extractControlElement(control, 'initBuffer',     75)
+    termBuffer    <- extractControlElement(control, 'termBuffer',     50)
+    adaptEpsilon   <- extractControlElement(control, 'adaptEpsilon',   TRUE)
+    adaptM         <- extractControlElement(control, 'adaptM',         TRUE)
+    ## node list generation
+    pause_draws <- FALSE
+    targetNodes <- model$expandNodeNames(target)
+    if(length(targetNodes) <= 0) stop('HMC sampler must operate on at least one node', call. = FALSE)
+    targetNodesAsScalars <- model$expandNodeNames(targetNodes, returnScalarComponents = TRUE)
+    targetNodesToPrint <- paste(targetNodes, collapse = ', ')
+    if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
+    calcNodes <- model$getDependencies(targetNodes)
+    ## check for discrete nodes (early, before parameterTransform is specialized)
+    if(any(model$isDiscrete(targetNodesAsScalars)))
+      stop(paste0('HMC sampler cannot operate on discrete-valued nodes: ',
+                  paste0(targetNodesAsScalars[model$isDiscrete(targetNodesAsScalars)], collapse = ', ')))
+    ## processing of bounds and transformations
+    my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
+    d <- my_parameterTransform$getTransformedLength()
+    d2 <- max(d, 2) ## for pre-allocating vectors
+    nimDerivs_wrt <- 1:d
+    derivsInfo_return <- makeModelDerivsInfo(model, targetNodes, calcNodes)
+    nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
+    nimDerivs_constantNodes <- derivsInfo_return$constantNodes
+    ## numeric value generation
+    timesRan <- 0;
+    stepsizeCounter <- 0
+    epsilon <- 0;
+    mu <- 0;
+    logEpsilonBar <- 0;
+    Hbar <- 0
+    log2 <- log(2)
+    warningCodes <- array(0, c(max(numWarnings,1), 2))
+    warningInd <- 0
+    nwarmupOrig <- nwarmup
+    # The adapt_* variables are initialized in before_chain()
+    adaptWindow_size <- 0
+    adapt_initBuffer <- 0
+    adapt_termBuffer <- 0
+    adapt_next_window <- 0
+    adaptWindow_counter <- 0
+    adaptWindow_iter <- 0
+    warmupSamples <- array(0, c(2,d2))           ## 2xd array
+    if(length(M) == 1) { if(M == -1) M <- rep(1, d2) else M <- c(M, 1) }
+    Morig <- M
+    sqrtM <- sqrt(M)
+    numDivergences <- 0
+    numTimesMaxTreeDepth <- 0
+    ## nimbleList class for reference input to buildtree
+    treebranchNL <- nimbleList(p_beg = double(1), p_end = double(1),
+                               rho = double(1), log_sum_wt = double())
+    ## nimbleList class for the state of the system including
+    ## position (q), momentum (p), Hamiltonian (H), logProb of calcNodes (logProb),
+    ## and gradient of logProb of calcNodes (gr_logProb)
+    stateNL <- nimbleList(q = double(1), p = double(1),
+                          H = double(), logProb = double(),
+                          gr_logProb = double(1))
+    state_current <- stateNL$new()
+    state_f <- stateNL$new()
+    state_b <- stateNL$new()
+    state_sample <- stateNL$new()
+    state_propose <- stateNL$new()
 
+    n_leapfrog <- 0
+    sum_metropolis_prob <- 0
+    divergent <- FALSE
+    # bool_fwd_vec is for debugging purposes and can be removed for release
+    bool_fwd_vec <<- c(FALSE, TRUE)
+    ## checks
+    if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
+    if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
+    if(initialEpsilon < 0) stop('HMC sampler initialEpsilon must be positive', call. = FALSE)
+    if(!all(M > 0)) stop('HMC sampler M must contain all positive elements', call. = FALSE)
+    if(d == 1) if(length(M) != 2) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
+    if(d  > 1) if(length(M) != d) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
+    if(maxTreeDepth < 1) stop('HMC maxTreeDepth must be at least one ', call. = FALSE)
+  },
+  run = function() {
+    ## No-U-Turn Sampler based on Stan
+    state_current$q <<- my_parameterTransform$transform(values(model, targetNodes))
+    if(timesRan == 0) {
+      if(nwarmup == -1) stop('HMC nwarmup was not set correctly')
+      state_current$p <<- numeric(d, init = FALSE)
+      state_current$gr_logProb <<- numeric(d, init = FALSE)
+      M <<- M[1:d]
+      sqrtM <<- sqrtM[1:d]
+      if(initialEpsilon == 0) {
+        epsilon <<- 1
+        mu <<- log(10*epsilon) # Curiously, Stan sets this for the first round BEFORE init_stepsize.
+        initializeEpsilon()  ## no initialEpsilon value was provided
+      }
+      else {
+        epsilon <<- initialEpsilon              ## user provided initialEpsilon
+        mu <<- log(10*epsilon)
+      }
+    }
+    timesRan <<- timesRan + 1
+    if(printTimesRan) print('============ times ran = ', timesRan)
+    if(printEpsilon)  print('epsilon = ', epsilon)
+    if(printM)        { print('M:'); print(M) }
+    # debugging trick to pause in uncompiled code when drawing momentum values
+    #   pause_draws <<- TRUE
+    drawMomentumValues(state_current)    ## draws values for p
+    update_state_calcs(state_current)
+    copy_state(state_f, state_current)
+    copy_state(state_b, state_current)
+    copy_state(state_sample, state_current)
+    copy_state(state_propose, state_current)
+
+    p_ff <- state_current$p
+    p_fb <- state_current$p
+    p_bf <- state_current$p
+    p_bb <- state_current$p
+
+    rho <- state_current$p
+
+    log_sum_wt <- 0
+    H0 <- state_current$H
+    depth <- 0
+    n_leapfrog <<- 0
+    sum_metropolis_prob <<- 0
+    divergent <<- FALSE
+    branch <- treebranchNL$new()
+    done <- FALSE
+    old_stepsize <- epsilon
+    old_M <- M
+    while((depth < maxTreeDepth) & (!done)) {
+      checkInterrupt()
+      rho_f <- numeric(0, length = d)
+      rho_b <- numeric(0, length = d)
+      valid_subtree <- FALSE
+      log_sum_wt_subtree <- -Inf
+      bool_fwd <- runif(1,0,1) > 0.5
+      # debugging trick to insert a known sequence of fwd and bck outcomes
+      #      print("about to set bool_fwd from bool_fwd_vec")
+      #     bool_fwd <- bool_fwd_vec[depth+1]
+      #     browser()
+      if(bool_fwd) {
+        copy_state(state_current, state_f)
+        rho_b <- rho
+        p_bf <- p_ff
+
+        branch$p_beg <- p_fb
+        branch$p_end <- p_ff
+        branch$rho <- rho_f
+        branch$log_sum_wt <- log_sum_wt_subtree
+        valid_subtree <- buildtree(depth, state_propose, branch, H0, 1)
+        log_sum_wt_subtree <- branch$log_sum_wt
+        rho_f <- branch$rho
+        p_ff <- branch$p_end
+        p_fb <- branch$p_beg
+        copy_state(state_f, state_current)
+      } else {
+        copy_state(state_current, state_b)
+        rho_f <- rho
+        p_fb <- p_bb
+        branch$p_beg <- p_bf
+        branch$p_end <- p_bb
+        branch$rho <- rho_b
+        branch$log_sum_wt <- log_sum_wt_subtree
+        valid_subtree <- buildtree(depth, state_propose, branch, H0, -1)
+        log_sum_wt_subtree <- branch$log_sum_wt
+        rho_b <- branch$rho
+        p_bb <- branch$p_end
+        p_bf <- branch$p_beg
+        copy_state(state_b, state_current)
+      }
+      if(!valid_subtree) done <- TRUE
+      if(!done) {
+        depth <- depth + 1
+        accept <- FALSE
+        log_accept_prob <- log_sum_wt_subtree - log_sum_wt
+        if(log_accept_prob > 0) {
+          accept <- TRUE
+        } else {
+          if(runif(1,0,1) < exp(log_accept_prob)) accept <- TRUE
+        }
+        if(accept) copy_state(state_sample, state_propose)
+        log_sum_wt <- log_sum_exp(log_sum_wt, log_sum_wt_subtree)
+        rho <- rho_b + rho_f
+
+        persist_criterion <- decide_persist(p_bb, p_ff,
+                                            p_bf, p_fb,
+                                            rho, rho_f, rho_b)
+        if(!persist_criterion) done <- TRUE
+      }
+    }
+
+    accept_prob <- sum_metropolis_prob / n_leapfrog
+#    print(timesRan, " | accept_prob=", sum_metropolis_prob,"/",n_leapfrog,"=",accept_prob," from depth= ", depth)
+    copy_state(state_current, state_sample) # extraneous copy? could remove?
+
+    inverseTransformStoreCalculate(state_sample$q)
+    nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
+    if(timesRan <= nwarmup)  {
+      if(adaptEpsilon)
+        adapt_stepsize(accept_prob)
+      update <- FALSE
+      if(adaptM) update <- adapt_M()
+      if(update & adaptEpsilon) {
+        initializeEpsilon()
+        Hbar <<- 0
+        logEpsilonBar <<- 0
+        stepsizeCounter <<- 0
+        mu <<- log(10*epsilon)
+      }
+      ## if(!update)
+      ##   print(timesRan, " | stepsize = ", old_stepsize, ". 1/M = (", min(1/old_M), " ", mean(1/old_M), " ",max(1/old_M), "). NEW stepsize = ", epsilon )
+      ## else
+      ##   print(timesRan, " | stepsize = ", old_stepsize, ". 1/M = (", min(1/old_M), " ", mean(1/old_M), " ",max(1/old_M),
+      ##         "). NEW stepsize = ", epsilon, ". NEW 1/M = ", min(1/M), " ", mean(1/M), " ", max(1/M),")." )
+    }
+  },
+  methods = list(
+    copy_state = function(to = stateNL(), from = stateNL()) {
+      to$p <- from$p
+      to$q <- from$q
+      to$H <- from$H
+      to$logProb <- from$logProb
+      to$gr_logProb <- from$gr_logProb
+    },
+    drawMomentumValues = function(state = stateNL()) {
+      draws <- rnorm(length(sqrtM), 0, sd = sqrtM)
+      ## debugging trick for uncompiled execution
+      # if(pause_draws) browser() # manually reset draws.
+      for(i in 1:d)   state$p[i] <- draws[i]
+    },
+    inverseTransformStoreCalculate = function(qArg = double(1)) {
+      values(model, targetNodes) <<- my_parameterTransform$inverseTransform(qArg)
+      lp <- model$calculate(calcNodes)
+      returnType(double())
+      return(lp)
+    },
+    calcLogProb = function(qArg = double(1)) {
+      ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)
+      returnType(double())
+      return(ans)
+    },
+    gradient_aux = function(qArg = double(1)) {
+      derivsOutput <- nimDerivs(calcLogProb(qArg), order = 1, wrt = nimDerivs_wrt, model = model, updateNodes = nimDerivs_updateNodes, constantNodes = nimDerivs_constantNodes)
+      returnType(double(1))
+      return(derivsOutput$jacobian[1, 1:d])
+    },
+    gradient = function(qArg = double(1)) {
+      derivsOutput <- nimDerivs(gradient_aux(qArg), order = 0, wrt = nimDerivs_wrt, model = model, updateNodes = nimDerivs_updateNodes, constantNodes = nimDerivs_constantNodes)
+      returnType(double(1))
+      return(derivsOutput$value)
+    },
+    update_state_calcs = function(state = stateNL()) {
+      state$logProb <- inverseTransformStoreCalculate(state$q) + my_parameterTransform$logDetJacobian(state$q)
+      state$H <- 0.5 * sum(state$p * state$p/M) - state$logProb
+      state$gr_logProb <- gradient(state$q)
+    },
+    leapfrog = function(state = stateNL(), eps = double()) {
+      state$p <- state$p + 0.5*eps * state$gr_logProb
+      state$q <- state$q +     eps * state$p / M
+      update_state_calcs(state)
+      state$p <- state$p + 0.5*eps * state$gr_logProb
+      # singly update H for the closing step in p that is after update_state_calcs
+      state$H <- 0.5 * sum(state$p * state$p/M) - state$logProb
+    },
+    log_sum_exp = function(x1 = double(), x2 = double()) {
+      returnType(double())
+      C <- max(x1, x2)
+      ans <- C + log(exp(x1 - C) + exp(x2 - C))
+      return(ans)
+    },
+    buildtree = function(depth = integer(),
+                         state_propose = stateNL(), branch = treebranchNL(),
+                         H0 = double(), sign = double()) {
+      if(depth == 0) {
+        leapfrog(state_current, sign*epsilon)
+        n_leapfrog <<- n_leapfrog+1
+        new_H <- state_current$H
+        if(is.nan(new_H)) new_H <- Inf
+        deltaH <- new_H - H0
+        if(deltaH > deltaMax) divergent <<- TRUE
+        branch$log_sum_wt <- log_sum_exp(branch$log_sum_wt, -deltaH)
+        if((-deltaH) > 0) sum_metropolis_prob <<- sum_metropolis_prob + 1
+        else sum_metropolis_prob <<- sum_metropolis_prob + exp(-deltaH)
+        copy_state(state_propose, state_current)
+        branch$rho <- branch$rho + state_current$p
+        branch$p_beg <- state_current$p
+        branch$p_end <- state_current$p
+        return(!divergent)
+      }
+      init_branch <- treebranchNL$new()
+      init_branch$log_sum_wt <- -Inf
+      init_branch$p_beg <- branch$p_beg
+      init_branch$rho <- numeric(0, length = d)
+      valid_init <- buildtree(depth-1, state_propose, init_branch, H0, sign)
+      branch$p_beg <- init_branch$p_beg
+      if(!valid_init) return(FALSE)
+
+      state_propose_final = stateNL$new()
+      copy_state(state_propose_final, state_current)
+      final_branch <- treebranchNL$new()
+      final_branch$p_end <- branch$p_end
+      final_branch$log_sum_wt <- -Inf
+      final_branch$rho <- numeric(0, length = d)
+      valid_final <- buildtree(depth-1, state_propose_final, final_branch, H0, sign)
+      branch$p_end <- final_branch$p_end
+      if(!valid_final) return(FALSE)
+
+      log_sum_wt_subtree <- log_sum_exp(init_branch$log_sum_wt, final_branch$log_sum_wt)
+      branch$log_sum_wt <- log_sum_exp(branch$log_sum_wt, log_sum_wt_subtree)
+
+      accept <- FALSE
+      log_accept_prob <- final_branch$log_sum_wt - log_sum_wt_subtree
+      if(log_accept_prob > 0) {
+        accept <- TRUE
+      } else {
+        accept_prob <- exp(log_accept_prob)
+        accept <- runif(1, 0, 1) < accept_prob
+      }
+      if(accept) copy_state(state_propose, state_propose_final)
+
+      rho_subtree <- final_branch$rho + init_branch$rho
+      branch$rho <- branch$rho + rho_subtree
+
+      persist_criterion <- decide_persist(branch$p_beg, branch$p_end,
+                                          init_branch$p_end,final_branch$p_beg,
+                                          rho_subtree, final_branch$rho, init_branch$rho )
+
+      ## For the case of diagonal M, the "sharp" variables in Stan are simply
+      ## element-wise division by diag(M), e.g.:
+      ## p_sharp_beg <- branch$p_beg / M
+      ## p_sharp_end   <- branch$p_end / M
+      ## but these are now in the decide_persist function
+
+      return(persist_criterion)
+      returnType(logical())
+    },
+    decide_persist = function(p_b = double(1), p_e = double(1),
+                              p_b2 = double(1), p_e2 = double(1),
+                              rho = double(1), rho_1 = double(1), rho_2 = double(1)
+                              ) {
+      p_b_overM <- p_b / M
+      p_e_overM <- p_e / M
+      persist_criterion <- compute_criterion(p_b_overM, p_e_overM, rho)
+      if(persist_criterion) {
+        rho_alt <- rho_2 + p_e2
+        p_e2_overM <- p_e2 / M
+        persist_criterion <- compute_criterion(p_b_overM, p_e2_overM, rho_alt)
+      }
+      if(persist_criterion) {
+        rho_alt <- rho_1 + p_b2
+        p_b2_overM <- p_b2 / M
+        persist_criterion <- compute_criterion(p_b2_overM, p_e_overM, rho_alt)
+      }
+      return(persist_criterion)
+      returnType(logical())
+    },
+    compute_criterion = function(poverM1 = double(1), poverM2 = double(1), rho = double(1)) {
+      ans <- (inprod(poverM2, rho) > 0) & (inprod(poverM1, rho) > 0)
+      return(ans)
+      returnType(logical())
+    },
+    initializeEpsilon = function() {
+      initValues <- values(model, calcNodes)
+
+      state_init <- stateNL$new()
+      copy_state(state_init, state_current)
+
+      drawMomentumValues(state_current)    ## draws values for p
+      update_state_calcs(state_current)
+      H0 <- state_current$H
+      leapfrog(state_current, epsilon)
+      newH <- state_current$H
+      if(is.nan(newH)) newH <- Inf
+      deltaH <- H0 - newH
+
+      direction <- 2*nimStep(deltaH > log(0.8)) - 1 # 1 or -1
+
+      done <- FALSE
+      while(!done) {
+        copy_state(state_current, state_init)
+        drawMomentumValues(state_current)
+        update_state_calcs(state_current)
+        H0 <- state_current$H
+        leapfrog(state_current, epsilon)
+        newH <- state_current$H
+        if(is.nan(newH)) newH <- Inf
+        deltaH <- H0 - newH
+
+        if((direction==1) & !(deltaH > log(0.8))) done <- TRUE
+        else {
+          if((direction==-1) & !(deltaH < log(0.8))) done <- TRUE
+          else {
+            if(direction==1) epsilon <<- 2*epsilon
+            else epsilon <<- 0.5 * epsilon
+          }
+        }
+        if(!done) {
+          if(epsilon > 1e7) stop("Search for initial stepsize in HMC exploded. Something is wrong.")
+          if(epsilon == 0) stop("Search for initial stepsize in HMC shrank to 0. Something is wrong.")
+        }
+      }
+      copy_state(state_current, state_init)
+      values(model, calcNodes) <<- initValues
+    },
+    adapt_stepsize = function(adapt_stat = double()) {
+      # Following Stan code, this is the same as what we have from Hoffman and Gelman
+      # but with adapt_stat instead of a/na.
+      if(adapt_stat > 1) adapt_stat <- 1
+      old_epsilon <- epsilon
+      stepsizeCounter <<- stepsizeCounter + 1
+      eta <- 1/(stepsizeCounter + t0)
+      Hbar <<- (1-eta) * Hbar + eta * (delta - adapt_stat) # s_bar in Stan code
+      logEpsilon <- mu - Hbar * sqrt(stepsizeCounter)/gamma # x in Stan code
+      epsilon <<- exp(logEpsilon)
+      stepsizeCounterToNegativeKappa <- stepsizeCounter^(-kappa) # x_eta in Stan code
+      logEpsilonBar <<- stepsizeCounterToNegativeKappa * logEpsilon + (1 - stepsizeCounterToNegativeKappa) * logEpsilonBar # x_bar in Stan code
+      if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
+    },
+    adapt_M = function() {
+      returnType(logical())
+      # The logic here follow's Stan closely, but we use 1-based indexing
+      in_adaptation_window <- (adaptWindow_counter > adapt_initBuffer) &
+        (adaptWindow_counter <= nwarmup - adapt_termBuffer) &
+        (adaptWindow_counter != nwarmup + 1) # last condition seems redundant, but following Stan closely
+
+      if(in_adaptation_window) {
+#        print("recording sample into warmupSamples ", adaptWindow_iter, " on adaptWindow_counter ", adaptWindow_counter)
+        warmupSamples[adaptWindow_iter, 1:d] <<- state_sample$q
+      }
+
+      end_adaptation_window <- (adaptWindow_counter == adapt_next_window) &
+        (adaptWindow_counter != nwarmup + 1) # Ditto comment
+
+      if(end_adaptation_window) {
+        origM <- M
+ #       print("adapting M based on ", adaptWindow_iter, " samples on adaptWindow_counter ", adaptWindow_counter)
+        for(i in 1:d) {
+          v <- var(warmupSamples[1:adaptWindow_iter, i])
+          vReg <- (adaptWindow_iter/(adaptWindow_iter+5))*v + 0.001*(5/(adaptWindow_iter+5))
+          M[i] <<- 1/vReg
+          sqrtM[i] <<- sqrt(M[i])
+        }
+        if(adapt_next_window == nwarmup - adapt_termBuffer) {
+          # done, no further adaptation
+          setSize(warmupSamples, 0, 0)
+ #         print("done adapting. setting warmupSamples to size 0")
+        } else {
+          adaptWindow_size <<- adaptWindow_size * 2
+          adapt_next_window <<- adaptWindow_counter + adaptWindow_size
+          if(adapt_next_window != nwarmup - adapt_termBuffer) {
+            next_window_boundary <- adapt_next_window + 2*adaptWindow_size
+            if(next_window_boundary > nwarmup - adapt_termBuffer) {
+              adapt_next_window <<- nwarmup - adapt_termBuffer
+              adaptWindow_size <<- adapt_next_window - adaptWindow_counter
+            }
+          }
+ #         setSize(warmupSamples, adaptWindow_size, d, copy = FALSE, fillZeros = FALSE)
+ #         print("next adaptWindow_size is ", adaptWindow_size, " so adapt_next_window = ", adapt_next_window)
+        }
+        adaptWindow_iter <<- 1
+        adaptWindow_counter <<- adaptWindow_counter + 1
+        return(TRUE)
+      }
+      if(in_adaptation_window) adaptWindow_iter <<- adaptWindow_iter + 1
+      adaptWindow_counter <<- adaptWindow_counter + 1
+      return(FALSE)
+    },
+    before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
+      if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
+      if(MCMCchain == 1) {
+        if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+        #  if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations.'); stop() }
+        #  if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ').')
+        #  if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ').')
+      }
+      ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
+      ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
+      ## https://colcarroll.github.io/hmc_tuning_talk/
+      ## Approach follows Stan code
+      adaptWindow_size <<- adaptWindow
+      adapt_initBuffer <<- initBuffer
+      adapt_termBuffer <<- termBuffer
+      adapt_next_window <<- adapt_initBuffer + adaptWindow_size
+      adaptWindow_counter <<- 1
+      adaptWindow_iter <<- 1
+      Hbar <<- 0
+      logEpsilonBar <<- 0
+      stepsizeCounter <<- 0
+      setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
+    },
+    after_chain = function() {
+      if(messages) {
+        if(numDivergences == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
+        if(numDivergences  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
+        if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
+        if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
+        numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
+        numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
+      }
+      if(warningInd > 0) {
+        for(i in 1:warningInd) {
+          if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
+          if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initializeEpsilon routine.')
+          if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
+        }
+        warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
+      }
+    },
+    reset = function() {
+      timesRan       <<- 0
+      epsilon        <<- 0
+      mu             <<- 0
+      logEpsilonBar  <<- 0
+      Hbar           <<- 0
+      numDivergences <<- 0
+      numTimesMaxTreeDepth <<- 0
+      warningInd     <<- 0
+      nwarmup        <<- nwarmupOrig
+      M              <<- Morig
+      sqrtM          <<- sqrt(M)
+      # The adapt_* variables are initialized in before_chain()
+      adaptWindow_size <<- 0
+      adapt_initBuffer <<- 0
+      adapt_termBuffer <<- 0
+      adapt_next_window <<- 0
+      adaptWindow_counter <<- 0
+      adaptWindow_iter <<- 0
+      stepsizeCounter <<- 0
+    }
+  ),
+  buildDerivs = list(
+    inverseTransformStoreCalculate = list(),
+    calcLogProb = list(),
+    gradient_aux = list()
+  )
+)
