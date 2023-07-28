@@ -229,7 +229,7 @@ test_that('HMC on conjugate Wishart', {
     Cmcmc <- compiledList$mcmc
     ##
     set.seed(0)
-    samples <- runMCMC(Cmcmc, niter = 1000)
+    samples <- runMCMC(Cmcmc, niter = 5000, nburnin = 2000)
     ##
     newDf <- 4 + n
     newR <- R + tcrossprod(Y- mu)
@@ -241,8 +241,8 @@ test_that('HMC on conjugate Wishart', {
     }
     OmegaSimTrueSDs <- apply(wishRV, c(1,2), sd)
     ##
-    expect_equal(as.numeric(apply(samples, 2, mean)), as.numeric(OmegaTrueMean), tol = 0.2)
-    expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.04)
+    expect_equal(as.numeric(apply(samples, 2, mean)), as.numeric(OmegaTrueMean), tol = 0.1)
+expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.011)
 })
 
 
