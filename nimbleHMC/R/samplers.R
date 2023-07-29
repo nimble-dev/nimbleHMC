@@ -189,6 +189,10 @@ sampler_langevin <- nimbleFunction(
 #' conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'HMC')
 #' 
 #' Rmcmc <- buildMCMC(conf)
+#'
+#' @references
+#'
+#' Hoffman, Matthew D., and Gelman, Andrew (2014). The No-U-Turn Sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. \emph{Journal of Machine Learning Research}, 15(1): 1593-1623.
 sampler_HMC <- nimbleFunction(
     name = 'sampler_HMC',
     contains = sampler_BASE,
@@ -323,8 +327,13 @@ sampler_HMC <- nimbleFunction(
             returnType(double())
             return(lp)
         },
+        calcLogProb = function(qArg = double(1)) {
+            ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)
+            returnType(double())
+            return(ans)
+        },
         gradient_aux = function(qArg = double(1)) {
-            derivsOutput <- nimDerivs(inverseTransformStoreCalculate(qArg), order = 1, wrt = nimDerivs_wrt, model = model, updateNodes = nimDerivs_updateNodes, constantNodes = nimDerivs_constantNodes)
+            derivsOutput <- nimDerivs(calcLogProb(qArg), order = 1, wrt = nimDerivs_wrt, model = model, updateNodes = nimDerivs_updateNodes, constantNodes = nimDerivs_constantNodes)
             returnType(double(1))
             return(derivsOutput$jacobian[1, 1:d])
         },
@@ -427,7 +436,7 @@ sampler_HMC <- nimbleFunction(
                 ##           if(numWarnings > 0) { print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a divergent path on iteration ', timesRan, ', with divergence = ', logu - qpLogH)
                 ##                                 numWarnings <<- numWarnings - 1 } }
                 a <- min(1, exp(qpLogH - logH0))
-                if(is.nan.vec(q) | is.nan.vec(p)) { n <- 0; s <- 0; a <- 0 }     ## my addition
+                if(is.nan.vec(q) | is.nan.vec(p) | is.nan(a)) { n <- 0; s <- 0; a <- 0 }     ## my addition
                 return(btNLDef$new(q1 = q, p1 = p, q2 = q, p2 = p, q3 = q, n = n, s = s, a = a, na = 1))
             } else {        ## recursively build left and right subtrees
                 btNL1 <- buildtree(qArg, pArg, logu, v, j-1, eps, logH0, 0)
@@ -439,7 +448,7 @@ sampler_HMC <- nimbleFunction(
                                   btNL1$q2 <- btNL2$q2;   btNL1$p2 <- btNL2$p2 }
                     nSum <- btNL1$n + btNL2$n
                     if(nSum > 0)   if(runif(1) < btNL2$n / nSum)   btNL1$q3 <- btNL2$q3
-                    qDiff <<- btNL1$q2-btNL1$q1
+                    qDiff <<- btNL1$q2 - btNL1$q1
                     btNL1$a  <- btNL1$a  + btNL2$a
                     btNL1$na <- btNL1$na + btNL2$na
                     btNL1$s  <- btNL2$s * nimStep(inprod(qDiff, btNL1$p1)) * nimStep(inprod(qDiff, btNL1$p2))
@@ -501,6 +510,7 @@ sampler_HMC <- nimbleFunction(
     ),
     buildDerivs = list(
         inverseTransformStoreCalculate = list(),
+        calcLogProb = list(),
         gradient_aux = list()
     )
 )
