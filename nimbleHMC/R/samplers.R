@@ -565,11 +565,11 @@ sampler_NUTS <- nimbleFunction(
         nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
-        timesRan <- 0;
+        timesRan <- 0
         stepsizeCounter <- 0
-        epsilon <- 0;
-        mu <- 0;
-        logEpsilonBar <- 0;
+        epsilon <- 0
+        mu <- 0
+        logEpsilonBar <- 0
         Hbar <- 0
         log2 <- log(2)
         warningCodes <- array(0, c(max(numWarnings,1), 2))
