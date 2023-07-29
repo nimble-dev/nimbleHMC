@@ -242,7 +242,7 @@ test_that('HMC on conjugate Wishart', {
     OmegaSimTrueSDs <- apply(wishRV, c(1,2), sd)
     ##
     expect_equal(as.numeric(apply(samples, 2, mean)), as.numeric(OmegaTrueMean), tol = 0.1)
-expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.02)
+    expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.02)
 })
 
 
