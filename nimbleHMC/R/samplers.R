@@ -919,33 +919,27 @@ sampler_NUTS <- nimbleFunction(
             values(model, calcNodes) <<- initValues
         },
         adapt_stepsize = function(adapt_stat = double()) {
-            # Following Stan code, this is the same as what we have from Hoffman and Gelman
-            # but with adapt_stat instead of a/na.
-            if(adapt_stat > 1) adapt_stat <- 1
+            ## following Stan code, this is the same as what we have from Hoffman and Gelman, but with adapt_stat instead of a/na
+            if(adapt_stat > 1)   adapt_stat <- 1
             old_epsilon <- epsilon
             stepsizeCounter <<- stepsizeCounter + 1
             eta <- 1/(stepsizeCounter + t0)
-            Hbar <<- (1-eta) * Hbar + eta * (delta - adapt_stat) # s_bar in Stan code
-            logEpsilon <- mu - Hbar * sqrt(stepsizeCounter)/gamma # x in Stan code
+            Hbar <<- (1-eta) * Hbar + eta * (delta - adapt_stat)          ## s_bar in Stan
+            logEpsilon <- mu - Hbar * sqrt(stepsizeCounter)/gamma         ## x in Stan
             epsilon <<- exp(logEpsilon)
-            stepsizeCounterToNegativeKappa <- stepsizeCounter^(-kappa) # x_eta in Stan code
-            logEpsilonBar <<- stepsizeCounterToNegativeKappa * logEpsilon + (1 - stepsizeCounterToNegativeKappa) * logEpsilonBar # x_bar in Stan code
+            stepsizeCounterToNegativeKappa <- stepsizeCounter^(-kappa)    ## x_eta in Stan
+            logEpsilonBar <<- stepsizeCounterToNegativeKappa * logEpsilon + (1 - stepsizeCounterToNegativeKappa) * logEpsilonBar   ## x_bar in Stan
             if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
         },
         adapt_M = function() {
-            returnType(logical())
-            # The logic here follow's Stan closely, but we use 1-based indexing
-            in_adaptation_window <- (adaptWindow_counter > adapt_initBuffer) &
+            ## logic follows Stan, but we use 1-based indexing
+            in_adaptation_window <-
+                (adaptWindow_counter > adapt_initBuffer) &
                 (adaptWindow_counter <= nwarmup - adapt_termBuffer) &
-                (adaptWindow_counter != nwarmup + 1) # last condition seems redundant, but following Stan closely
-
-            if(in_adaptation_window) {
-                warmupSamples[adaptWindow_iter, 1:d] <<- state_sample$q
-            }
-
-            end_adaptation_window <- (adaptWindow_counter == adapt_next_window) &
-                (adaptWindow_counter != nwarmup + 1) # Ditto comment
-
+                (adaptWindow_counter != nwarmup + 1)   ## seems redundant, but following Stan closely
+            ##
+            if(in_adaptation_window)   warmupSamples[adaptWindow_iter, 1:d] <<- state_sample$q
+            end_adaptation_window <- (adaptWindow_counter == adapt_next_window) & (adaptWindow_counter != nwarmup + 1)  # ditto comment
             if(end_adaptation_window) {
                 origM <- M
                 for(i in 1:d) {
@@ -955,8 +949,7 @@ sampler_NUTS <- nimbleFunction(
                     sqrtM[i] <<- sqrt(M[i])
                 }
                 if(adapt_next_window == nwarmup - adapt_termBuffer) {
-                    # done, no further adaptation
-                    setSize(warmupSamples, 0, 0)
+                    setSize(warmupSamples, 0, 0)   ## done, no further adaptation
                 } else {
                     adaptWindow_size <<- adaptWindow_size * 2
                     adapt_next_window <<- adaptWindow_counter + adaptWindow_size
@@ -973,8 +966,9 @@ sampler_NUTS <- nimbleFunction(
                 adaptWindow_counter <<- adaptWindow_counter + 1
                 return(TRUE)
             }
-            if(in_adaptation_window) adaptWindow_iter <<- adaptWindow_iter + 1
+            if(in_adaptation_window)   adaptWindow_iter <<- adaptWindow_iter + 1
             adaptWindow_counter <<- adaptWindow_counter + 1
+            returnType(logical())
             return(FALSE)
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
@@ -983,7 +977,7 @@ sampler_NUTS <- nimbleFunction(
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
             ## https://colcarroll.github.io/hmc_tuning_talk/
-            ## Approach follows Stan code
+            ## approach follows Stan code
             if(initBuffer + adaptWindow + termBuffer > nwarmup) {
                 if(messages) print('  [Warning] nwarmup is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
                 adapt_initBuffer <<- round(nwarmup * 0.15)
@@ -993,8 +987,7 @@ sampler_NUTS <- nimbleFunction(
                 adaptWindow_size <<- adaptWindow
                 adapt_initBuffer <<- initBuffer
                 adapt_termBuffer <<- termBuffer
-                # If there won't be room for the next window of doubled size,
-                # simply make the first and only window longer
+                ## if there won't be room for the next window of doubled size, make the first and only window longer
                 if((nwarmup - (adapt_initBuffer + adaptWindow_size + adapt_termBuffer)) < 2*adaptWindow_size)
                     adaptWindow_size <<- nwarmup - (adapt_initBuffer + adapt_termBuffer)
             }
@@ -1008,10 +1001,10 @@ sampler_NUTS <- nimbleFunction(
         },
         after_chain = function() {
             if(messages) {
-                if(numDivergences == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
-                if(numDivergences  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
-                if(numTimesMaxTreeDepth == 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
-                if(numTimesMaxTreeDepth  > 1) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
+                if(numDivergences == 1)        print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
+                if(numDivergences  > 1)        print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
+                if(numTimesMaxTreeDepth == 1)  print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
+                if(numTimesMaxTreeDepth  > 1)  print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
                 numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
                 numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
             }
@@ -1036,7 +1029,7 @@ sampler_NUTS <- nimbleFunction(
             nwarmup        <<- nwarmupOrig
             M              <<- Morig
             sqrtM          <<- sqrt(M)
-            # The adapt_* variables are initialized in before_chain()
+            ## the adapt_* variables are initialized in before_chain()
             adaptWindow_size    <<- 0
             adapt_initBuffer    <<- 0
             adapt_termBuffer    <<- 0
