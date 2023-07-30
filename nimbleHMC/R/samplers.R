@@ -328,7 +328,7 @@ sampler_HMC <- nimbleFunction(
             return(lp)
         },
         calcLogProb = function(qArg = double(1)) {
-            ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)
+            ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)     ## won't forget this
             returnType(double())
             return(ans)
         },
@@ -714,9 +714,9 @@ sampler_NUTS <- nimbleFunction(
         if((timesRan <= nwarmup) && adapt) {
             if(adaptEpsilon)   adapt_stepsize(accept_prob)
             update <- FALSE
-            if(adaptM) update <- adapt_M()
+            if(adaptM)   update <- adapt_M()
             if(update & adaptEpsilon) {
-                if(initializeEpsilon) initEpsilon()
+                if(initializeEpsilon)   initEpsilon()
                 Hbar <<- 0
                 logEpsilonBar <<- 0
                 stepsizeCounter <<- 0
@@ -726,10 +726,10 @@ sampler_NUTS <- nimbleFunction(
     },
     methods = list(
         copy_state = function(to = stateNL(), from = stateNL()) {
-            to$p <- from$p
-            to$q <- from$q
-            to$H <- from$H
-            to$logProb <- from$logProb
+            to$p          <- from$p
+            to$q          <- from$q
+            to$H          <- from$H
+            to$logProb    <- from$logProb
             to$gr_logProb <- from$gr_logProb
         },
         drawMomentumValues = function(state = stateNL()) {
@@ -743,7 +743,7 @@ sampler_NUTS <- nimbleFunction(
             return(lp)
         },
         calcLogProb = function(qArg = double(1)) {
-            ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)
+            ans <- inverseTransformStoreCalculate(qArg) + my_parameterTransform$logDetJacobian(qArg)     ## won't forget this
             returnType(double())
             return(ans)
         },
@@ -763,32 +763,30 @@ sampler_NUTS <- nimbleFunction(
             state$gr_logProb <- gradient(state$q)
         },
         leapfrog = function(state = stateNL(), eps = double()) {
-            state$p <- state$p + 0.5*eps * state$gr_logProb
-            state$q <- state$q +     eps * state$p / M
+            state$p <- state$p + 0.5 * eps * state$gr_logProb
+            state$q <- state$q +       eps * state$p / M
             update_state_calcs(state)
-            state$p <- state$p + 0.5*eps * state$gr_logProb
-            # singly update H for the closing step in p that is after update_state_calcs
-            state$H <- 0.5 * sum(state$p * state$p/M) - state$logProb
+            state$p <- state$p + 0.5 * eps * state$gr_logProb
+            ## update H for the closing step in p that is after update_state_calcs
+            state$H <- 0.5 * sum(state$p * state$p / M) - state$logProb
         },
         log_sum_exp = function(x1 = double(), x2 = double()) {
-            returnType(double())
             C <- max(x1, x2)
             ans <- C + log(exp(x1 - C) + exp(x2 - C))
+            returnType(double())
             return(ans)
         },
-        buildtree = function(depth = integer(),
-                             state_propose = stateNL(), branch = treebranchNL(),
-                             H0 = double(), sign = double()) {
+        buildtree = function(depth = integer(), state_propose = stateNL(), branch = treebranchNL(), H0 = double(), sign = double()) {
             if(depth == 0) {
                 leapfrog(state_current, sign*epsilon)
-                n_leapfrog <<- n_leapfrog+1
+                n_leapfrog <<- n_leapfrog + 1
                 new_H <- state_current$H
-                if(is.nan(new_H)) new_H <- Inf
+                if(is.nan(new_H))   new_H <- Inf
                 deltaH <- new_H - H0
-                if(deltaH > deltaMax) divergent <<- TRUE
+                if(deltaH > deltaMax)   divergent <<- TRUE
                 branch$log_sum_wt <- log_sum_exp(branch$log_sum_wt, -deltaH)
-                if((-deltaH) > 0) sum_metropolis_prob <<- sum_metropolis_prob + 1
-                else sum_metropolis_prob <<- sum_metropolis_prob + exp(-deltaH)
+                if((-deltaH) > 0)   sum_metropolis_prob <<- sum_metropolis_prob + 1
+                else                sum_metropolis_prob <<- sum_metropolis_prob + exp(-deltaH)
                 copy_state(state_propose, state_current)
                 branch$rho <- branch$rho + state_current$p
                 branch$p_beg <- state_current$p
@@ -801,9 +799,9 @@ sampler_NUTS <- nimbleFunction(
             init_branch$rho <- numeric(0, length = d)
             valid_init <- buildtree(depth-1, state_propose, init_branch, H0, sign)
             branch$p_beg <- init_branch$p_beg
-            if(!valid_init) return(FALSE)
-
-            state_propose_final = stateNL$new()
+            if(!valid_init)   return(FALSE)
+            ##
+            state_propose_final <- stateNL$new()
             copy_state(state_propose_final, state_current)
             final_branch <- treebranchNL$new()
             final_branch$p_end <- branch$p_end
@@ -811,11 +809,11 @@ sampler_NUTS <- nimbleFunction(
             final_branch$rho <- numeric(0, length = d)
             valid_final <- buildtree(depth-1, state_propose_final, final_branch, H0, sign)
             branch$p_end <- final_branch$p_end
-            if(!valid_final) return(FALSE)
-
+            if(!valid_final)   return(FALSE)
+            ##
             log_sum_wt_subtree <- log_sum_exp(init_branch$log_sum_wt, final_branch$log_sum_wt)
             branch$log_sum_wt <- log_sum_exp(branch$log_sum_wt, log_sum_wt_subtree)
-
+            ##
             accept <- FALSE
             log_accept_prob <- final_branch$log_sum_wt - log_sum_wt_subtree
             if(log_accept_prob > 0) {
@@ -824,28 +822,20 @@ sampler_NUTS <- nimbleFunction(
                 accept_prob <- exp(log_accept_prob)
                 accept <- runif(1, 0, 1) < accept_prob
             }
-            if(accept) copy_state(state_propose, state_propose_final)
-
+            if(accept)   copy_state(state_propose, state_propose_final)
+            ##
             rho_subtree <- final_branch$rho + init_branch$rho
             branch$rho <- branch$rho + rho_subtree
-
-            persist_criterion <- decide_persist(branch$p_beg, branch$p_end,
-                                                init_branch$p_end,final_branch$p_beg,
-                                                rho_subtree, final_branch$rho, init_branch$rho )
-
-            ## For the case of diagonal M, the "sharp" variables in Stan are simply
-            ## element-wise division by diag(M), e.g.:
+            ##
+            persist_criterion <- decide_persist(branch$p_beg, branch$p_end, init_branch$p_end,final_branch$p_beg, rho_subtree, final_branch$rho, init_branch$rho)
+            ## For the case of diagonal M, the "sharp" variables in Stan are simply element-wise division by diag(M), e.g.:
             ## p_sharp_beg <- branch$p_beg / M
-            ## p_sharp_end   <- branch$p_end / M
+            ## p_sharp_end <- branch$p_end / M
             ## but these are now in the decide_persist function
-
-            return(persist_criterion)
             returnType(logical())
+            return(persist_criterion)
         },
-        decide_persist = function(p_b = double(1), p_e = double(1),
-                                  p_b2 = double(1), p_e2 = double(1),
-                                  rho = double(1), rho_1 = double(1), rho_2 = double(1)
-                                  ) {
+        decide_persist = function(p_b = double(1), p_e = double(1), p_b2 = double(1), p_e2 = double(1), rho = double(1), rho_1 = double(1), rho_2 = double(1)) {
             p_b_overM <- p_b / M
             p_e_overM <- p_e / M
             persist_criterion <- compute_criterion(p_b_overM, p_e_overM, rho)
@@ -859,30 +849,26 @@ sampler_NUTS <- nimbleFunction(
                 p_b2_overM <- p_b2 / M
                 persist_criterion <- compute_criterion(p_b2_overM, p_e_overM, rho_alt)
             }
-            return(persist_criterion)
             returnType(logical())
+            return(persist_criterion)
         },
         compute_criterion = function(poverM1 = double(1), poverM2 = double(1), rho = double(1)) {
             ans <- (inprod(poverM2, rho) > 0) & (inprod(poverM1, rho) > 0)
-            return(ans)
             returnType(logical())
+            return(ans)
         },
         initEpsilon = function() {
             initValues <- values(model, calcNodes)
-
             state_init <- stateNL$new()
             copy_state(state_init, state_current)
-
             drawMomentumValues(state_current)    ## draws values for p
             update_state_calcs(state_current)
             H0 <- state_current$H
             leapfrog(state_current, epsilon)
             newH <- state_current$H
-            if(is.nan(newH)) newH <- Inf
+            if(is.nan(newH))   newH <- Inf
             deltaH <- H0 - newH
-
-            direction <- 2*nimStep(deltaH > log(0.8)) - 1 # 1 or -1
-
+            direction <- 2*nimStep(deltaH > log(0.8)) - 1    ## 1 or -1
             done <- FALSE
             while(!done) {
                 copy_state(state_current, state_init)
@@ -891,20 +877,19 @@ sampler_NUTS <- nimbleFunction(
                 H0 <- state_current$H
                 leapfrog(state_current, epsilon)
                 newH <- state_current$H
-                if(is.nan(newH)) newH <- Inf
+                if(is.nan(newH))   newH <- Inf
                 deltaH <- H0 - newH
-
-                if((direction==1) & !(deltaH > log(0.8))) done <- TRUE
+                if((direction == 1) & !(deltaH > log(0.8)))   done <- TRUE
                 else {
-                    if((direction==-1) & !(deltaH < log(0.8))) done <- TRUE
+                    if((direction == -1) & !(deltaH < log(0.8)))   done <- TRUE
                     else {
-                        if(direction==1) epsilon <<- 2*epsilon
-                        else epsilon <<- 0.5 * epsilon
+                        if(direction == 1) epsilon <<- epsilon * 2
+                        else               epsilon <<- epsilon / 2
                     }
                 }
                 if(!done) {
                     if(epsilon > 1e7) stop("Search for initial stepsize in HMC exploded. Something is wrong.")
-                    if(epsilon == 0) stop("Search for initial stepsize in HMC shrank to 0. Something is wrong.")
+                    if(epsilon == 0)  stop("Search for initial stepsize in HMC shrank to 0. Something is wrong.")
                 }
             }
             copy_state(state_current, state_init)
