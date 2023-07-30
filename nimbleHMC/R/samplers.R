@@ -518,7 +518,7 @@ sampler_HMC <- nimbleFunction(
 #' @export
 sampler_NUTS <- nimbleFunction(
     name = 'sampler_NUTS',
-    contains = nimble::sampler_BASE,
+    contains = sampler_BASE,
     setup = function(model, mvSaved, target, control) {
         ## control list extraction
         printTimesRan  <- extractControlElement(control, 'printTimesRan',  FALSE)
@@ -527,9 +527,7 @@ sampler_NUTS <- nimbleFunction(
         printM         <- extractControlElement(control, 'printM',         FALSE)
         messages       <- extractControlElement(control, 'messages',       getNimbleOption('verbose'))
         numWarnings    <- extractControlElement(control, 'numWarnings',    0)
-        #    initialEpsilon <- extractControlElement(control, 'initialEpsilon', 0)
-        epsilon        <- extractControlElement(control, 'epsilon',        0) # initial epsilon, if 0 then use 1
-        origEpsilon <- epsilon # record for later
+        epsilon        <- extractControlElement(control, 'epsilon',        0)          # initial epsilon, if 0 then use 1
         initializeEpsilon <- extractControlElement(control, 'initializeEpsilon', TRUE) # use initializeEpsilon step?
         gamma          <- extractControlElement(control, 'gamma',          0.05)
         t0             <- extractControlElement(control, 't0',             10)
@@ -542,7 +540,7 @@ sampler_NUTS <- nimbleFunction(
         adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)
         initBuffer     <- extractControlElement(control, 'initBuffer',     75)
         termBuffer     <- extractControlElement(control, 'termBuffer',     50)
-        adapt          <- extractControlElement(control, 'adapt',          TRUE) # any adaptation? (if FALSE, next two flags are ignored)
+        adaptive       <- extractControlElement(control, 'adaptive',       TRUE) # any adaptation? (if FALSE, next two flags are ignored)
         adaptEpsilon   <- extractControlElement(control, 'adaptEpsilon',   TRUE) # stepsize adaptation?
         adaptM         <- extractControlElement(control, 'adaptM',         TRUE) # mass matrix adaptation?
         ## node list generation
@@ -565,70 +563,64 @@ sampler_NUTS <- nimbleFunction(
         nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
-        timesRan <- 0
-        stepsizeCounter <- 0
-        epsilon <- 0
-        mu <- 0
-        logEpsilonBar <- 0
-        Hbar <- 0
-        log2 <- log(2)
-        warningCodes <- array(0, c(max(numWarnings,1), 2))
-        warningInd <- 0
+        epsilonOrig <- epsilon
         nwarmupOrig <- nwarmup
-        # The adapt_* variables are initialized in before_chain()
-        adaptWindow_size <- 0
-        adapt_initBuffer <- 0
-        adapt_termBuffer <- 0
-        adapt_next_window <- 0
+        timesRan            <- 0
+        stepsizeCounter     <- 0
+        mu                  <- 0
+        logEpsilonBar       <- 0
+        Hbar                <- 0
+        n_leapfrog          <- 0
+        sum_metropolis_prob <- 0
+        warmupSamples       <- array(0, c(2,d2))     ## 2xd array
+        divergent           <- FALSE
+        log2                <- log(2)
+        ## adapt_* variables are initialized in before_chain method
+        adaptWindow_size    <- 0
+        adapt_initBuffer    <- 0
+        adapt_termBuffer    <- 0
+        adapt_next_window   <- 0
         adaptWindow_counter <- 0
-        adaptWindow_iter <- 0
-        warmupSamples <- array(0, c(2,d2))           ## 2xd array
+        adaptWindow_iter    <- 0
         if(length(M) == 1) { if(M == -1) M <- rep(1, d2) else M <- c(M, 1) }
         Morig <- M
         sqrtM <- sqrt(M)
-        numDivergences <- 0
+        warningInd   <- 0
+        warningCodes <- array(0, c(max(numWarnings,1), 2))
+        numDivergences       <- 0
         numTimesMaxTreeDepth <- 0
         ## nimbleList class for reference input to buildtree
-        treebranchNL <- nimbleList(p_beg = double(1), p_end = double(1),
-                                   rho = double(1), log_sum_wt = double())
-        ## nimbleList class for the state of the system including
-        ## position (q), momentum (p), Hamiltonian (H), logProb of calcNodes (logProb),
-        ## and gradient of logProb of calcNodes (gr_logProb)
-        stateNL <- nimbleList(q = double(1), p = double(1),
-                              H = double(), logProb = double(),
-                              gr_logProb = double(1))
+        treebranchNL <- nimbleList(p_beg = double(1), p_end = double(1), rho = double(1), log_sum_wt = double())
+        ## nimbleList class for the state of the system including:
+        ## position (q), momentum (p), Hamiltonian (H), logProb of calcNodes (logProb), gradient of logProb of calcNodes (gr_logProb)
+        stateNL <- nimbleList(q = double(1), p = double(1), H = double(), logProb = double(), gr_logProb = double(1))
         state_current <- stateNL$new()
-        state_f <- stateNL$new()
-        state_b <- stateNL$new()
-        state_sample <- stateNL$new()
+        state_f       <- stateNL$new()
+        state_b       <- stateNL$new()
+        state_sample  <- stateNL$new()
         state_propose <- stateNL$new()
-
-        n_leapfrog <- 0
-        sum_metropolis_prob <- 0
-        divergent <- FALSE
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
-        if(initialEpsilon < 0) stop('HMC sampler initialEpsilon must be positive', call. = FALSE)
+        if(epsilon < 0) stop('HMC sampler epsilon must be positive', call. = FALSE)
         if(!all(M > 0)) stop('HMC sampler M must contain all positive elements', call. = FALSE)
         if(d == 1) if(length(M) != 2) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
         if(d  > 1) if(length(M) != d) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
-        if(maxTreeDepth < 1) stop('HMC maxTreeDepth must be at least one ', call. = FALSE)
+        if(maxTreeDepth < 1) stop('HMC maxTreeDepth must be at least one', call. = FALSE)
     },
     run = function() {
         ## No-U-Turn Sampler based on Stan
         state_current$q <<- my_parameterTransform$transform(values(model, targetNodes))
         if(timesRan == 0) {
             if(nwarmup == -1) stop('HMC nwarmup was not set correctly')
-            if(nwarmup < 20)
-                if(messages) print("  [Warning] nwarmup is so small (",nwarmup,") that it might be useless.")
-            state_current$p <<- numeric(d, init = FALSE)
+            if(nwarmup < 20) if(messages) print("  [Warning] HMC sampler nwarmup is so small (",nwarmup,") that it might be useless.")
+            state_current$p          <<- numeric(d, init = FALSE)
             state_current$gr_logProb <<- numeric(d, init = FALSE)
             M <<- M[1:d]
             sqrtM <<- sqrtM[1:d]
             if(epsilon <= 0) epsilon <<- 1
-            mu <<- log(10*epsilon) # Curiously, Stan sets this for the first round BEFORE init_stepsize.
-            if(initializeEpsilon) doInitializeEpsilon()  ## no initialEpsilon value was provided
+            mu <<- log(10*epsilon)    ## curiously, Stan sets this for the first round *before* init_stepsize
+            if(initializeEpsilon)   initEpsilon()
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -640,14 +632,14 @@ sampler_NUTS <- nimbleFunction(
         copy_state(state_b, state_current)
         copy_state(state_sample, state_current)
         copy_state(state_propose, state_current)
-
+        ##
         p_ff <- state_current$p
         p_fb <- state_current$p
         p_bf <- state_current$p
         p_bb <- state_current$p
-
+        ##
         rho <- state_current$p
-
+        ##
         log_sum_wt <- 0
         H0 <- state_current$H
         depth <- 0
@@ -669,7 +661,7 @@ sampler_NUTS <- nimbleFunction(
                 copy_state(state_current, state_f)
                 rho_b <- rho
                 p_bf <- p_ff
-
+                ##
                 branch$p_beg <- p_fb
                 branch$p_end <- p_ff
                 branch$rho <- rho_f
@@ -695,7 +687,7 @@ sampler_NUTS <- nimbleFunction(
                 p_bf <- branch$p_beg
                 copy_state(state_b, state_current)
             }
-            if(!valid_subtree) done <- TRUE
+            if(!valid_subtree)   done <- TRUE
             if(!done) {
                 depth <- depth + 1
                 accept <- FALSE
@@ -703,31 +695,28 @@ sampler_NUTS <- nimbleFunction(
                 if(log_accept_prob > 0) {
                     accept <- TRUE
                 } else {
-                    if(runif(1,0,1) < exp(log_accept_prob)) accept <- TRUE
+                    if(runif(1,0,1) < exp(log_accept_prob))   accept <- TRUE
                 }
-                if(accept) copy_state(state_sample, state_propose)
+                if(accept)   copy_state(state_sample, state_propose)
                 log_sum_wt <- log_sum_exp(log_sum_wt, log_sum_wt_subtree)
                 rho <- rho_b + rho_f
-
-                persist_criterion <- decide_persist(p_bb, p_ff,
-                                                    p_bf, p_fb,
-                                                    rho, rho_f, rho_b)
-                if(!persist_criterion) done <- TRUE
+                ##
+                persist_criterion <- decide_persist(p_bb, p_ff, p_bf, p_fb, rho, rho_f, rho_b)
+                if(!persist_criterion)   done <- TRUE
             }
         }
-
+        ##
         accept_prob <- sum_metropolis_prob / n_leapfrog
-        copy_state(state_current, state_sample) # extraneous copy? could remove?
-
+        copy_state(state_current, state_sample)        ## extraneous copy? could remove?
+        ##
         inverseTransformStoreCalculate(state_sample$q)
         nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
-        if((timesRan <= nwarmup) && adapt)  {
-            if(adaptEpsilon)
-                adapt_stepsize(accept_prob)
+        if((timesRan <= nwarmup) && adapt) {
+            if(adaptEpsilon)   adapt_stepsize(accept_prob)
             update <- FALSE
             if(adaptM) update <- adapt_M()
             if(update & adaptEpsilon) {
-                if(initializeEpsilon) doInitionalizeEpsilon()
+                if(initializeEpsilon) initEpsilon()
                 Hbar <<- 0
                 logEpsilonBar <<- 0
                 stepsizeCounter <<- 0
@@ -878,7 +867,7 @@ sampler_NUTS <- nimbleFunction(
             return(ans)
             returnType(logical())
         },
-        doInitionalizeEpsilon = function() {
+        initEpsilon = function() {
             initValues <- values(model, calcNodes)
 
             state_init <- stateNL$new()
@@ -982,12 +971,7 @@ sampler_NUTS <- nimbleFunction(
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
-            if(MCMCchain == 1) {
-                if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
-                #  if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations.'); stop() }
-                #  if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ').')
-                #  if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ').')
-            }
+            if(MCMCchain == 1)  if(messages)   print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
             ## https://colcarroll.github.io/hmc_tuning_talk/
@@ -1026,7 +1010,7 @@ sampler_NUTS <- nimbleFunction(
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
                     if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
-                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in doInitionalizeEpsilon routine.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon.')
                     if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
                 }
                 warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
@@ -1034,7 +1018,7 @@ sampler_NUTS <- nimbleFunction(
         },
         reset = function() {
             timesRan       <<- 0
-            epsilon        <<- origEpsilon
+            epsilon        <<- epsilonOrig
             mu             <<- 0
             logEpsilonBar  <<- 0
             Hbar           <<- 0
@@ -1045,13 +1029,13 @@ sampler_NUTS <- nimbleFunction(
             M              <<- Morig
             sqrtM          <<- sqrt(M)
             # The adapt_* variables are initialized in before_chain()
-            adaptWindow_size <<- 0
-            adapt_initBuffer <<- 0
-            adapt_termBuffer <<- 0
-            adapt_next_window <<- 0
+            adaptWindow_size    <<- 0
+            adapt_initBuffer    <<- 0
+            adapt_termBuffer    <<- 0
+            adapt_next_window   <<- 0
             adaptWindow_counter <<- 0
-            adaptWindow_iter <<- 0
-            stepsizeCounter <<- 0
+            adaptWindow_iter    <<- 0
+            stepsizeCounter     <<- 0
         }
     ),
     buildDerivs = list(
