@@ -193,8 +193,8 @@ sampler_langevin <- nimbleFunction(
 #' @references
 #'
 #' Hoffman, Matthew D., and Gelman, Andrew (2014). The No-U-Turn Sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. \emph{Journal of Machine Learning Research}, 15(1): 1593-1623.
-sampler_HMC <- nimbleFunction(
-    name = 'sampler_HMC',
+sampler_NUTS_classic <- nimbleFunction(
+    name = 'sampler_NUTS_classic',
     contains = sampler_BASE,
     setup = function(model, mvSaved, target, control) {
         ## control list extraction
