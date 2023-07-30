@@ -907,7 +907,7 @@ sampler_NUTS <- nimbleFunction(
                     if((direction == -1) & !(deltaH < log(0.8)))   done <- TRUE
                     else {
                         if(direction == 1) epsilon <<- epsilon * 2
-                        else               epsilon <<- epsilon / 2
+                        else               epsilon <<- epsilon * 0.5
                     }
                 }
                 if(!done) {
