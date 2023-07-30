@@ -632,7 +632,6 @@ sampler_NUTS <- nimbleFunction(
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
-        if(initialEpsilon < 0) stop('HMC sampler initialEpsilon must be positive', call. = FALSE)
         if(!all(M > 0)) stop('HMC sampler M must contain all positive elements', call. = FALSE)
         if(d == 1) if(length(M) != 2) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
         if(d  > 1) if(length(M) != d) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
@@ -651,7 +650,7 @@ sampler_NUTS <- nimbleFunction(
             sqrtM <<- sqrtM[1:d]
             if(epsilon <= 0) epsilon <<- 1
             mu <<- log(10*epsilon) # Curiously, Stan sets this for the first round BEFORE init_stepsize.
-            if(initializeEpsilon) doInitializeEpsilon()  ## no initialEpsilon value was provided
+            if(initializeEpsilon) initEpsilon()  ## no initialEpsilon value was provided
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -744,13 +743,13 @@ sampler_NUTS <- nimbleFunction(
 
         inverseTransformStoreCalculate(state_sample$q)
         nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
-        if((timesRan <= nwarmup) && adapt)  {
+        if((timesRan <= nwarmup) & adapt)  {
             if(adaptEpsilon)
                 adapt_stepsize(accept_prob)
             update <- FALSE
             if(adaptM) update <- adapt_M()
             if(update & adaptEpsilon) {
-                if(initializeEpsilon) doInitionalizeEpsilon()
+                if(initializeEpsilon) initEpsilon()
                 Hbar <<- 0
                 logEpsilonBar <<- 0
                 stepsizeCounter <<- 0
@@ -901,7 +900,7 @@ sampler_NUTS <- nimbleFunction(
             return(ans)
             returnType(logical())
         },
-        doInitionalizeEpsilon = function() {
+        initEpsilon = function() {
             initValues <- values(model, calcNodes)
 
             state_init <- stateNL$new()
@@ -1019,7 +1018,7 @@ sampler_NUTS <- nimbleFunction(
                 if(messages) print('  [Warning] nwarmup is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
                 adapt_initBuffer <<- round(nwarmup * 0.15)
                 adapt_termBuffer <<- round(nwarmup * 0.10)
-                adaptWindow_size <- nwarmup - adapt_initBuffer - adapt_termBuffer
+                adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer
             } else {
                 adaptWindow_size <<- adaptWindow
                 adapt_initBuffer <<- initBuffer
@@ -1049,7 +1048,7 @@ sampler_NUTS <- nimbleFunction(
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
                     if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
-                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in doInitionalizeEpsilon routine.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon routine.')
                     if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
                 }
                 warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
