@@ -734,7 +734,7 @@ sampler_NUTS <- nimbleFunction(
         ##
         inverseTransformStoreCalculate(state_sample$q)
         nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
-        if((timesRan <= nwarmup) && adapt) {
+        if((timesRan <= nwarmup) & adapt) {
             if(adaptEpsilon)   adapt_stepsize(accept_prob)
             update <- FALSE
             if(adaptM)   update <- adapt_M()
@@ -988,7 +988,7 @@ sampler_NUTS <- nimbleFunction(
                 if(messages) print('  [Warning] nwarmup is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
                 adapt_initBuffer <<- round(nwarmup * 0.15)
                 adapt_termBuffer <<- round(nwarmup * 0.10)
-                adaptWindow_size <- nwarmup - adapt_initBuffer - adapt_termBuffer
+                adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer
             } else {
                 adaptWindow_size <<- adaptWindow
                 adapt_initBuffer <<- initBuffer
@@ -1018,7 +1018,7 @@ sampler_NUTS <- nimbleFunction(
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
                     if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
-                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon routine.')
                     if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
                 }
                 warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
