@@ -193,8 +193,8 @@ sampler_langevin <- nimbleFunction(
 #' @references
 #'
 #' Hoffman, Matthew D., and Gelman, Andrew (2014). The No-U-Turn Sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. \emph{Journal of Machine Learning Research}, 15(1): 1593-1623.
-sampler_HMC <- nimbleFunction(
-    name = 'sampler_HMC',
+sampler_NUTS_classic <- nimbleFunction(
+    name = 'sampler_NUTS_classic',
     contains = sampler_BASE,
     setup = function(model, mvSaved, target, control) {
         ## control list extraction
@@ -213,6 +213,9 @@ sampler_HMC <- nimbleFunction(
         M              <- extractControlElement(control, 'M',              -1)
         nwarmup        <- extractControlElement(control, 'nwarmup',        -1)
         maxTreeDepth   <- extractControlElement(control, 'maxTreeDepth',   10)
+        adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)
+        initBuffer     <- extractControlElement(control, 'initBuffer',     75)
+        termBuffer     <- extractControlElement(control, 'termBuffer',     50)
         ## node list generation
         targetNodes <- model$expandNodeNames(target)
         if(length(targetNodes) <= 0) stop('HMC sampler must operate on at least one node', call. = FALSE)
@@ -239,10 +242,11 @@ sampler_HMC <- nimbleFunction(
         warningCodes <- array(0, c(max(numWarnings,1), 2))
         warningInd <- 0
         nwarmupOrig <- nwarmup
-        warmupIntervalLengths <- rep(0,7)            ## length 7 vector
-        warmupIntervalsAdaptM <- rep(0,7)            ## length 7 vector
+        warmupIntervalLengths <- rep(0,2)
+        warmupIntervalsAdaptM <- rep(0,2)
         warmupIntervalNumber <- 0
         warmupIntervalCount <- 0
+        epsilonAdaptCount <- 0
         warmupSamples <- array(0, c(2,d2))           ## 2xd array
         if(length(M) == 1) { if(M == -1) M <- rep(1, d2) else M <- c(M, 1) }
         Morig <- M
@@ -387,15 +391,16 @@ sampler_HMC <- nimbleFunction(
         adaptiveProcedure = function(a = double(), na = double()) {
             ## adapt epsilon:
             ## this is the "Dual Averaging" part of Algorithm 6 from Hoffman and Gelman (2014)
-            Hbar <<- (1 - 1/(timesRan+t0)) * Hbar + 1/(timesRan+t0) * (delta - a/na)
-            logEpsilon <- mu - sqrt(timesRan)/gamma * Hbar
+            epsilonAdaptCount <<- epsilonAdaptCount + 1
+            Hbar <<- (1 - 1/(epsilonAdaptCount+t0)) * Hbar + 1/(epsilonAdaptCount+t0) * (delta - a/na)
+            logEpsilon <- mu - sqrt(epsilonAdaptCount)/gamma * Hbar
             epsilon <<- exp(logEpsilon)
-            timesRanToNegativeKappa <- timesRan^(-kappa)
+            timesRanToNegativeKappa <- epsilonAdaptCount^(-kappa)
             logEpsilonBar <<- timesRanToNegativeKappa * logEpsilon + (1 - timesRanToNegativeKappa) * logEpsilonBar
             if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
             if(warningInd < numWarnings) if(is.nan(epsilon)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 3; warningCodes[warningInd,2] <<- timesRan } ## message code 3: print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan)
             ## adapt M:
-            if(warmupIntervalNumber < 8) {
+            if(warmupIntervalNumber <= length(warmupIntervalLengths)) {
                 warmupIntervalCount <<- warmupIntervalCount + 1
                 if(warmupIntervalCount > warmupIntervalLengths[warmupIntervalNumber]) stop('something went wrong in HMC warmup book-keeping')
                 if(warmupIntervalsAdaptM[warmupIntervalNumber] == 1)   warmupSamples[warmupIntervalCount, 1:d] <<- qNew
@@ -417,6 +422,9 @@ sampler_HMC <- nimbleFunction(
                         ##warmupCovRegularized <- (warmupIntervalCount/(warmupIntervalCount+5))*warmupSamplesCov + 0.001*(5/(warmupIntervalCount+5))*diag(d)
                         ##for(i in 1:d)   M[i] <<- 1 / warmupCovRegularized[i,i]
                         sqrtM <<- sqrt(M)
+                        initializeEpsilon()
+                        epsilonAdaptCount <<- 0
+                        mu <<- log(10 * epsilon)
                     }
                     warmupIntervalCount <<- 0
                     warmupIntervalNumber <<- warmupIntervalNumber + 1
@@ -461,18 +469,33 @@ sampler_HMC <- nimbleFunction(
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(MCMCchain == 1) {
                 if(messages) print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
-                if(nwarmup <  80) { print('  [Error] HMC sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 80 warmup iterations.'); stop() }
-                if(nwarmup < 200) print('  [Warning] A minimum of 200 warmup iterations is recommended for HMC sampler (nodes: ', targetNodesToPrint, ').')
-                if(nwarmup > MCMCniter) print('  [Warning] Running fewer MCMC iterations than number of HMC warmup iterations (nodes: ', targetNodesToPrint, ').')
             }
-            ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
-            ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
-            ## https://colcarroll.github.io/hmc_tuning_talk/
-            warmupBaseInterval <- floor(nwarmup/40)                             ## stan: 25
-            if(warmupBaseInterval < 1)   stop('HMC warmupBaseInterval not set correctly')
-            warmupIntervalLengths <<- warmupBaseInterval * c(3, 1, 2, 4, 8, 20, 2)    ## stan: 75 | 25 | 50 | 100 | 200 | 500 | 50
-            warmupIntervalsAdaptM <<- c(0, 1, 1, 1, 1, 1, 0)
-            setSize(warmupSamples, 20*warmupBaseInterval, d)
+            ## need to deal with exceptions such as nwarmup < 100
+            warmupIntervalLengths <<- numeric(length = 1, value = initBuffer)
+            endIntervals <- initBuffer     ## iteration marking the end of intervals planned so far
+            warmupIntervalsAdaptM <<- numeric(length = 1, value = 0)
+            nextIntervalLength <- 25
+            done <- FALSE
+            while(!done) {
+                warmupIntervalLengths <<- c(warmupIntervalLengths, nextIntervalLength)
+                warmupIntervalsAdaptM <<- c(warmupIntervalsAdaptM, 1)
+                endIntervals <- endIntervals + nextIntervalLength
+                remainingIterations <- nwarmup - (endIntervals + termBuffer)
+                if(remainingIterations == 0) {
+                    done <- TRUE
+                } else {
+                    ## look ahead two iterations into the future
+                    nextIntervalLength <- 2*nextIntervalLength
+                    nextRemainingIterations <- remainingIterations - nextIntervalLength
+                    nextnextIntervalLength <- 2*nextIntervalLength
+                    if(nextRemainingIterations < nextnextIntervalLength) {
+                        nextIntervalLength <- nextIntervalLength + nextRemainingIterations
+                    }
+                }
+            }
+            warmupIntervalLengths <<- c(warmupIntervalLengths, termBuffer)
+            warmupIntervalsAdaptM <<- c(warmupIntervalsAdaptM, 0)
+            setSize(warmupSamples, max(warmupIntervalLengths), d, fillZeros = FALSE)
         },
         after_chain = function() {
             if(messages) {
