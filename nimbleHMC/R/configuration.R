@@ -57,15 +57,16 @@
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE, print = TRUE) {
-    if(identical(nodes, character()))  return()
-    nodesExpanded <- conf$model$expandNodeNames(nodes)
-    if(length(nodesExpanded)) {
-        discreteNodes <- nodesExpanded[conf$model$isDiscrete(nodesExpanded)]
+addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), replace = FALSE, print = TRUE, ...) {
+    if(identical(target, character()))  return()
+    targetExpanded <- conf$model$expandNodeNames(target)
+    if(length(targetExpanded)) {
+        discreteNodes <- targetExpanded[conf$model$isDiscrete(targetExpanded)]
         if(length(discreteNodes))   stop(paste0('HMC sampler cannot be applied to discrete nodes: ', paste0(discreteNodes, collapse = ', ')), call. = FALSE)
     }
-    if(replace)   conf$removeSamplers(nodes)
-    conf$addSampler(target = nodes, type = 'HMC', control = control, print = print)
+    if(replace)   conf$removeSamplers(target)
+    control <- c(control, list(...))
+    conf$addSampler(target = target, type = type, control = control, print = print)
     return(invisible(conf))
 }
 
@@ -123,7 +124,7 @@ addHMC <- function(conf, nodes = character(), control = list(), replace = FALSE,
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-configureHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {
+configureHMC <- function(model, nodes = character(), type, control, print = TRUE, ...) {
     nodesProvided <- !identical(nodes, character())
     if(nodesProvided) {
         nodes <- model$expandNodeNames(nodes, returnScalarComponents = TRUE)
@@ -137,7 +138,7 @@ configureHMC <- function(model, nodes = character(), control = list(), print = T
         postPredNodes  <- nodeLists$postPred
     }
     conf <- configureMCMC(model, nodes = NULL, print = FALSE, ...)
-    addHMC(conf = conf, nodes = stochContNodes, control = control, print = FALSE)
+    addHMC(conf = conf, nodes = stochContNodes, type = type, control = control, print = FALSE)
     conf$addSampler(target = stochDiscNodes, control = control, print = FALSE, default = TRUE)
     if(!nodesProvided)   conf$addSampler(target = postPredNodes, control = control, print = FALSE, default = TRUE)
     if(print)   conf$show()
@@ -191,8 +192,8 @@ configureHMC <- function(model, nodes = character(), control = list(), print = T
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-buildHMC <- function(model, nodes = character(), control = list(), print = TRUE, ...) {
-    conf <- configureHMC(model = model, nodes = nodes, control = control, print = print, ...)
+buildHMC <- function(model, nodes, type, control, print, ...) {
+    conf <- configureHMC(model = model, nodes = nodes, type = type, control = control, print = print, ...)
     return(buildMCMC(conf))
 }
 
@@ -290,6 +291,7 @@ nimbleHMC <- function(code,
                       inits,
                       dimensions = list(),
                       model,
+                      type,
                       monitors,
                       thin = 1,
                       niter = 10000,
@@ -306,7 +308,7 @@ nimbleHMC <- function(code,
     if(!samples && !summary && !WAIC) stop('no output specified, use samples = TRUE, summary = TRUE, or WAIC = TRUE')
     if(!missing(code) && inherits(code, 'modelBaseClass')) model <- code   ## let's handle it, if model object is provided as un-named first argument
     Rmodel <- mcmc_createModelObject(model, inits, nchains, setSeed, code, constants, data, dimensions, check, buildDerivs = TRUE)
-    Rmcmc <- buildHMC(Rmodel, monitors = monitors, thin = thin, enableWAIC = WAIC, print = FALSE)
+    Rmcmc <- buildHMC(Rmodel, type = type, monitors = monitors, thin = thin, enableWAIC = WAIC, print = FALSE)
     compiledList <- compileNimble(Rmodel, Rmcmc)    ## only one compileNimble() call
     Cmcmc <- compiledList$Rmcmc
     runMCMC(Cmcmc, niter = niter, nburnin = nburnin, nchains = nchains, inits = inits,

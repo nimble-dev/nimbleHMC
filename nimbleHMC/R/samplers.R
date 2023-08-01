@@ -734,7 +734,7 @@ sampler_NUTS <- nimbleFunction(
         ##
         inverseTransformStoreCalculate(state_sample$q)
         nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
-        if((timesRan <= nwarmup) & adapt) {
+        if((timesRan <= nwarmup) & adaptive) {
             if(adaptEpsilon)   adapt_stepsize(accept_prob)
             update <- FALSE
             if(adaptM)   update <- adapt_M()
