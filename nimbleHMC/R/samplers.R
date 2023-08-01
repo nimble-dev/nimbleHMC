@@ -538,6 +538,14 @@ sampler_NUTS_classic <- nimbleFunction(
     )
 )
 
+
+
+#' @export
+stateNL_NUTS <- nimbleList(q = double(1), p = double(1), H = double(), logProb = double(), gr_logProb = double(1))
+
+#' @export
+treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = double(1), log_sum_wt = double())
+
 #' @export
 sampler_NUTS <- nimbleFunction(
     name = 'sampler_NUTS',
@@ -612,11 +620,9 @@ sampler_NUTS <- nimbleFunction(
         warningCodes <- array(0, c(max(numWarnings,1), 2))
         numDivergences       <- 0
         numTimesMaxTreeDepth <- 0
-        ## nimbleList class for reference input to buildtree
-        treebranchNL <- nimbleList(p_beg = double(1), p_end = double(1), rho = double(1), log_sum_wt = double())
-        ## nimbleList class for the state of the system including:
-        ## position (q), momentum (p), Hamiltonian (H), logProb of calcNodes (logProb), gradient of logProb of calcNodes (gr_logProb)
-        stateNL <- nimbleList(q = double(1), p = double(1), H = double(), logProb = double(), gr_logProb = double(1))
+        ## nimbleLists
+        treebranchNL <- treebranchNL_NUTS   ## reference input to buildtree
+        stateNL <- stateNL_NUTS             ## system state (p, q, H, lp, gr_lp)
         state_current <- stateNL$new()
         state_f       <- stateNL$new()
         state_b       <- stateNL$new()
