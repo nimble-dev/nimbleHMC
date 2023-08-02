@@ -124,7 +124,7 @@ addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), 
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-configureHMC <- function(model, nodes = character(), type, control, print = TRUE, ...) {
+configureHMC <- function(model, nodes = character(), type = 'NUTS', control = list(), print = TRUE, ...) {
     nodesProvided <- !identical(nodes, character())
     if(nodesProvided) {
         nodes <- model$expandNodeNames(nodes, returnScalarComponents = TRUE)
@@ -138,7 +138,7 @@ configureHMC <- function(model, nodes = character(), type, control, print = TRUE
         postPredNodes  <- nodeLists$postPred
     }
     conf <- configureMCMC(model, nodes = NULL, print = FALSE, ...)
-    addHMC(conf = conf, nodes = stochContNodes, type = type, control = control, print = FALSE)
+    addHMC(conf = conf, target = stochContNodes, type = type, control = control, print = FALSE)
     conf$addSampler(target = stochDiscNodes, control = control, print = FALSE, default = TRUE)
     if(!nodesProvided)   conf$addSampler(target = postPredNodes, control = control, print = FALSE, default = TRUE)
     if(print)   conf$show()
@@ -192,7 +192,7 @@ configureHMC <- function(model, nodes = character(), type, control, print = TRUE
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-buildHMC <- function(model, nodes, type, control, print, ...) {
+buildHMC <- function(model, nodes = character(), type = 'NUTS', control = list(), print = TRUE, ...) {
     conf <- configureHMC(model = model, nodes = nodes, type = type, control = control, print = print, ...)
     return(buildMCMC(conf))
 }
