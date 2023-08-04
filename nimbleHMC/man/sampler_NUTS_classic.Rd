@@ -4,7 +4,7 @@
 \alias{sampler_NUTS_classic}
 \alias{HMC}
 \alias{hmc}
-\title{Hamiltonian Monte Carlo (HMC) Sampler}
+\title{Classic No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) Sampler}
 \usage{
 sampler_NUTS_classic(model, mvSaved, target, control)
 }
@@ -21,7 +21,7 @@ sampler_NUTS_classic(model, mvSaved, target, control)
 A object of class `sampler_HMC`.
 }
 \description{
-The HMC sampler implements the No-U-Turn algorithm (NUTS; Hoffman and Gelman, 2014) for performing joint updates of multiple continuous-valued posterior dimensions.  This is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
+The NUTS_classic sampler implements the original No-U-Turn (NUTS classic) HMC sampling as put forth in Hoffman and Gelman (2014) for performing joint updates of multiple continuous-valued posterior dimensions.  This is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
 }
 \details{
 The HMC sampler accepts the following control list elements:
@@ -29,8 +29,8 @@ The HMC sampler accepts the following control list elements:
 \itemize{
 \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
 \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered).  See additional details below.  (default = 0)
-\item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 \item initialEpsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+\item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
 \item kappa.  A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
 \item delta.  A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.65)
@@ -38,6 +38,9 @@ The HMC sampler accepts the following control list elements:
 \item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled by HMC sampler.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in HMC sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
 \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
 \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
+\item adaptWindow.  (default = 25)
+\item initBuffer.  (default = 75)
+\item termBuffer.  (default = 50)
 }
 
 NaN vales may be encountered in the course of the HMC leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
