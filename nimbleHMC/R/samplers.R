@@ -468,7 +468,6 @@ sampler_NUTS_classic <- nimbleFunction(
             }
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
-            browser()
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(MCMCchain == 1) {
                 if(messages) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
