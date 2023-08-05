@@ -2,9 +2,11 @@
 % Please edit documentation in R/samplers.R
 \name{sampler_NUTS_classic}
 \alias{sampler_NUTS_classic}
-\alias{HMC}
-\alias{hmc}
-\title{Classic No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) Sampler}
+\alias{NUTS-classic}
+\alias{NUTS_classic}
+\alias{nuts-classic}
+\alias{nuts_classic}
+\title{Classic No-U-Turn (NUTS_classic) Hamiltonian Monte Carlo (HMC) Sampler}
 \usage{
 sampler_NUTS_classic(model, mvSaved, target, control)
 }
@@ -18,13 +20,13 @@ sampler_NUTS_classic(model, mvSaved, target, control)
 \item{control}{A named list that controls the precise behavior of the sampler.  The default values for control list elements are specified in the setup code of the sampler.  A description of the possible control list elements appear in the details section.}
 }
 \value{
-A object of class `sampler_HMC`.
+A object of class `sampler_NUTS_classic`.
 }
 \description{
-The NUTS_classic sampler implements the original No-U-Turn (NUTS classic) HMC sampling as put forth in Hoffman and Gelman (2014) for performing joint updates of multiple continuous-valued posterior dimensions.  This is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
+The NUTS_classic sampler implements the original No-U-Turn (NUTS classic) sampling as put forth in Hoffman and Gelman (2014) for performing joint updates of multiple continuous-valued posterior dimensions.  This is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS_classic algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
 }
 \details{
-The HMC sampler accepts the following control list elements:
+The NUTS_classic sampler accepts the following control list elements:
 
 \itemize{
 \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
@@ -35,15 +37,14 @@ The HMC sampler accepts the following control list elements:
 \item kappa.  A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
 \item delta.  A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.65)
 \item deltaMax.  A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
-\item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled by HMC sampler.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in HMC sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
+\item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
 \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
 \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
-\item adaptWindow.  (default = 25)
-\item initBuffer.  (default = 75)
-\item termBuffer.  (default = 50)
+\item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
+\item termBuffer.  Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
 }
 
-NaN vales may be encountered in the course of the HMC leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
+NaN vales may be encountered in the course of the leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
 }
 \examples{
 nimbleOptions(enableDerivs = TRUE)
@@ -67,7 +68,7 @@ Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 
 conf <- configureMCMC(Rmodel, nodes = NULL)
 
-conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'HMC')
+conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'NUTS_classic')
 
 Rmcmc <- buildMCMC(conf)
 

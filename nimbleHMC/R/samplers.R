@@ -542,17 +542,91 @@ sampler_NUTS_classic <- nimbleFunction(
 
 
 
+#' nimbleList definition used internally in NUTS sampler.
 #' @export
-#' @description
-#' Used internally in NUTS sampler and not expected to be called directly.
 stateNL_NUTS <- nimbleList(q = double(1), p = double(1), H = double(), logProb = double(), gr_logProb = double(1))
 
+#' nimbleList definition used internally in NUTS sampler.
 #' @export
-#' @description
-#' Used internally in NUTS sampler and not expected to be called directly.
 treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = double(1), log_sum_wt = double())
 
+#' No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) Sampler
+#'
+#' The NUTS sampler implements No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) sampling following the algorithm of version 2.32.2 of Stan.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
+#'
+#' @param model An uncompiled nimble model object on which the MCMC will operate.
+#' @param mvSaved A nimble \code{modelValues} object to be used to store MCMC samples.
+#' @param target A character vector of node names on which the sampler will operate.
+#' @param control A named list that controls the precise behavior of the sampler.  The default values for control list elements are specified in the setup code of the sampler.  A description of the possible control list elements appear in the details section.
+#'
+#' @details
+#'
+#' The NUTS sampler accepts the following control list elements:
+#' 
+#' \itemize{
+#' \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
+#' \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered).  See additional details below.  (default = 0)
+#' \item epsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+#' \item initializeEpsilon.  A logical argument, specifying whether to perform the epsilon (stepsize) initialization routine at the onset of each adapatation window. (default = TRUE)
+#' \item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
+#' \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
+#' \item kappa.  A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
+#' \item delta.  A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.8)
+#' \item deltaMax.  A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
+#' \item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
+#' \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
+#' \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
+#' \item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
+#' \item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
+#' \item termBuffer.  Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
+#' \item adaptive.  A logical argument, specifying whether to do any adaptation whatsoever.  When TRUE, specific adapatation routines are controled by the adaptEpsilon and adaptM control list elements.  (default = TRUE)
+#' \item adaptEpsilon.  A logical argument, specifying whether to perform stepsize adaptation.  Only used when adaptive = TRUE.  (default = TRUE)
+#' \item adaptM.  A logical argument, specifying whether to perform adaptation of the mass matrix (metric) M.  Only used when adaptive = TRUE.  (default = TRUE)
+#' }
+#'
+#' NaN vales may be encountered in the course of the leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
+#' 
+#' @import nimble
+#' 
 #' @export
+#'
+#' @return A object of class `sampler_NUTS`.
+#' 
+#' @aliases NUTS HMC nuts hmc
+#' 
+#' @author Perry de Valpine and Daniel Turek
+#' 
+#' @examples
+#' nimbleOptions(enableDerivs = TRUE)
+#' 
+#' code <- nimbleCode({
+#'     b0 ~ dnorm(0, 0.001)
+#'     b1 ~ dnorm(0, 0.001)
+#'     sigma ~ dunif(0, 10000)
+#'     for(i in 1:N) {
+#'         mu[i] <- b0 + b1 * x[i]
+#'         y[i] ~ dnorm(mu[i], sd = sigma)
+#'     }
+#' })
+#' 
+#' N <- 10
+#' constants <- list(N = N, x = 1:N)
+#' data <- list(y = 1:N)
+#' inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
+#' 
+#' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+#' 
+#' conf <- configureMCMC(Rmodel, nodes = NULL)
+#' 
+#' conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'NUTS')
+#' 
+#' Rmcmc <- buildMCMC(conf)
+#'
+#' @references
+#'
+#' Hoffman, Matthew D., and Gelman, Andrew (2014). The No-U-Turn Sampler: Adaptively setting path lengths in Hamiltonian Monte Carlo. \emph{Journal of Machine Learning Research}, 15(1): 1593-1623.
+#'
+#' Stan Development Team. 2023. Stan Modeling Language Users Guide and Reference Manual, 2.32.2. https://mc-stan.org.
 sampler_NUTS <- nimbleFunction(
     name = 'sampler_NUTS',
     contains = sampler_BASE,
