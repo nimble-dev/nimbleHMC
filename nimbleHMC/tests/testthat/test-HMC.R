@@ -407,6 +407,7 @@ test_that('error trap discrete latent nodes', {
     expect_error(addHMC(conf, target = 'z'), 'HMC sampler cannot be applied')
     expect_error(addHMC(conf, target = 'z2'), 'HMC sampler cannot be applied')
     expect_error(addHMC(conf, target = c('mu','z')), 'HMC sampler cannot be applied')
+    expect_error(addHMC(conf, target = 'mu', type = 'wrong'))
 })
 
 

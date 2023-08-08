@@ -3,7 +3,7 @@
 \docType{data}
 \name{treebranchNL_NUTS}
 \alias{treebranchNL_NUTS}
-\title{nimbleList definition used internally in NUTS sampler and not expected to be called directly.}
+\title{nimbleList definition used internally in NUTS sampler.}
 \format{
 An object of class \code{list} of length 1.
 }
@@ -11,6 +11,6 @@ An object of class \code{list} of length 1.
 treebranchNL_NUTS
 }
 \description{
-nimbleList definition used internally in NUTS sampler and not expected to be called directly.
+nimbleList definition used internally in NUTS sampler.
 }
 \keyword{datasets}

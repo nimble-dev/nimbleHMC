@@ -162,7 +162,7 @@ sampler_langevin <- nimbleFunction(
 #'
 #' @return A object of class `sampler_NUTS_classic`.
 #' 
-#' @aliases NUTS-classic NUTS_classic nuts-classic nuts_classic
+#' @aliases NUTS-classic NUTS_classic nuts-classic nuts_classic sampler_NUTS_classic
 #' 
 #' @author Daniel Turek
 #' 
@@ -592,7 +592,7 @@ treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = doub
 #'
 #' @return A object of class `sampler_NUTS`.
 #' 
-#' @aliases NUTS HMC nuts hmc
+#' @aliases NUTS nuts HMC hmc samspler_NUTS
 #' 
 #' @author Perry de Valpine and Daniel Turek
 #' 
