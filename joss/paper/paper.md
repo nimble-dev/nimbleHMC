@@ -24,7 +24,7 @@ affiliations:
    index: 1
  - name: University of California, USA
    index: 2
-date: 18 July 2023
+date: NEW DATE HERE (18 July 2023)
 bibliography: paper.bib
 output: pdf_document
 ---
@@ -44,39 +44,47 @@ distribution of model parameters conditional on observed data.
 MCMC is not a single algorithm, but actually a framework which admits any assignment of sampling
 techniques to unobserved parameters.
 There exists a vast set of valid samplers to draw upon,
-which differ in complexity, autocorrelation of the samples
-produced, and applicability.  Hamiltonian Monte Carlo [HMC; @brooks2011handbook] is one such
-sampling technique applicable to any subset of continuous-valued parameters.  HMC uses
-the gradients to generate large transitions in the output sequence of samples.  This results in low
-autocorrelation, and therefore the samples generated using HMC
-are more likely to be highly informative about the target
-distribution, relative for example to an equal-length sequence of highly
-autocorrelated samples.   This rich information content does not come
-freely, as calculating gradients is computationally expensive.
+which differ in complexity, autocorrelation of samples
+produced, and applicability.
+
+Hamiltonian Monte Carlo
+[HMC; @brooks2011handbook] sampling is one such technique, applicable
+to continuous-valued parameters, which uses
+the gradients to generate large transitions in parameter space.  The
+resulting samples have low
+autocorrelation, and therefore have high information content,
+relative for example to an equal-length sequence of highly
+autocorrelated samples.  The No-U-Turn (NUTS) variety of HMC sampling
+[HMC-NUTS; @hoffman2014no] greatly increases the usability of HMC by self-adapting key
+sampler tuning parameters upon which the overall performance is highly dependent.
 
 Many software packages offer implementations of MCMC, such as
 `nimble` [@de2017programming], `WinBUGS` [@lunn2000winbugs], `jags` [@plummer2003jags], `pyMC`
 [@fonnesbeck2015pymc], and `Stan` [@carpenter2017stan].
 These packages differ, however, in their approaches to sampler
-assignment to model parameters.  As sampling techniques vary in
-computational demands and quality of the samples, the
+assignments.  As sampling techniques vary in
+computation  and quality of the samples, the
 effectiveness of the MCMC algorithms will vary depending on the
-software and model; each software
-package provides distinct approach for sampler assignment.
+software and model.
 
-Among MCMC software packages, `nimble` uniquely allows specification
-of which samplers are used. Users may select any
+Among MCMC software packages, only `nimble` opens the hood of
+the sampler assignment process. Users may select any
 valid assignment of samplers to each parameter,
-selecting from among the suite of non-derivative-based samplers
+selecting from the suite of samplers
 provided with `nimble`.  These include
 random walk Metropolis-Hastings sampling [@robert1999metropolis],
 slice sampling [@neal2003slice], elliptical slice sampling
 [@murray2010elliptical], automated factor slice sampling [@tibbits2014automated],
-conjugate sampling [@george1993conjugate], and many others.  The `nimbleHMC` package provides an implementation of HMC sampling
+conjugate sampling [@george1993conjugate], and others.
+
+The `nimbleHMC` package provides two implementations of HMC-NUTS sampling
 for use within `nimble`.  Specifically, `nimbleHMC`
-implements the No-U-Turn variety of HMC [HMC-NUTS; @hoffman2014no].
-HMC samplers can be assigned to any set of
-continuous-valued parameters, and may be used in combination with other
+provides an implementation of the original ("classic") HMC-NUTS
+algorithm as developed in
+@hoffman2014no, and a more current version of
+HMC-NUTS sampling identical to that offered in version 2.32.2 of `Stan`
+[@stan2023stan].  The samplers provided in `nimbleHMC` can be assigned
+to any continuous-valued parameters, and may be used in combination with other
 samplers provided with `nimble`.
 
 
@@ -164,16 +172,15 @@ conf <- configureMCMC(Rmodel)
 ```
 
 Now we customize the MCMC configuration object to use HMC sampling for
-the model parameters.  
-`replaceSamplers` replaces current samplers operating on
-$\phi_1$, $\phi_2$ and $p$ instead with the `HMC` sampler provided in
- `nimbleHMC`.
+the model parameters.  `replaceSamplers` replaces the samplers operating on
+$\phi_1$, $\phi_2$ and $p$ with the state-of-the-art HMC-NUTS sampler (called
+the `NUTS` sampler) provided in `nimbleHMC`.
 
 ```
-conf$replaceSamplers(target = c("phi", "p"), type = "HMC")
+conf$replaceSamplers(target = c("phi", "p"), type = "NUTS")
 conf$printSamplers(byType = TRUE)
 
-## HMC sampler (1)
+## NUTS sampler (1)
 ##   - phi, p 
 ## binary sampler (848)
 ##   - x[]  (848 elements)
@@ -181,7 +188,7 @@ conf$printSamplers(byType = TRUE)
 
 Alternatively, the convenience function `configureHMC(Rmodel)`
 may be used to create an identical MCMC configuration, applying
-HMC sampling to $\phi_1$, $\phi_2$ and $p$, and default binary
+HMC-NUTS sampling to $\phi_1$, $\phi_2$ and $p$, and default binary
 samplers for discrete parameters.
 
 Now we build and compile the MCMC algorithm.
