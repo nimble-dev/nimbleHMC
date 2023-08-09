@@ -205,14 +205,7 @@ as burn-in.
 ```
 set.seed(0)
 samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
-
-##  [Note] HMC sampler (nodes: phi[1], phi[2], p) is using 1000 warmup iterations. 
-##  [Note] HMC sampler (nodes: phi[1], phi[2], p) encountered 3 divergent paths. 
 ```
-
-The HMC sampler outputs two notes, indicating the number
-of warmup iterations and the total number of divergent paths
-encountered [see @hoffman2014no for details].
 
 Finally, posterior summary statistics are calculated for the model parameters.
 
@@ -220,13 +213,13 @@ Finally, posterior summary statistics are calculated for the model parameters.
 samplesSummary(samples, round = 2)
 
 ##        Mean Median St.Dev. 95%CI_low 95%CI_upp
-## p      0.90   0.90    0.03      0.83      0.94
+## p      0.89   0.90    0.03      0.83      0.94
 ## phi[1] 0.58   0.58    0.03      0.52      0.63
-## phi[2] 0.50   0.50    0.06      0.39      0.61
+## phi[2] 0.50   0.50    0.06      0.39      0.60
 ```
 
 Traceplots and posterior density plots are generated using
-the `samplesSummary` function from the `basicMCMCplots` package.
+the `samplesPlot` function from the `basicMCMCplots` package.
 
 ```
 basicMCMCplots::samplesPlot(samples, legend.location = "topleft")
