@@ -4,7 +4,14 @@
 \alias{configureHMC}
 \title{Configure HMC}
 \usage{
-configureHMC(model, nodes = character(), control = list(), print = TRUE, ...)
+configureHMC(
+  model,
+  nodes = character(),
+  type = "NUTS",
+  control = list(),
+  print = TRUE,
+  ...
+)
 }
 \arguments{
 \item{model}{A nimble model, as returned by `nimbleModel`}
