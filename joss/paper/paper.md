@@ -81,8 +81,8 @@ The `nimbleHMC` package provides two implementations of HMC-NUTS sampling
 for use within `nimble`.  Specifically, `nimbleHMC`
 provides an implementation of the original ("classic") HMC-NUTS
 algorithm as developed in
-@hoffman2014no, and a more current version of
-HMC-NUTS sampling identical to that offered in version 2.32.2 of `Stan`
+@hoffman2014no, and a modern version of
+HMC-NUTS sampling matching the HMC sampler available in version 2.32.2 of `Stan`
 [@stan2023stan].  The samplers provided in `nimbleHMC` can be assigned
 to any continuous-valued parameters, and may be used in combination with other
 samplers provided with `nimble`.
@@ -173,8 +173,9 @@ conf <- configureMCMC(Rmodel)
 
 Now we customize the MCMC configuration object to use HMC sampling for
 the model parameters.  `replaceSamplers` replaces the samplers operating on
-$\phi_1$, $\phi_2$ and $p$ with the state-of-the-art HMC-NUTS sampler (called
-the `NUTS` sampler) provided in `nimbleHMC`.
+$\phi_1$, $\phi_2$ and $p$ with the modern HMC-NUTS sampler (called
+the `NUTS` sampler) provided in `nimbleHMC`.  The classic version of
+the HMC-NUTS sampler could be assigned by specifying `type = "NUTS_classic"`.
 
 ```
 conf$replaceSamplers(target = c("phi", "p"), type = "NUTS")
@@ -232,32 +233,29 @@ basicMCMCplots::samplesPlot(samples, legend.location = "topleft")
 
 # Statement of need
 
-HMC is recognized as a state-of-the-art MCMC strategy.
+HMC is recognized as a state-of-the-art MCMC sampling algorithm.
 A testimony to this, software packages such as
-`Stan` have been built exclusively around HMC sampling.
-As a result, however, such software cannot operate on models
-with discrete parameters where HMC cannot operate.  Models with
+`Stan` exclusively employ HMC sampling.
+Consequently, such software cannot operate on models
+containing discrete parameters (upon which HMC cannot operate).  Models with
 discrete parameters arise in a range of statistical motifs
 including hidden Markov models, finite mixture models, and generally in
 the presence of unobserved categorical data [@bartolucci2022discrete].
-In contrast, other mainstream MCMC packages 
-*`WinBUGS`, `OpenBUGS` and `jags`) can sample discrete parameters,
+In contrast, other mainstream MCMC packages
+(`WinBUGS`, `OpenBUGS` and `jags`) can sample discrete parameters,
 but provide no facilities for HMC sampling.  This leaves a gap, as there is no support
-for applying HMC sampling to continuous-valued parameters of
-hierarchical models which also contain discrete parameters.
+for HMC sampling of hierarchical models which also contain discrete parameters.
 
-`nimbleHMC` fills this gap, by providing an HMC sampler which operates
- inside `nimble`'s  MCMC engine.  `nimble` provides
-a host of MCMC sampling algorithms which are suitable for either
-continuous or discrete parameters, as well as the
-ability to customize an MCMC algorithm by specifying sampler
-assignments. `nimbleHMC` supplements the suite
-of sampling algorithms provided with `nimble` with an
-HMC sampler, which can be used alongside other samplers.  The example presented herein
-demonstrates precisely this use case: HMC sampling operating
-alongside other discrete samplers, which is not possible without the use of `nimbleHMC`.
+`nimbleHMC` fills this gap, by providing two HMC samplers which operate
+ inside `nimble`'s  MCMC engine.  The base `nimble` package provides
+a variety of MCMC sampling algorithms, as well as the
+ability to customize MCMC sampler assignments. `nimbleHMC` augments the set
+of sampling algorithms provided in `nimble` with two options for
+HMC sampling, which can be used alongside any other samplers.  The example presented here
+demonstrates precisely that: HMC sampling operating
+alongside discrete samplers, which is not possible without the use of `nimbleHMC`.
 
-It is an open question of what combination of
+It's an open question of what combination of
 samplers will optimize MCMC efficiency.
 One metric of comparison is the effective sample size of the
 samples generated per unit
@@ -268,10 +266,10 @@ metric is studied in @turek2017automated and
 samplers from a large pool of candidates is
 important from both practical and theoretical standpoints.
 Indeed, packages such as `compareMCMCs`
-[@de2022comparemcmcs] are designed to compare the relative
+[@de2022comparemcmcs] exist specifically to compare the relative
 performance of MCMC algorithms.  The addition of HMC sampling
-provided by `nimbleHMC` supports new combinations of MCMC algorithms, as well as facilitates
-a deeper study of practical Bayesian modelling.
+provided by `nimbleHMC` supports new practical combinations for applied MCMC, as well as facilitates
+a deeper study of Bayesian modelling.
 
 
 
