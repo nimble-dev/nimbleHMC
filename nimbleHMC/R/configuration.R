@@ -59,8 +59,9 @@
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), replace = FALSE, print = TRUE, ...) {
+addHMC <- function(conf, target = character(), type, control = list(), replace = FALSE, print = TRUE, ...) {
     if(identical(target, character()))  return()
+    if(missing(type))   type <- 'NUTS'
     if(!(type %in% c('NUTS', 'NUTS_classic')))   stop('type argument must be \"NUTS\" or \"NUTS_classic\".')
     targetExpanded <- conf$model$expandNodeNames(target)
     if(length(targetExpanded)) {
@@ -130,8 +131,9 @@ addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), 
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-configureHMC <- function(model, nodes = character(), type = 'NUTS', control = list(), print = TRUE, ...) {
+configureHMC <- function(model, nodes = character(), type, control, print = TRUE, ...) {
     nodesProvided <- !identical(nodes, character())
+    if(missing(control))   control <- list()
     if(nodesProvided) {
         nodes <- model$expandNodeNames(nodes, returnScalarComponents = TRUE)
         isDiscreteBool <- model$isDiscrete(nodes)
@@ -201,7 +203,7 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
 #' # Cmodel <- compileNimble(Rmodel)
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
-buildHMC <- function(model, nodes = character(), type = 'NUTS', control = list(), print = TRUE, ...) {
+buildHMC <- function(model, nodes = character(), type, control, print = TRUE, ...) {
     conf <- configureHMC(model = model, nodes = nodes, type = type, control = control, print = print, ...)
     return(buildMCMC(conf))
 }
@@ -302,7 +304,7 @@ nimbleHMC <- function(code,
                       inits,
                       dimensions = list(),
                       model,
-                      type = 'NUTS',
+                      type,
                       monitors,
                       thin = 1,
                       niter = 10000,
