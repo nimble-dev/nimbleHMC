@@ -656,14 +656,14 @@ sampler_NUTS <- nimbleFunction(
         adaptM         <- extractControlElement(control, 'adaptM',         TRUE) # mass matrix adaptation?
         ## node list generation
         targetNodes <- model$expandNodeNames(target)
-        if(length(targetNodes) <= 0) stop('HMC sampler must operate on at least one node', call. = FALSE)
+        if(length(targetNodes) <= 0) stop('NUTS sampler must operate on at least one node', call. = FALSE)
         targetNodesAsScalars <- model$expandNodeNames(targetNodes, returnScalarComponents = TRUE)
         targetNodesToPrint <- paste(targetNodes, collapse = ', ')
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
         ## check for discrete nodes (early, before parameterTransform is specialized)
         if(any(model$isDiscrete(targetNodesAsScalars)))
-            stop(paste0('HMC sampler cannot operate on discrete-valued nodes: ',
+            stop(paste0('NUTS sampler cannot operate on discrete-valued nodes: ',
                         paste0(targetNodesAsScalars[model$isDiscrete(targetNodesAsScalars)], collapse = ', ')))
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
@@ -711,18 +711,18 @@ sampler_NUTS <- nimbleFunction(
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
-        if(epsilon < 0) stop('HMC sampler epsilon must be positive', call. = FALSE)
-        if(!all(M > 0)) stop('HMC sampler M must contain all positive elements', call. = FALSE)
-        if(d == 1) if(length(M) != 2) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
-        if(d  > 1) if(length(M) != d) stop('length of HMC sampler M must match length of HMC target nodes', call. = FALSE)
-        if(maxTreeDepth < 1) stop('HMC maxTreeDepth must be at least one', call. = FALSE)
+        if(epsilon < 0) stop('NUTS sampler epsilon must be positive', call. = FALSE)
+        if(!all(M > 0)) stop('NUTS sampler M must contain all positive elements', call. = FALSE)
+        if(d == 1) if(length(M) != 2) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
+        if(d  > 1) if(length(M) != d) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
+        if(maxTreeDepth < 1) stop('NUTS maxTreeDepth must be at least one', call. = FALSE)
     },
     run = function() {
         ## No-U-Turn Sampler based on Stan
         state_current$q <<- my_parameterTransform$transform(values(model, targetNodes))
         if(timesRan == 0) {
-            if(nwarmup == -1) stop('HMC nwarmup was not set correctly')
-            if(nwarmup < 20) if(messages) print("  [Warning] HMC sampler nwarmup is so small (",nwarmup,") that it might be useless.")
+            if(nwarmup == -1) stop('NUTS nwarmup was not set correctly')
+            if(nwarmup < 20) if(messages) print("  [Warning] NUTS sampler nwarmup is so small (",nwarmup,") that it might be useless.")
             state_current$p          <<- numeric(d, init = FALSE)
             state_current$gr_logProb <<- numeric(d, init = FALSE)
             M <<- M[1:d]
@@ -997,8 +997,8 @@ sampler_NUTS <- nimbleFunction(
                     }
                 }
                 if(!done) {
-                    if(epsilon > 1e7) stop("Search for initial stepsize in HMC exploded. Something is wrong.")
-                    if(epsilon == 0)  stop("Search for initial stepsize in HMC shrank to 0. Something is wrong.")
+                    if(epsilon > 1e7) stop("Search for initial stepsize in NUTS exploded. Something is wrong.")
+                    if(epsilon == 0)  stop("Search for initial stepsize in NUTS shrank to 0. Something is wrong.")
                 }
             }
             copy_state(state_current, state_init)
@@ -1059,7 +1059,7 @@ sampler_NUTS <- nimbleFunction(
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
-            if(MCMCchain == 1)  if(messages)   print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+            if(MCMCchain == 1)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
             ## https://colcarroll.github.io/hmc_tuning_talk/
@@ -1087,18 +1087,18 @@ sampler_NUTS <- nimbleFunction(
         },
         after_chain = function() {
             if(messages) {
-                if(numDivergences == 1)        print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
-                if(numDivergences  > 1)        print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
-                if(numTimesMaxTreeDepth == 1)  print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
-                if(numTimesMaxTreeDepth  > 1)  print('  [Note] HMC sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
+                if(numDivergences == 1)        print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
+                if(numDivergences  > 1)        print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
+                if(numTimesMaxTreeDepth == 1)  print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
+                if(numTimesMaxTreeDepth  > 1)  print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
                 numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
                 numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
             }
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
-                    if(warningCodes[i,1] == 1) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
-                    if(warningCodes[i,1] == 2) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon routine.')
-                    if(warningCodes[i,1] == 3) print('  [Warning] HMC sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
+                    if(warningCodes[i,1] == 1) print('  [Warning] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon routine.')
+                    if(warningCodes[i,1] == 3) print('  [Warning] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
                 }
                 warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
             }
