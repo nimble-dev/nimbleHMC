@@ -5,11 +5,12 @@
 #' Add a No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object
 #'
 #' @param conf A nimble MCMC configuration object, as returned by `configureMCMC`.
-#' @param nodes A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.
+#' @param target A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.
 #' @param type A character string specifying the type of HMC sampler to add, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.
 #' @param control Optional named list of control parameters to be passed as the `control` argument to the HMC sampler.  See `help(NUTS)` or `help(NUTS_classic)` for details of the control list elements accepted by each sampler.
 #' @param replace Logical argument.  If `TRUE`, any existing samplers operating on the specified nodes will be removed, prior to adding the HMC sampler.  Default value is `FALSE`.
 #' @param print Logical argument whether to print the newly added HMC sampler.  Default value is `TRUE`.
+#' @param ... Additional named arguments passed through ... will be used as additional control list elements.
 #'
 #' @details
 #'
@@ -25,7 +26,7 @@
 #'
 #' @return Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
 #'
-#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{sampler_HMC}} \code{\link{configureMCMC}} \code{\link{addSampler}}
+#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' nimbleOptions(enableDerivs = TRUE)
@@ -99,7 +100,7 @@ addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), 
 #'
 #' @return An object of class `MCMCconf`.
 #'
-#' @seealso \code{\link{addHMC}} \code{\link{buildHMC}} \code{\link{sampler_HMC}} \code{\link{configureMCMC}} \code{\link{addSampler}}
+#' @seealso \code{\link{addHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' #' nimbleOptions(enableDerivs = TRUE)
@@ -174,7 +175,7 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
 #'
 #' @author Daniel Turek
 #' 
-#' @seealso \code{\link{addHMC}} \code{\link{configureHMC}} \code{\link{sampler_HMC}} \code{\link{configureMCMC}} \code{\link{addSampler}}
+#' @seealso \code{\link{addHMC}} \code{\link{configureHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' nimbleOptions(enableDerivs = TRUE)
@@ -225,6 +226,8 @@ buildHMC <- function(model, nodes = character(), type = 'NUTS', control = list()
 #' @param dimensions Named list of dimensions for variables.  Only needed for variables used with empty indices in model code that are not provided in constants or data.
 #'
 #' @param model A compiled or uncompiled NIMBLE model object.  When provided, this model will be used to configure the MCMC algorithm to be executed, rather than using the \code{code}, \code{constants}, \code{data} and \code{inits} arguments to create a new model object.  However, if also provided, the \code{inits} argument will still be used to initialize this model prior to running each MCMC chain.
+#'
+#' @param type A character string specifying the type of HMC sampling to apply, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.
 #' 
 #' @param monitors A character vector giving the node names or variable names to monitor.  The samples corresponding to these nodes will returned, and/or will have summary statistics calculated. Default value is all top-level stochastic nodes of the model.
 #' 
@@ -299,7 +302,7 @@ nimbleHMC <- function(code,
                       inits,
                       dimensions = list(),
                       model,
-                      type,
+                      type = 'NUTS',
                       monitors,
                       thin = 1,
                       niter = 10000,

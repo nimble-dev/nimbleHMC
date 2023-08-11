@@ -17,6 +17,8 @@ addHMC(
 \arguments{
 \item{conf}{A nimble MCMC configuration object, as returned by `configureMCMC`.}
 
+\item{target}{A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.}
+
 \item{type}{A character string specifying the type of HMC sampler to add, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.}
 
 \item{control}{Optional named list of control parameters to be passed as the `control` argument to the HMC sampler.  See `help(NUTS)` or `help(NUTS_classic)` for details of the control list elements accepted by each sampler.}
@@ -25,7 +27,7 @@ addHMC(
 
 \item{print}{Logical argument whether to print the newly added HMC sampler.  Default value is `TRUE`.}
 
-\item{nodes}{A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.}
+\item{...}{Additional named arguments passed through ... will be used as additional control list elements.}
 }
 \value{
 Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
@@ -36,7 +38,7 @@ Add a No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) sampler to an existing nimb
 \details{
 This function adds an HMC sampler to an MCMC configuration object.  Use this function if you have already created an MCMC configuration and want to add an HMC sampler.  Optionally, using `replace = TRUE`, this function will also remove any existing samplers operating on the target node(s).
 
-Either the `NUTS_classic` or the `NUTS` sampler can be added.  Both implement variants of No-U-Turn HMC sampling, however the `NUTS` sampler uses more modern adapatation techniques.
+Either the `NUTS_classic` or the `NUTS` sampler can be added.  Both implement variants of No-U-Turn HMC sampling, however the `NUTS` sampler uses more modern adapatation techniques.  See `help(NUTS)` or `help(NUTS_classic)` for details.
 
 Use `conf$addSampler` instead if you need more fine-grained control.  See `help(configureMCMC)` in nimble.
 }
@@ -73,7 +75,7 @@ Rmcmc <- buildMCMC(conf)
 # samples <- runMCMC(Cmcmc)
 }
 \seealso{
-\code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{sampler_HMC}} \code{\link{configureMCMC}} \code{\link{addSampler}}
+\code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 }
 \author{
 Daniel Turek
