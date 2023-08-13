@@ -135,7 +135,7 @@ configureHMC <- function(model, nodes = character(), type, control, print = TRUE
     nodesProvided <- !identical(nodes, character())
     if(missing(control))   control <- list()
     if(nodesProvided) {
-        nodes <- model$expandNodeNames(nodes, returnScalarComponents = TRUE)
+        nodes <- model$expandNodeNames(nodes)
         isDiscreteBool <- model$isDiscrete(nodes)
         stochContNodes <- nodes[!isDiscreteBool]
         stochDiscNodes <- nodes[ isDiscreteBool]
