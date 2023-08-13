@@ -149,7 +149,7 @@ configureHMC <- function(model, nodes = character(), type, control, print = TRUE
     addHMC(conf = conf, target = stochContNodes, type = type, control = control, print = FALSE)
     conf$addSampler(target = stochDiscNodes, control = control, print = FALSE, default = TRUE)
     if(!nodesProvided)   conf$addSampler(target = postPredNodes, control = control, print = FALSE, default = TRUE)
-    if(print)   conf$show()
+    if(print)   conf$show(...)
     return(invisible(conf))
 }
 
@@ -204,8 +204,9 @@ configureHMC <- function(model, nodes = character(), type, control, print = TRUE
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
 buildHMC <- function(model, nodes = character(), type, control, print = TRUE, ...) {
-    conf <- configureHMC(model = model, nodes = nodes, type = type, control = control, print = print, ...)
-    return(buildMCMC(conf))
+    conf <- configureHMC(model = model, nodes = nodes, type = type, control = control, print = print, includeConfGetUnsampledNodes = FALSE, ...)
+    Rmcmc <- suppressMessages(buildMCMC(conf))
+    return(Rmcmc)
 }
 
 

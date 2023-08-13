@@ -7,7 +7,7 @@
 addHMC(
   conf,
   target = character(),
-  type = "NUTS",
+  type,
   control = list(),
   replace = FALSE,
   print = TRUE,

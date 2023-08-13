@@ -11,7 +11,7 @@ nimbleHMC(
   inits,
   dimensions = list(),
   model,
-  type = "NUTS",
+  type,
   monitors,
   thin = 1,
   niter = 10000,

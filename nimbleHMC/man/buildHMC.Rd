@@ -4,14 +4,7 @@
 \alias{buildHMC}
 \title{Build HMC}
 \usage{
-buildHMC(
-  model,
-  nodes = character(),
-  type = "NUTS",
-  control = list(),
-  print = TRUE,
-  ...
-)
+buildHMC(model, nodes = character(), type, control, print = TRUE, ...)
 }
 \arguments{
 \item{model}{A nimble model, as returned by `nimbleModel`}
