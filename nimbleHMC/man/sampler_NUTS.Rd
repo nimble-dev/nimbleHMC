@@ -53,8 +53,6 @@ The NUTS sampler accepts the following control list elements:
 NaN vales may be encountered in the course of the leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
 }
 \examples{
-nimbleOptions(enableDerivs = TRUE)
-
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
     b1 ~ dnorm(0, 0.001)

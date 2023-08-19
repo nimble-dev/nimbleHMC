@@ -28,8 +28,6 @@
 ## #' @author Daniel Turek
 ## #' 
 ## #' @examples
-## #' nimbleOptions(enableDerivs = TRUE)
-## #' 
 ## #' code <- nimbleCode({
 ## #'     b0 ~ dnorm(0, 0.001)
 ## #'     b1 ~ dnorm(0, 0.001)
@@ -167,8 +165,6 @@ sampler_langevin <- nimbleFunction(
 #' @author Daniel Turek
 #' 
 #' @examples
-#' nimbleOptions(enableDerivs = TRUE)
-#' 
 #' code <- nimbleCode({
 #'     b0 ~ dnorm(0, 0.001)
 #'     b1 ~ dnorm(0, 0.001)
@@ -597,8 +593,6 @@ treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = doub
 #' @author Perry de Valpine and Daniel Turek
 #' 
 #' @examples
-#' nimbleOptions(enableDerivs = TRUE)
-#' 
 #' code <- nimbleCode({
 #'     b0 ~ dnorm(0, 0.001)
 #'     b1 ~ dnorm(0, 0.001)
@@ -722,7 +716,6 @@ sampler_NUTS <- nimbleFunction(
         state_current$q <<- my_parameterTransform$transform(values(model, targetNodes))
         if(timesRan == 0) {
             if(nwarmup == -1) stop('NUTS nwarmup was not set correctly')
-            if(nwarmup < 20) if(messages) print("  [Warning] NUTS sampler nwarmup is so small (",nwarmup,") that it might be useless.")
             state_current$p          <<- numeric(d, init = FALSE)
             state_current$gr_logProb <<- numeric(d, init = FALSE)
             M <<- M[1:d]
@@ -997,8 +990,8 @@ sampler_NUTS <- nimbleFunction(
                     }
                 }
                 if(!done) {
-                    if(epsilon > 1e7) stop("Search for initial stepsize in NUTS exploded. Something is wrong.")
-                    if(epsilon == 0)  stop("Search for initial stepsize in NUTS shrank to 0. Something is wrong.")
+                    if(epsilon > 1e7)    stop("Search for initial stepsize in NUTS sampler exploded. Something is wrong.")
+                    if(epsilon < 1e-16)  stop("Search for initial stepsize in NUTS sampler shrank to 0. Something is wrong.")
                 }
             }
             copy_state(state_current, state_init)
@@ -1059,13 +1052,13 @@ sampler_NUTS <- nimbleFunction(
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
-            if(MCMCchain == 1)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+            if(MCMCchain == 1 & adaptive)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
             ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
             ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
             ## https://colcarroll.github.io/hmc_tuning_talk/
             ## approach follows Stan code
             if(initBuffer + adaptWindow + termBuffer > nwarmup) {
-                if(messages) print('  [Warning] nwarmup is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
+                if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS sampler is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
                 adapt_initBuffer <<- round(nwarmup * 0.15)
                 adapt_termBuffer <<- round(nwarmup * 0.10)
                 adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer
@@ -1077,6 +1070,7 @@ sampler_NUTS <- nimbleFunction(
                 if((nwarmup - (adapt_initBuffer + adaptWindow_size + adapt_termBuffer)) < 2*adaptWindow_size)
                     adaptWindow_size <<- nwarmup - (adapt_initBuffer + adapt_termBuffer)
             }
+            if(nwarmup < 20 & adaptive) if(messages) print("  [Warning] Number of warmup iteration for NUTS sampler is so small (",nwarmup,") that it might be useless.")
             adapt_next_window <<- adapt_initBuffer + adaptWindow_size
             adaptWindow_counter <<- 1
             adaptWindow_iter <<- 1

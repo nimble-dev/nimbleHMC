@@ -11,7 +11,7 @@ nimbleHMC(
   inits,
   dimensions = list(),
   model,
-  type,
+  type = "NUTS",
   monitors,
   thin = 1,
   niter = 10000,
@@ -39,7 +39,7 @@ nimbleHMC(
 
 \item{model}{A compiled or uncompiled NIMBLE model object.  When provided, this model will be used to configure the MCMC algorithm to be executed, rather than using the \code{code}, \code{constants}, \code{data} and \code{inits} arguments to create a new model object.  However, if also provided, the \code{inits} argument will still be used to initialize this model prior to running each MCMC chain.}
 
-\item{type}{A character string specifying the type of HMC sampling to apply, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.}
+\item{type}{A character string specifying the type of HMC sampling to apply, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.  The default sampler type is "NUTS".}
 
 \item{monitors}{A character vector giving the node names or variable names to monitor.  The samples corresponding to these nodes will returned, and/or will have summary statistics calculated. Default value is all top-level stochastic nodes of the model.}
 

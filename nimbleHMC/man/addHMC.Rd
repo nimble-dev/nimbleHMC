@@ -7,7 +7,7 @@
 addHMC(
   conf,
   target = character(),
-  type,
+  type = "NUTS",
   control = list(),
   replace = FALSE,
   print = TRUE,
@@ -19,7 +19,7 @@ addHMC(
 
 \item{target}{A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.}
 
-\item{type}{A character string specifying the type of HMC sampler to add, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.}
+\item{type}{A character string specifying the type of HMC sampler to add, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.  The default sampler type is "NUTS".}
 
 \item{control}{Optional named list of control parameters to be passed as the `control` argument to the HMC sampler.  See `help(NUTS)` or `help(NUTS_classic)` for details of the control list elements accepted by each sampler.}
 
@@ -43,8 +43,6 @@ Either the `NUTS_classic` or the `NUTS` sampler can be added.  Both implement va
 Use `conf$addSampler` instead if you need more fine-grained control.  See `help(configureMCMC)` in nimble.
 }
 \examples{
-nimbleOptions(enableDerivs = TRUE)
-
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
     b1 ~ dnorm(0, 0.001)

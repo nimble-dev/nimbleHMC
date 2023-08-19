@@ -4,14 +4,21 @@
 \alias{configureHMC}
 \title{Configure HMC}
 \usage{
-configureHMC(model, nodes = character(), type, control, print = TRUE, ...)
+configureHMC(
+  model,
+  nodes = character(),
+  type = "NUTS",
+  control = list(),
+  print = TRUE,
+  ...
+)
 }
 \arguments{
 \item{model}{A nimble model, as returned by `nimbleModel`}
 
 \item{nodes}{A character vector of stochastic node names to be sampled. If an empty character vector is provided (the default), then all stochastic non-data nodes will be sampled.  An HMC sampler will be applied to all continuous-valued non-data nodes, and nimble's default sampler will be assigned for all discrete-valued samplin to apply, either "NUTS" or "NUTS_classic".}
 
-\item{type}{A character string specifying the type of HMC sampling to apply, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.}
+\item{type}{A character string specifying the type of HMC sampling to apply, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.  The default sampler type is "NUTS".}
 
 \item{control}{Optional named list of control parameters to be passed as the `control` argument to the HMC sampler.  See `help(NUTS)` or `help(NUTS_classic)` for details of the control list elements accepted by each sampler.}
 
@@ -33,8 +40,6 @@ Either the `NUTS_classic` or the `NUTS` sampler can be applied.  Both implement 
 Use this function if you want to create an MCMC configuration, and then modify it further before building the MCMC algorithm.  `buildHMC` provides a more direct route to a compilable MCMC algorithm with HMC sampling applied to all continuous-valued dimensions.
 }
 \examples{
-#' nimbleOptions(enableDerivs = TRUE)
-
 code <- nimbleCode({
     b0 ~ dnorm(0, 0.001)
     b1 ~ dnorm(0, 0.001)
