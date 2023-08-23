@@ -148,6 +148,7 @@ sampler_langevin <- nimbleFunction(
 #' \item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
 #' \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
 #' \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
+#' \item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
 #' \item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
 #' \item termBuffer.  Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
 #' }
@@ -211,7 +212,7 @@ sampler_NUTS_classic <- nimbleFunction(
         M              <- extractControlElement(control, 'M',              -1)
         nwarmup        <- extractControlElement(control, 'nwarmup',        -1)
         maxTreeDepth   <- extractControlElement(control, 'maxTreeDepth',   10)
-        ##adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)   ## not used in NUTS_classic
+        adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)
         initBuffer     <- extractControlElement(control, 'initBuffer',     75)
         termBuffer     <- extractControlElement(control, 'termBuffer',     50)
         ## node list generation
@@ -472,7 +473,7 @@ sampler_NUTS_classic <- nimbleFunction(
             warmupIntervalLengths <<- numeric(length = 1, value = initBuffer)
             endIntervals <- initBuffer     ## iteration marking the end of intervals planned so far
             warmupIntervalsAdaptM <<- numeric(length = 1, value = 0)
-            nextIntervalLength <- 25
+            nextIntervalLength <- adaptWindow
             done <- FALSE
             while(!done) {
                 warmupIntervalLengths <<- c(warmupIntervalLengths, nextIntervalLength)
