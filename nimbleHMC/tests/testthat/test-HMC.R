@@ -1,4 +1,4 @@
-nimbleOptions(enableDerivs = TRUE)
+nimbleOptions(enableDerivs = TRUE) # TRUE by default, but just in case
 
 temporarilyAssignInGlobalEnv <- function(value, replace = FALSE) {
     name <- deparse(substitute(value))

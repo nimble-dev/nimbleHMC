@@ -139,7 +139,8 @@ sampler_langevin <- nimbleFunction(
 #' \itemize{
 #' \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
 #' \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered).  See additional details below.  (default = 0)
-#' \item initialEpsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+#' \item epsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+#' \item initializeEpsilon.  A logical argument, specifying whether to perform the epsilon (stepsize) initialization routine at the onset of each adapatation window. (default = TRUE)
 #' \item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 #' \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
 #' \item kappa.  A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
@@ -151,6 +152,9 @@ sampler_langevin <- nimbleFunction(
 #' \item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
 #' \item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
 #' \item termBuffer.  Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
+#' \item adaptive.  A logical argument, specifying whether to do any adaptation whatsoever.  When TRUE, specific adapatation routines are controled by the adaptEpsilon and adaptM control list elements.  (default = TRUE)
+#' \item adaptEpsilon.  A logical argument, specifying whether to perform stepsize adaptation.  Only used when adaptive = TRUE.  (default = TRUE)
+#' \item adaptM.  A logical argument, specifying whether to perform adaptation of the mass matrix (metric) M.  Only used when adaptive = TRUE.  (default = TRUE)
 #' }
 #'
 #' NaN vales may be encountered in the course of the leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
@@ -203,7 +207,8 @@ sampler_NUTS_classic <- nimbleFunction(
         printM         <- extractControlElement(control, 'printM',         FALSE)
         messages       <- extractControlElement(control, 'messages',       getNimbleOption('verbose'))
         numWarnings    <- extractControlElement(control, 'numWarnings',    0)
-        initialEpsilon <- extractControlElement(control, 'initialEpsilon', 0)
+        epsilon        <- extractControlElement(control, 'epsilon',        0)          # initial epsilon, if 0 then use 1
+        initializeEpsilon <- extractControlElement(control, 'initializeEpsilon', TRUE) # use initializeEpsilon step?
         gamma          <- extractControlElement(control, 'gamma',          0.05)
         t0             <- extractControlElement(control, 't0',             10)
         kappa          <- extractControlElement(control, 'kappa',          0.75)
@@ -215,6 +220,10 @@ sampler_NUTS_classic <- nimbleFunction(
         adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)
         initBuffer     <- extractControlElement(control, 'initBuffer',     75)
         termBuffer     <- extractControlElement(control, 'termBuffer',     50)
+        adaptive       <- extractControlElement(control, 'adaptive',       TRUE) # any adaptation? (if FALSE, next two flags are ignored)
+        adaptEpsilon   <- extractControlElement(control, 'adaptEpsilon',   TRUE) # stepsize adaptation?
+        adaptM         <- extractControlElement(control, 'adaptM',         TRUE) # mass matrix adaptation?
+
         ## node list generation
         targetNodes <- model$expandNodeNames(target)
         if(length(targetNodes) <= 0) stop('NUTS_classic sampler must operate on at least one node', call. = FALSE)
@@ -240,6 +249,7 @@ sampler_NUTS_classic <- nimbleFunction(
         log2 <- log(2)
         warningCodes <- array(0, c(max(numWarnings,1), 2))
         warningInd <- 0
+        epsilonOrig <- epsilon
         nwarmupOrig <- nwarmup
         warmupIntervalLengths <- rep(0,2)
         warmupIntervalsAdaptM <- rep(0,2)
@@ -258,7 +268,7 @@ sampler_NUTS_classic <- nimbleFunction(
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
-        if(initialEpsilon < 0) stop('NUTS_classic sampler initialEpsilon must be positive', call. = FALSE)
+        if(epsilon < 0) stop('NUTS_classic sampler epsilon must be non-negative', call. = FALSE)
         if(!all(M > 0)) stop('NUTS_classic sampler M must contain all positive elements', call. = FALSE)
         if(d == 1) if(length(M) != 2) stop('length of NUTS_classic sampler M must match length of NUTS_classic target nodes', call. = FALSE)
         if(d  > 1) if(length(M) != d) stop('length of NUTS_classic sampler M must match length of NUTS_classic target nodes', call. = FALSE)
@@ -273,9 +283,9 @@ sampler_NUTS_classic <- nimbleFunction(
             p <<- p[1:d];   pL <<- pL[1:d];   pR <<- pR[1:d];   p2 <<- p2[1:d];           p3 <<- p3[1:d]
             grad <<- grad[1:d];   gradFirst <<- gradFirst[1:d];   gradSaveL <<- gradSaveL[1:d];   gradSaveR <<- gradSaveR[1:d]
             M <<- M[1:d];         sqrtM <<- sqrtM[1:d]
-            if(initialEpsilon == 0) { initializeEpsilon()                 ## no initialEpsilon value was provided
-                                  } else { epsilon <<- initialEpsilon }   ## user provided initialEpsilon
-            mu <<- log(10*epsilon)
+            if(epsilon == 0) epsilon <<- 1
+            mu <<- log(10*epsilon)              ## Following Stan: use default 1 and set mu before initializeEpsilon for first window.
+            if(initializeEpsilon)  initEpsilon()                 ## no initialEpsilon value was provided
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -307,7 +317,7 @@ sampler_NUTS_classic <- nimbleFunction(
         }
         inverseTransformStoreCalculate(qNew)
         nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
-        if(timesRan <= nwarmup)   adaptiveProcedure(btNL$a, btNL$na)
+        if((timesRan <= nwarmup) & adaptive)   adaptiveProcedure(btNL$a, btNL$na)
     },
     methods = list(
         drawMomentumValues = function() {
@@ -363,13 +373,12 @@ sampler_NUTS_classic <- nimbleFunction(
             if(warningInd < numWarnings) if(is.nan.vec(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
             returnType(qpNLDef());   return(qpNLDef$new(q = q2, p = p3))
         },
-        initializeEpsilon = function() {
+        initEpsilon = function() {
             ## Algorithm 4 from Hoffman and Gelman (2014)
             savedCalcNodeValues <- values(model, calcNodes)
             q <<- my_parameterTransform$transform(values(model, targetNodes))
             p <<- numeric(d)        ## keep, sets 'p' to size d on first iteration
             drawMomentumValues()    ## draws values for p
-            epsilon <<- 1
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
             while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
                 ##if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
@@ -390,44 +399,50 @@ sampler_NUTS_classic <- nimbleFunction(
         adaptiveProcedure = function(a = double(), na = double()) {
             ## adapt epsilon:
             ## this is the "Dual Averaging" part of Algorithm 6 from Hoffman and Gelman (2014)
-            epsilonAdaptCount <<- epsilonAdaptCount + 1
-            Hbar <<- (1 - 1/(epsilonAdaptCount+t0)) * Hbar + 1/(epsilonAdaptCount+t0) * (delta - a/na)
-            logEpsilon <- mu - sqrt(epsilonAdaptCount)/gamma * Hbar
-            epsilon <<- exp(logEpsilon)
-            timesRanToNegativeKappa <- epsilonAdaptCount^(-kappa)
-            logEpsilonBar <<- timesRanToNegativeKappa * logEpsilon + (1 - timesRanToNegativeKappa) * logEpsilonBar
-            if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
-            if(warningInd < numWarnings) if(is.nan(epsilon)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 3; warningCodes[warningInd,2] <<- timesRan } ## message code 3: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan)
-            ## adapt M:
-            if(warmupIntervalNumber <= length(warmupIntervalLengths)) {
-                warmupIntervalCount <<- warmupIntervalCount + 1
-                if(warmupIntervalCount > warmupIntervalLengths[warmupIntervalNumber]) stop('something went wrong in NUTS_classic warmup book-keeping')
-                if(warmupIntervalsAdaptM[warmupIntervalNumber] == 1)   warmupSamples[warmupIntervalCount, 1:d] <<- qNew
-                if(warmupIntervalCount == warmupIntervalLengths[warmupIntervalNumber]) {
-                    if(warmupIntervalsAdaptM[warmupIntervalNumber] == 1) {
+            if(adaptEpsilon) {
+              epsilonAdaptCount <<- epsilonAdaptCount + 1
+              Hbar <<- (1 - 1/(epsilonAdaptCount+t0)) * Hbar + 1/(epsilonAdaptCount+t0) * (delta - a/na)
+              logEpsilon <- mu - sqrt(epsilonAdaptCount)/gamma * Hbar
+              epsilon <<- exp(logEpsilon)
+              timesRanToNegativeKappa <- epsilonAdaptCount^(-kappa)
+              logEpsilonBar <<- timesRanToNegativeKappa * logEpsilon + (1 - timesRanToNegativeKappa) * logEpsilonBar
+              if(timesRan == nwarmup)   epsilon <<- exp(logEpsilonBar)
+              if(warningInd < numWarnings) if(is.nan(epsilon)) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 3; warningCodes[warningInd,2] <<- timesRan } ## message code 3: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') value of epsilon is NaN, with timesRan = ', timesRan)
+            }
+              ## adapt M:
+            if(adaptM) {
+              if(warmupIntervalNumber <= length(warmupIntervalLengths)) {
+                  warmupIntervalCount <<- warmupIntervalCount + 1
+                  if(warmupIntervalCount > warmupIntervalLengths[warmupIntervalNumber]) stop('something went wrong in NUTS_classic warmup book-keeping')
+                  if(warmupIntervalsAdaptM[warmupIntervalNumber] == 1)   warmupSamples[warmupIntervalCount, 1:d] <<- qNew
+                  if(warmupIntervalCount == warmupIntervalLengths[warmupIntervalNumber]) {
+                      if(warmupIntervalsAdaptM[warmupIntervalNumber] == 1) {
                         ## see comments in drawMomentumValues method
                         ## use regularized estimation of empirical covariance (identical to Stan):
                         ## https://github.com/stan-dev/stan/blob/develop/src/stan/mcmc/covar_adaptation.hpp
                         ## SigmaRegularized = [ N / (N + 5) ] * Sigma_raw + 0.001 * [ 5 / (N + 5) ] * I
                         ## only estimating diagonal elements:
-                        for(i in 1:d) {
-                            v <- var(warmupSamples[1:warmupIntervalCount, i])
-                            vReg <- (warmupIntervalCount/(warmupIntervalCount+5))*v + 0.001*(5/(warmupIntervalCount+5))
-                            M[i] <<- 1/vReg
-                        }
-                        ## estimating full empirical covariance:
-                        ##for(i in 1:d)     warmupSamples[, i] <- warmupSamples[, i] - mean(warmupSamples[, i])
-                        ##warmupSamplesCov <- (t(warmupSamples) %*% warmupSamples) / (warmupIntervalCount-1)
-                        ##warmupCovRegularized <- (warmupIntervalCount/(warmupIntervalCount+5))*warmupSamplesCov + 0.001*(5/(warmupIntervalCount+5))*diag(d)
-                        ##for(i in 1:d)   M[i] <<- 1 / warmupCovRegularized[i,i]
-                        sqrtM <<- sqrt(M)
-                        initializeEpsilon()
-                        epsilonAdaptCount <<- 0
-                        mu <<- log(10 * epsilon)
+                          for(i in 1:d) {
+                              v <- var(warmupSamples[1:warmupIntervalCount, i])
+                              vReg <- (warmupIntervalCount/(warmupIntervalCount+5))*v + 0.001*(5/(warmupIntervalCount+5))
+                              M[i] <<- 1/vReg
+                          }
+                          ## estimating full empirical covariance:
+                          ##for(i in 1:d)     warmupSamples[, i] <- warmupSamples[, i] - mean(warmupSamples[, i])
+                          ##warmupSamplesCov <- (t(warmupSamples) %*% warmupSamples) / (warmupIntervalCount-1)
+                          ##warmupCovRegularized <- (warmupIntervalCount/(warmupIntervalCount+5))*warmupSamplesCov + 0.001*(5/(warmupIntervalCount+5))*diag(d)
+                          ##for(i in 1:d)   M[i] <<- 1 / warmupCovRegularized[i,i]
+                          sqrtM <<- sqrt(M)
+                          if(adaptEpsilon) {
+                            initEpsilon()
+                            epsilonAdaptCount <<- 0
+                            mu <<- log(10 * epsilon)
+                          }
                     }
                     warmupIntervalCount <<- 0
                     warmupIntervalNumber <<- warmupIntervalNumber + 1
-                }
+                  }
+              }
             }
         },
         buildtree = function(qArg = double(1), pArg = double(1), logu = double(), v = double(), j = double(), eps = double(), logH0 = double(), first = double()) {
@@ -466,35 +481,52 @@ sampler_NUTS_classic <- nimbleFunction(
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
-            if(MCMCchain == 1) {
-                if(messages) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
-            }
-            ## need to deal with exceptions such as nwarmup < 100
-            warmupIntervalLengths <<- numeric(length = 1, value = initBuffer)
-            endIntervals <- initBuffer     ## iteration marking the end of intervals planned so far
-            warmupIntervalsAdaptM <<- numeric(length = 1, value = 0)
-            nextIntervalLength <- adaptWindow
-            done <- FALSE
-            while(!done) {
-                warmupIntervalLengths <<- c(warmupIntervalLengths, nextIntervalLength)
-                warmupIntervalsAdaptM <<- c(warmupIntervalsAdaptM, 1)
-                endIntervals <- endIntervals + nextIntervalLength
-                remainingIterations <- nwarmup - (endIntervals + termBuffer)
-                if(remainingIterations == 0) {
+            if(adaptive) {
+              if(nwarmup > 0 & nwarmup < 20) {
+                stop("  [Error] NUTS_classic sampler: Don't set nwarmup to be 1-19. At least 20 is needed for any warmup. If you want no warmup, use 0.")
+              }
+              if(nwarmup > 0) {
+                if(MCMCchain == 1) {
+                  if(messages) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+                }
+                ## need to deal with exceptions such as nwarmup < 100
+                if(initBuffer + adaptWindow + termBuffer > nwarmup) {
+                  if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
+                                                'is too small for even one cycle of standard adaptation. Using 15% ',
+                                                'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
+                                                'adaptatation, and 10% for final stepsize adaptation.')
+                  initBuffer <<- round(nwarmup * 0.15)
+                  termBuffer <<- round(nwarmup * 0.10)
+                  adaptWindow <<- nwarmup - initBuffer - termBuffer
+                }
+
+                warmupIntervalLengths <<- numeric(length = 1, value = initBuffer)
+                endIntervals <- initBuffer     ## iteration marking the end of intervals planned so far
+                warmupIntervalsAdaptM <<- numeric(length = 1, value = 0)
+                nextIntervalLength <- adaptWindow
+                done <- FALSE
+                while(!done) {
+                  warmupIntervalLengths <<- c(warmupIntervalLengths, nextIntervalLength)
+                  warmupIntervalsAdaptM <<- c(warmupIntervalsAdaptM, 1)
+                  endIntervals <- endIntervals + nextIntervalLength
+                  remainingIterations <- nwarmup - (endIntervals + termBuffer)
+                  if(remainingIterations == 0) {
                     done <- TRUE
-                } else {
+                  } else {
                     ## look ahead two iterations into the future
                     nextIntervalLength <- 2*nextIntervalLength
                     nextRemainingIterations <- remainingIterations - nextIntervalLength
                     nextnextIntervalLength <- 2*nextIntervalLength
                     if(nextRemainingIterations < nextnextIntervalLength) {
-                        nextIntervalLength <- nextIntervalLength + nextRemainingIterations
+                      nextIntervalLength <- nextIntervalLength + nextRemainingIterations
                     }
+                  }
                 }
+                warmupIntervalLengths <<- c(warmupIntervalLengths, termBuffer)
+                warmupIntervalsAdaptM <<- c(warmupIntervalsAdaptM, 0)
+                setSize(warmupSamples, max(warmupIntervalLengths), d, fillZeros = FALSE)
             }
-            warmupIntervalLengths <<- c(warmupIntervalLengths, termBuffer)
-            warmupIntervalsAdaptM <<- c(warmupIntervalsAdaptM, 0)
-            setSize(warmupSamples, max(warmupIntervalLengths), d, fillZeros = FALSE)
+            }
         },
         after_chain = function() {
             if(messages) {
@@ -508,7 +540,7 @@ sampler_NUTS_classic <- nimbleFunction(
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
                     if(warningCodes[i,1] == 1) print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value on MCMC iteration ', warningCodes[i,2], '.')
-                    if(warningCodes[i,1] == 2) print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initializeEpsilon routine.')
+                    if(warningCodes[i,1] == 2) print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered acceptance prob = NaN in initEpsilon routine.')
                     if(warningCodes[i,1] == 3) print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered epsilon = NaN on MCMC iteration ', warningCodes[i,2], '.')
                 }
                 warningInd <<- 0               ## reset warningInd even when using reset=FALSE to continue the same chain
@@ -516,7 +548,7 @@ sampler_NUTS_classic <- nimbleFunction(
         },
         reset = function() {
             timesRan       <<- 0
-            epsilon        <<- 0
+            epsilon        <<- epsilonOrig
             mu             <<- 0
             logEpsilonBar  <<- 0
             Hbar           <<- 0
@@ -706,7 +738,7 @@ sampler_NUTS <- nimbleFunction(
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
-        if(epsilon < 0) stop('NUTS sampler epsilon must be positive', call. = FALSE)
+        if(epsilon < 0) stop('NUTS sampler epsilon must be non-negative', call. = FALSE)
         if(!all(M > 0)) stop('NUTS sampler M must contain all positive elements', call. = FALSE)
         if(d == 1) if(length(M) != 2) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
         if(d  > 1) if(length(M) != d) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
@@ -1052,33 +1084,40 @@ sampler_NUTS <- nimbleFunction(
             return(FALSE)
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
-            if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
-            if(MCMCchain == 1 & adaptive)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
-            ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
-            ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
-            ## https://colcarroll.github.io/hmc_tuning_talk/
-            ## approach follows Stan code
-            if(initBuffer + adaptWindow + termBuffer > nwarmup) {
+          if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
+          if(adaptive) {
+            if(nwarmup > 0 & nwarmup < 20) {
+              stop("  [Error] NUTS_classic sampler: Don't set nwarmup to be 1-19. At least 20 is needed for any warmup. If you want no warmup, use 0 or set adaptive=FALSE.")
+            }
+            if(nwarmup > 0) {
+              if(MCMCchain == 1)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
+              ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
+              ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
+              ## https://colcarroll.github.io/hmc_tuning_talk/
+              ## approach follows Stan code
+              if(initBuffer + adaptWindow + termBuffer > nwarmup) {
                 if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS sampler is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
                 adapt_initBuffer <<- round(nwarmup * 0.15)
                 adapt_termBuffer <<- round(nwarmup * 0.10)
                 adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer
-            } else {
+              } else {
                 adaptWindow_size <<- adaptWindow
                 adapt_initBuffer <<- initBuffer
                 adapt_termBuffer <<- termBuffer
                 ## if there won't be room for the next window of doubled size, make the first and only window longer
                 if((nwarmup - (adapt_initBuffer + adaptWindow_size + adapt_termBuffer)) < 2*adaptWindow_size)
-                    adaptWindow_size <<- nwarmup - (adapt_initBuffer + adapt_termBuffer)
+                  adaptWindow_size <<- nwarmup - (adapt_initBuffer + adapt_termBuffer)
+              }
+                                        # if(nwarmup < 20 & adaptive) if(messages) print("  [Warning] Number of warmup iteration for NUTS sampler is so small (",nwarmup,") that it might be useless.")
+              adapt_next_window <<- adapt_initBuffer + adaptWindow_size
+              adaptWindow_counter <<- 1
+              adaptWindow_iter <<- 1
+              Hbar <<- 0
+              logEpsilonBar <<- 0
+              stepsizeCounter <<- 0
+              setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
             }
-            if(nwarmup < 20 & adaptive) if(messages) print("  [Warning] Number of warmup iteration for NUTS sampler is so small (",nwarmup,") that it might be useless.")
-            adapt_next_window <<- adapt_initBuffer + adaptWindow_size
-            adaptWindow_counter <<- 1
-            adaptWindow_iter <<- 1
-            Hbar <<- 0
-            logEpsilonBar <<- 0
-            stepsizeCounter <<- 0
-            setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
+          }
         },
         after_chain = function() {
             if(messages) {
