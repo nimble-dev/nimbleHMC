@@ -218,9 +218,10 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   data <- list(d = 5)
   inits <- list(a = rep(0, 3))
   Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+#  temporarilyAssignInGlobalEnv(Rmodel)
 
   #A
-  set.seed(1)
+  set.seed(2)
   conf <- configureMCMC(Rmodel, nodes = NULL)
   conf$addSampler('a', "NUTS", control = list(nwarmup = 1000, adaptive = FALSE, initializeEpsilon=TRUE))
   Rmcmc <- buildMCMC(conf)

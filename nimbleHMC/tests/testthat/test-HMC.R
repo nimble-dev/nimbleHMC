@@ -169,10 +169,9 @@ test_that('HMC for Dirichlet-multinomial', {
         Cmcmc <- compiledList$mcmc
         set.seed(0)
         samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
-        expect_equal(as.numeric(apply(samples, 2, mean)), p, tol = .05)
+        expect_equal(as.numeric(apply(samples, 2, mean)), y/n, tol = .002)
     }
 })
-
 
 ## copied from 'block sampler on MVN node' test in test-mcmc.R
 test_that('HMC on MVN node', {
@@ -476,4 +475,3 @@ test_that('configureHMC correctly assign samplers for posterior-predictive nodes
     expect_true(conf$samplerConfs[[2]]$name == 'posterior_predictive')
     expect_identical(conf$samplerConfs[[2]]$target, 'pp')
 })
-
