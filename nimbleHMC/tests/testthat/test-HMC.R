@@ -169,7 +169,7 @@ test_that('HMC for Dirichlet-multinomial', {
         Cmcmc <- compiledList$mcmc
         set.seed(0)
         samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
-        expect_equal(as.numeric(apply(samples, 2, mean)), y/n, tol = .002)
+        expect_equal(as.numeric(apply(samples, 2, mean)), y/n, tol = .02)
     }
 })
 

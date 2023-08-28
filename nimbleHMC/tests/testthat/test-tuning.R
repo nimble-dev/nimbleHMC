@@ -218,8 +218,8 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   data <- list(d = 5)
   inits <- list(a = rep(0, 3))
   Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-#  temporarilyAssignInGlobalEnv(Rmodel)
 
+  temporarilyAssignInGlobalEnv(Rmodel)
   #A
   set.seed(2)
   conf <- configureMCMC(Rmodel, nodes = NULL)
@@ -297,13 +297,14 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
 
   # For NUTS_classic, we have to compile
   nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
-  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-  conf <- configureMCMC(Rmodel, nodes = NULL)
+  Rmodel2 <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  temporarilyAssignInGlobalEnv(Rmodel2)
+  conf <- configureMCMC(Rmodel2, nodes = NULL)
   conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = FALSE,
                                                       initializeEpsilon=TRUE))
   Rmcmc <- buildMCMC(conf)
-  Cmodel <- compileNimble(Rmodel)
-  Cmcmc <- compileNimble(Rmcmc, project=Rmodel)
+  Cmodel <- compileNimble(Rmodel2)
+  Cmcmc <- compileNimble(Rmcmc, project=Rmodel2)
 
   #A
   set.seed(1)
