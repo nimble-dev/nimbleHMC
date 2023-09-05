@@ -1123,14 +1123,14 @@ sampler_NUTS <- nimbleFunction(
                     }
                     # if(nwarmup < 20 & adaptive) if(messages) print("  [Warning] Number of warmup iteration for NUTS sampler is so small (",nwarmup,") that it might be useless.")
                     adapt_next_window <<- adapt_initBuffer + adaptWindow_size
-              adaptWindow_counter <<- 1
-              adaptWindow_iter <<- 1
-              Hbar <<- 0
-              logEpsilonBar <<- 0
-              stepsizeCounter <<- 0
-              setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
+                    adaptWindow_counter <<- 1
+                    adaptWindow_iter <<- 1
+                    Hbar <<- 0
+                    logEpsilonBar <<- 0
+                    stepsizeCounter <<- 0
+                    setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
+                }
             }
-          }
         },
         after_chain = function() {
             if(messages) {
