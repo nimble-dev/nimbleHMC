@@ -143,7 +143,7 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
     addHMC(conf, stochContNodes, type, control, print = FALSE)
     conf$addSampler(target = stochDiscNodes, control = control, print = FALSE, default = TRUE)
     if(!nodesProvided)   conf$addSampler(target = postPredNodes, control = control, print = FALSE, default = TRUE)
-    if(print)   conf$show(...)     ## ... is needed for includeConfGetUnsampledNodes argument
+    if(print)   conf$show()     ## conf$show(...) is needed for includeConfGetUnsampledNodes argument
     return(invisible(conf))
 }
 
