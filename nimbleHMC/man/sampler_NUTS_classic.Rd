@@ -31,7 +31,8 @@ The NUTS_classic sampler accepts the following control list elements:
 \itemize{
 \item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
 \item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered).  See additional details below.  (default = 0)
-\item initialEpsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+\item epsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+\item initializeEpsilon.  A logical argument, specifying whether to perform the epsilon (stepsize) initialization routine at the onset of each adapatation window. (default = TRUE)
 \item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 \item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
 \item kappa.  A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
@@ -40,8 +41,12 @@ The NUTS_classic sampler accepts the following control list elements:
 \item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
 \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
 \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
+\item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
 \item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
 \item termBuffer.  Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
+\item adaptive.  A logical argument, specifying whether to do any adaptation whatsoever.  When TRUE, specific adapatation routines are controled by the adaptEpsilon and adaptM control list elements.  (default = TRUE)
+\item adaptEpsilon.  A logical argument, specifying whether to perform stepsize adaptation.  Only used when adaptive = TRUE.  (default = TRUE)
+\item adaptM.  A logical argument, specifying whether to perform adaptation of the mass matrix (metric) M.  Only used when adaptive = TRUE.  (default = TRUE)
 }
 
 NaN vales may be encountered in the course of the leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
