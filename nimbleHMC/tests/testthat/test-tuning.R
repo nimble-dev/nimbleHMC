@@ -5,6 +5,15 @@
 
 nimbleOptions(enableDerivs=TRUE) # TRUE by default, but just in case
 
+temporarilyAssignInGlobalEnv <- function(value, replace = FALSE) {
+    name <- deparse(substitute(value))
+    assign(name, value, envir = .GlobalEnv)
+    if(!replace) {
+        rmCommand <- substitute(remove(name, envir = .GlobalEnv))
+        do.call('on.exit', list(rmCommand, add = TRUE), envir = parent.frame())
+    }
+}
+
 capture_windows_NUTS <- function(sNUTS, niter, nwarmup) {
   sNUTS$before_chain(niter, 0, 1)
   update <- rep(FALSE, niter)
