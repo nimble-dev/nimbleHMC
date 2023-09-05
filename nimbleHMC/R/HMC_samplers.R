@@ -495,7 +495,7 @@ sampler_NUTS_classic <- nimbleFunction(
             if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
             if(adaptive) {
                 if(nwarmup > 0 & nwarmup < 20) {
-                    stop("  [Error] NUTS_classic sampler: Don't set nwarmup to be 1-19. At least 20 is needed for any warmup. If you want no warmup, use 0.")
+                    stop("  [Error] NUTS_classic sampler: Don't set nwarmup between 1 and 19. At least 20 iterations is needed for any warmup. If you want no warmup, use nwarmup = 0 or set adaptive = FALSE.")
                 }
                 if(nwarmup > 0) {
                     if(MCMCchain == 1) {
@@ -1099,7 +1099,7 @@ sampler_NUTS <- nimbleFunction(
             if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
             if(adaptive) {
                 if(nwarmup > 0 & nwarmup < 20) {
-                    stop("  [Error] NUTS_classic sampler: Don't set nwarmup to be 1-19. At least 20 is needed for any warmup. If you want no warmup, use 0 or set adaptive=FALSE.")
+                    stop("  [Error] NUTS sampler: Don't set nwarmup between 1 and 19. At least 20 iterations is needed for any warmup. If you want no warmup, use nwarmup = 0 or set adaptive = FALSE.")
                 }
                 if(nwarmup > 0) {
                     if(MCMCchain == 1)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
