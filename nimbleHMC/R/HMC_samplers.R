@@ -223,7 +223,6 @@ sampler_NUTS_classic <- nimbleFunction(
         adaptive       <- extractControlElement(control, 'adaptive',       TRUE) # any adaptation? (if FALSE, next two flags are ignored)
         adaptEpsilon   <- extractControlElement(control, 'adaptEpsilon',   TRUE) # stepsize adaptation?
         adaptM         <- extractControlElement(control, 'adaptM',         TRUE) # mass matrix adaptation?
-
         ## node list generation
         targetNodes <- model$expandNodeNames(target)
         if(length(targetNodes) <= 0) stop('NUTS_classic sampler must operate on at least one node', call. = FALSE)
