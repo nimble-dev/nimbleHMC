@@ -35,7 +35,7 @@ test_that('HMC sampler seems to work', {
         print(as.numeric(apply(samples, 2, mean)))
         print('B')
         print(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841))
-        pring('C')
+        print('C')
         ##
         expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.01))
         expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.01))
