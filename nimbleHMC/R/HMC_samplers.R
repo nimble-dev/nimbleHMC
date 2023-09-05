@@ -283,8 +283,8 @@ sampler_NUTS_classic <- nimbleFunction(
             grad <<- grad[1:d];   gradFirst <<- gradFirst[1:d];   gradSaveL <<- gradSaveL[1:d];   gradSaveR <<- gradSaveR[1:d]
             M <<- M[1:d];         sqrtM <<- sqrtM[1:d]
             if(epsilon == 0) epsilon <<- 1
-            mu <<- log(10*epsilon)              ## Following Stan: use default 1 and set mu before initializeEpsilon for first window.
-            if(initializeEpsilon)  initEpsilon()                 ## no initialEpsilon value was provided
+            mu <<- log(10*epsilon)              ## following Stan: use default 1 and set mu before initializeEpsilon for first window
+            if(initializeEpsilon)  initEpsilon()
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
