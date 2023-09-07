@@ -393,7 +393,7 @@ sampler_NUTS_classic <- nimbleFunction(
             while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
                 ##if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
                 ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
-                epsilon <<- epsilon / 1000                                ## my addition
+                epsilon <<- epsilon / 2                                   ## my addition
                 qpNL <- leapfrog(q, p, epsilon, 0, 2)                     ## my addition
             }                                                             ## my addition
             qpLogH <- logH(q, p)
