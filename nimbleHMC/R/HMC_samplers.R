@@ -284,7 +284,7 @@ sampler_NUTS_classic <- nimbleFunction(
             M <<- M[1:d];         sqrtM <<- sqrtM[1:d]
             if(epsilon == 0) epsilon <<- 1
             mu <<- log(10*epsilon)              ## following Stan: use default 1 and set mu before initializeEpsilon for first window
-            if(initializeEpsilon)  initEpsilon()
+            if(initializeEpsilon & adaptive)  initEpsilon()
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -767,7 +767,7 @@ sampler_NUTS <- nimbleFunction(
             sqrtM <<- sqrtM[1:d]
             if(epsilon <= 0) epsilon <<- 1
             mu <<- log(10*epsilon)    ## curiously, Stan sets this for the first round *before* init_stepsize
-            if(initializeEpsilon)   initEpsilon()
+            if(initializeEpsilon & adaptive)   initEpsilon()
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
