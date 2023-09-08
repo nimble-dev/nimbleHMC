@@ -228,7 +228,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   inits <- list(a = rep(0, 3))
   Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 
-  temporarilyAssignInGlobalEnv(Rmodel)
+  # temporarilyAssignInGlobalEnv(Rmodel)
   #A
   set.seed(2)
   conf <- configureMCMC(Rmodel, nodes = NULL)
@@ -303,11 +303,92 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   expect_false(sNUTS$epsilon == 0.5)
   expect_true(all(sNUTS$M == 1))
 
+  # NUTS_classic
+  # At the time of this writing,
+  # a bug in nimble waiting to be fixed is that is.nan.vec
+  # is not exported for uncompild execution. For these tests,
+  # we grab it here so it can be called during initEpsilon:
+  is.nan.vec <- nimble:::is.nan.vec
+  temporarilyAssignInGlobalEnv(is.nan.vec)
+  #A
+  set.seed(2)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = FALSE, initializeEpsilon=TRUE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  Rmcmc$run(niter = 1)
+  expect_false(sNUTS$epsilon == 1)
 
-  # For NUTS_classic, we have to compile
+  #B
+  set.seed(1)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = FALSE, initializeEpsilon=FALSE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  Rmcmc$run(niter = 1)
+  expect_true(sNUTS$epsilon == 1)
+
+  #C
+  set.seed(1)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = FALSE, epsilon = 0.5,
+                                              initializeEpsilon=FALSE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  Rmcmc$run(niter = 1)
+  expect_true(sNUTS$epsilon == 0.5)
+
+  #D
+  set.seed(1)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = FALSE, epsilon = 0.5,
+                                              initializeEpsilon=TRUE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  Rmcmc$run(niter = 1)
+  expect_false(sNUTS$epsilon == 0.5)
+
+  #E
+  set.seed(1)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = TRUE, epsilon = 0.5,
+                                              initializeEpsilon=FALSE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  Rmcmc$run(niter = 1)
+  expect_false(sNUTS$epsilon == 0.5)
+
+  #F
+  set.seed(1)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 20, adaptive = TRUE, epsilon = 0.5,
+                                              adaptEpsilon = FALSE,
+                                              initializeEpsilon=FALSE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  expect_true(all(sNUTS$M == 1))
+  Rmcmc$run(niter = 20)
+  expect_true(sNUTS$epsilon == 0.5)
+  expect_false(all(sNUTS$M == 1))
+
+  #G
+  set.seed(1)
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = TRUE, epsilon = 0.5,
+                                              adaptM = FALSE,
+                                              initializeEpsilon=FALSE))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  expect_true(all(sNUTS$M == 1))
+  Rmcmc$run(niter = 1)
+  expect_false(sNUTS$epsilon == 0.5)
+  expect_true(all(sNUTS$M == 1))
+
+  # For NUTS_classic, we also wrote versions with compiling
+  # These may turn out to be redundant with above.
   nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
   Rmodel2 <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
-  temporarilyAssignInGlobalEnv(Rmodel2)
+  # temporarilyAssignInGlobalEnv(Rmodel2)
   conf <- configureMCMC(Rmodel2, nodes = NULL)
   conf$addSampler('a', "NUTS_classic", control = list(nwarmup = 1000, adaptive = FALSE,
                                                       initializeEpsilon=TRUE))

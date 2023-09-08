@@ -241,7 +241,7 @@ sampler_NUTS_classic <- nimbleFunction(
         nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
-        timesRan <- 0;   epsilon <- 0;   mu <- 0;   logEpsilonBar <- 0;   Hbar <- 0
+        timesRan <- 0;   mu <- 0;   logEpsilonBar <- 0;   Hbar <- 0
         q <- numeric(d2);   qL <- numeric(d2);   qR <- numeric(d2);   qDiff <- numeric(d2);   qNew <- numeric(d2)
         p <- numeric(d2);   pL <- numeric(d2);   pR <- numeric(d2);   p2 <- numeric(d2);      p3 <- numeric(d2)
         grad <- numeric(d2);   gradFirst <- numeric(d2);   gradSaveL <- numeric(d2);   gradSaveR <- numeric(d2)
