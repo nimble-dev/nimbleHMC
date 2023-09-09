@@ -122,6 +122,61 @@ sampler_langevin <- nimbleFunction(
 )
 
 
+hmc_checkWarmup <- function(warmupMode, warmup, samplerName) {
+    if(!(warmupMode %in% c('default', 'burnin', 'fraction', 'iterations')))   stop(paste0('  [Error] warmupMode control argument of ', samplerName, ' sampler must have value "default", "burnin", "fraction", or "iterations".  The value provided was: ', warmupMode, '.'), call. = FALSE)
+    if(warmupMode == 'fraction')
+        if(!is.numeric(warmup) | warmup < 0 | warmup > 1)   stop(paste0('  [Error] When the warmupMode control argument of ', samplerName, ' sampler is "fraction", the warmup control argument must be a number between 0 and 1, which will specify the fraction of the total MCMC iterations to use as warmup.  The value provided for the warmup control argument was: ', warmup, '.'), call. = FALSE)
+    if(warmupMode == 'iterations')
+        if(!is.numeric(warmup) | warmup < 0 | floor(warmup) != warmup)   stop(paste0('  [Error] When the warmupMode control argument of ', samplerName, ' sampler is "iterations", the warmup control argument must be a non-negative integer, which will specify the number MCMC iterations to use as warmup.  The value provided for the warmup control argument was: ', warmup, '.'), call. = FALSE)
+}
+
+
+
+hmc_setWarmup <- nimbleFunction(
+    setup = function(warmupMode, warmup, messages, samplerName, targetNodesToPrint) {},
+    run = function(MCMCniter = double(), MCMCnburnin = double(), adaptive = logical()) {
+        ##
+        ## set nwarmup
+        if(warmupMode == 'default') {
+            if(MCMCnburnin > 0)   nwarmup <- MCMCnburnin
+            else                  nwarmup <- floor(MCMCniter/2)
+        }
+        if(warmupMode == 'burnin')       nwarmup <- MCMCnburnin
+        if(warmupMode == 'fraction')     nwarmup <- floor(warmup*MCMCniter)
+        if(warmupMode == 'iterations')   nwarmup <- warmup
+        ##
+        ## informative message
+        if(messages) {
+            if(!adaptive) {   ## adaptive = FALSE
+                print('  [Note] ', samplerName, ' sampler (nodes: ', targetNodesToPrint, ') has adapation turned off, so no warmup period will be used.')
+            } else {          ## adaptive = TRUE
+                if(warmupMode == 'default') {
+                    if(MCMCnburnin > 0)          print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'default' and nburnin > 0, the number of warmup iterations is equal to nburnin.  The burnin samples will be discarded, and all samples returned will be post-warmup.")
+                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'default' and nburnin = 0, the number of warmup iterations is equal to niter/2.  No samples will be discarded, so the first half of the samples returned are from the warmup period, and the second half of the samples are post-warmup.")
+                }
+                if(warmupMode == 'burnin')       print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'burnin', the number of warmup iterations is equal to nburnin.  The burnin samples will be discarded, and all samples returned will be post-warmup.")
+                if(warmupMode == 'fraction') {
+                    if(MCMCnburnin < nwarmup)    print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'fraction', the number of warmup iterations is equal to niter*fraction, where fraction is the value of the warmup control argument.  Because nburnin is less than the number of warmup iterations, some of the samples returned will be collected during the warmup period, and the remainder of the samples returned will be post-warmup.")
+                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'fraction', the number of warmup iterations is equal to niter*fraction, where fraction is the value of the warmup control argument.  Because nburnin exceeeds the number of warmup iterations, all samples returned will be post-warmup.")
+                }
+                if(warmupMode == 'iterations')
+                    if(MCMCnburnin < nwarmup)    print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'iterations', the number of warmup iterations is the value of the warmup control argument.  Because nburnin is less than the number of warmup iterations, some of the samples returned will be collected during the warmup period, and the remainder of the samples returned will be post-warmup.")
+                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'iterations', the number of warmup iterations is the value of the warmup control argument.  Because nburnin exceeeds the number of warmup iterations, all samples returned will be post-warmup.")
+            }
+        }
+        ##
+        ## hard check that nwarmup >= 20
+        if(adaptive & nwarmup > 0 & nwarmup < 20) {
+            print('  [Error] ', samplerName, ' sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 20 warmup iterations.')
+            stop()
+        }
+        ##
+        returnType(double())
+        return(nwarmup)
+    }
+)
+
+
 
 #' Classic No-U-Turn (NUTS_classic) Hamiltonian Monte Carlo (HMC) Sampler
 #'
@@ -147,7 +202,8 @@ sampler_langevin <- nimbleFunction(
 #' \item delta.  A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.65)
 #' \item deltaMax.  A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
 #' \item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
-#' \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
+#' \item warmupMode.  A character string, specifying the behavior for choosing the number of warmup iterations.  Four values are possible.  The value 'default' (the default) sets the number of warmup iterations as (if a positive burnin period is specified) the number of burnin iterations (which will be discarded), or (if no burnin period is specified) half the number of MCMC iterations in each chain.  The value 'burnin' sets the number of warmup iterations as the number of burnin iterations regardless of the length of the burnin period.  The value 'fraction' sets the number of warmup iterations as fraction*niter, where fraction is the value of the warmup control argument, and niter is the number of MCMC iterations in each chain; in this case, the value of the warmup control argument must be between 0 and 1.  The value 'iterations' sets the number of warmup iterations as the value of the warmup control argumnet, regardless of the length of the burnin period or the number of MCMC iterations; in this case the value of the warmup control argument must be a non-negative integer.
+#' item warmup Numeric value used in determining the number of warmup iterations.  This control argument is only used when warmupMode is 'fraction' or 'iterations'.  See documentation for the warmup control argument.
 #' \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
 #' \item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
 #' \item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
@@ -215,7 +271,8 @@ sampler_NUTS_classic <- nimbleFunction(
         delta          <- extractControlElement(control, 'delta',          0.65)
         deltaMax       <- extractControlElement(control, 'deltaMax',       1000)
         M              <- extractControlElement(control, 'M',              -1)
-        nwarmup        <- extractControlElement(control, 'nwarmup',        -1)
+        warmupMode     <- extractControlElement(control, 'warmupMode',     'default')   ## 'default', 'burnin', 'fraction', or 'iterations'
+        warmup         <- extractControlElement(control, 'warmup',         -1)          ## used if warmupMode is 'fraction' or 'iterations'
         maxTreeDepth   <- extractControlElement(control, 'maxTreeDepth',   10)
         adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)
         initBuffer     <- extractControlElement(control, 'initBuffer',     75)
@@ -241,7 +298,7 @@ sampler_NUTS_classic <- nimbleFunction(
         nimDerivs_updateNodes   <- derivsInfo_return$updateNodes
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
-        timesRan <- 0;   mu <- 0;   logEpsilonBar <- 0;   Hbar <- 0
+        timesRan <- 0;   nwarmup <- 0;   mu <- 0;   logEpsilonBar <- 0;   Hbar <- 0
         q <- numeric(d2);   qL <- numeric(d2);   qR <- numeric(d2);   qDiff <- numeric(d2);   qNew <- numeric(d2)
         p <- numeric(d2);   pL <- numeric(d2);   pR <- numeric(d2);   p2 <- numeric(d2);      p3 <- numeric(d2)
         grad <- numeric(d2);   gradFirst <- numeric(d2);   gradSaveL <- numeric(d2);   gradSaveR <- numeric(d2)
@@ -249,7 +306,6 @@ sampler_NUTS_classic <- nimbleFunction(
         warningCodes <- array(0, c(max(numWarnings,1), 2))
         warningInd <- 0
         epsilonOrig <- epsilon
-        nwarmupOrig <- nwarmup
         warmupIntervalLengths <- rep(0,2)
         warmupIntervalsAdaptM <- rep(0,2)
         warmupIntervalNumber <- 0
@@ -261,9 +317,11 @@ sampler_NUTS_classic <- nimbleFunction(
         sqrtM <- sqrt(M)
         numDivergences <- 0
         numTimesMaxTreeDepth <- 0
-        ## nested function and function list definitions
+        ## nimbleLists
         qpNLDef <- nimbleList(q  = double(1), p  = double(1))
         btNLDef <- nimbleList(q1 = double(1), p1 = double(1), q2 = double(1), p2 = double(1), q3 = double(1), n = double(), s = double(), a = double(), na = double())
+        ## nested function and function list definitions
+        my_setWarmup <- hmc_setWarmup(warmupMode, warmup, messages, 'NUTS_classic', targetNodesToPrint)
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
@@ -272,6 +330,7 @@ sampler_NUTS_classic <- nimbleFunction(
         if(d == 1) if(length(M) != 2) stop('length of NUTS_classic sampler M must match length of NUTS_classic target nodes', call. = FALSE)
         if(d  > 1) if(length(M) != d) stop('length of NUTS_classic sampler M must match length of NUTS_classic target nodes', call. = FALSE)
         if(maxTreeDepth < 1) stop('NUTS_classic maxTreeDepth must be at least one ', call. = FALSE)
+        hmc_checkWarmup(warmupMode, warmup, 'NUTS_classic')
     },
     run = function() {
         ## No-U-Turn Sampler with Dual Averaging, Algorithm 6 from Hoffman and Gelman (2014)
@@ -284,7 +343,7 @@ sampler_NUTS_classic <- nimbleFunction(
             M <<- M[1:d];         sqrtM <<- sqrtM[1:d]
             if(epsilon == 0) epsilon <<- 1
             mu <<- log(10*epsilon)              ## following Stan: use default 1 and set mu before initializeEpsilon for first window
-            if(initializeEpsilon)  initEpsilon()
+            if(initializeEpsilon & adaptive)  initEpsilon()
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -393,7 +452,7 @@ sampler_NUTS_classic <- nimbleFunction(
             while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
                 ##if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
                 ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
-                epsilon <<- epsilon / 1000                                ## my addition
+                epsilon <<- epsilon / 2                                   ## my addition
                 qpNL <- leapfrog(q, p, epsilon, 0, 2)                     ## my addition
             }                                                             ## my addition
             qpLogH <- logH(q, p)
@@ -492,15 +551,9 @@ sampler_NUTS_classic <- nimbleFunction(
             }
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
-            if(nwarmup == -1)   nwarmup <<- min( floor(MCMCniter/2), 1000 )
+            if(MCMCchain == 1)   nwarmup <<- my_setWarmup$run(MCMCniter, MCMCnburnin, adaptive)
             if(adaptive) {
-                if(nwarmup > 0 & nwarmup < 20) {
-                    stop("  [Error] NUTS_classic sampler: Don't set nwarmup between 1 and 19. At least 20 iterations is needed for any warmup. If you want no warmup, use nwarmup = 0 or set adaptive = FALSE.")
-                }
                 if(nwarmup > 0) {
-                    if(MCMCchain == 1) {
-                        if(messages) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
-                    }
                     ## need to deal with exceptions such as nwarmup < 100
                     if(initBuffer + adaptWindow + termBuffer > nwarmup) {
                         if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
@@ -567,7 +620,6 @@ sampler_NUTS_classic <- nimbleFunction(
             numDivergences <<- 0
             numTimesMaxTreeDepth <<- 0
             warningInd     <<- 0
-            nwarmup        <<- nwarmupOrig
             M              <<- Morig
             sqrtM          <<- sqrt(M)
             warmupIntervalNumber <<- 1
@@ -615,7 +667,8 @@ treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = doub
 #' \item delta.  A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.8)
 #' \item deltaMax.  A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
 #' \item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
-#' \item nwarmup.  The number of sampling iterations to adapt the leapfrog step-size.  This defaults to half the number of MCMC iterations, up to a maximum of 1000.
+#' \item warmupMode.  A character string, specifying the behavior for choosing the number of warmup iterations.  Four values are possible.  The value 'default' (the default) sets the number of warmup iterations as (if a positive burnin period is specified) the number of burnin iterations (which will be discarded), or (if no burnin period is specified) half the number of MCMC iterations in each chain.  The value 'burnin' sets the number of warmup iterations as the number of burnin iterations regardless of the length of the burnin period.  The value 'fraction' sets the number of warmup iterations as fraction*niter, where fraction is the value of the warmup control argument, and niter is the number of MCMC iterations in each chain; in this case, the value of the warmup control argument must be between 0 and 1.  The value 'iterations' sets the number of warmup iterations as the value of the warmup control argumnet, regardless of the length of the burnin period or the number of MCMC iterations; in this case the value of the warmup control argument must be a non-negative integer.
+#' item warmup Numeric value used in determining the number of warmup iterations.  This control argument is only used when warmupMode is 'fraction' or 'iterations'.  See documentation for the warmup control argument.
 #' \item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
 #' \item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
 #' \item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
@@ -685,7 +738,8 @@ sampler_NUTS <- nimbleFunction(
         delta          <- extractControlElement(control, 'delta',          0.8)
         deltaMax       <- extractControlElement(control, 'deltaMax',       1000)
         M              <- extractControlElement(control, 'M',              -1)
-        nwarmup        <- extractControlElement(control, 'nwarmup',        -1)
+        warmupMode     <- extractControlElement(control, 'warmupMode',     'default')   ## 'default', 'burnin', 'fraction', or 'iterations'
+        warmup         <- extractControlElement(control, 'warmup',         -1)          ## used if warmupMode is 'fraction' or 'iterations'
         maxTreeDepth   <- extractControlElement(control, 'maxTreeDepth',   10)
         adaptWindow    <- extractControlElement(control, 'adaptWindow',    25)
         initBuffer     <- extractControlElement(control, 'initBuffer',     75)
@@ -714,8 +768,8 @@ sampler_NUTS <- nimbleFunction(
         nimDerivs_constantNodes <- derivsInfo_return$constantNodes
         ## numeric value generation
         epsilonOrig <- epsilon
-        nwarmupOrig <- nwarmup
         timesRan            <- 0
+        nwarmup             <- 0
         stepsizeCounter     <- 0
         mu                  <- 0
         logEpsilonBar       <- 0
@@ -747,6 +801,8 @@ sampler_NUTS <- nimbleFunction(
         state_b       <- stateNL$new()
         state_sample  <- stateNL$new()
         state_propose <- stateNL$new()
+        ## nested function and function list definitions
+        my_setWarmup <- hmc_setWarmup(warmupMode, warmup, messages, 'NUTS', targetNodesToPrint)
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
@@ -755,6 +811,7 @@ sampler_NUTS <- nimbleFunction(
         if(d == 1) if(length(M) != 2) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
         if(d  > 1) if(length(M) != d) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
         if(maxTreeDepth < 1) stop('NUTS maxTreeDepth must be at least one', call. = FALSE)
+        hmc_checkWarmup(warmupMode, warmup, 'NUTS')
     },
     run = function() {
         ## No-U-Turn Sampler based on Stan
@@ -767,7 +824,7 @@ sampler_NUTS <- nimbleFunction(
             sqrtM <<- sqrtM[1:d]
             if(epsilon <= 0) epsilon <<- 1
             mu <<- log(10*epsilon)    ## curiously, Stan sets this for the first round *before* init_stepsize
-            if(initializeEpsilon)   initEpsilon()
+            if(initializeEpsilon & adaptive)   initEpsilon()
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -1096,13 +1153,9 @@ sampler_NUTS <- nimbleFunction(
             return(FALSE)
         },
         before_chain = function(MCMCniter = double(), MCMCnburnin = double(), MCMCchain = double()) {
-            if(nwarmup == -1)   nwarmup <<- floor(MCMCniter/2)
+            if(MCMCchain == 1)   nwarmup <<- my_setWarmup$run(MCMCniter, MCMCnburnin, adaptive)
             if(adaptive) {
-                if(nwarmup > 0 & nwarmup < 20) {
-                    stop("  [Error] NUTS sampler: Don't set nwarmup between 1 and 19. At least 20 iterations is needed for any warmup. If you want no warmup, use nwarmup = 0 or set adaptive = FALSE.")
-                }
                 if(nwarmup > 0) {
-                    if(MCMCchain == 1)  if(messages)   print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') is using ', nwarmup, ' warmup iterations.')
                     ## https://mc-stan.org/docs/2_23/reference-manual/hmc-algorithm-parameters.html#adaptation.figure
                     ## https://discourse.mc-stan.org/t/new-adaptive-warmup-proposal-looking-for-feedback/12039
                     ## https://colcarroll.github.io/hmc_tuning_talk/
@@ -1158,7 +1211,6 @@ sampler_NUTS <- nimbleFunction(
             numDivergences <<- 0
             numTimesMaxTreeDepth <<- 0
             warningInd     <<- 0
-            nwarmup        <<- nwarmupOrig
             M              <<- Morig
             sqrtM          <<- sqrt(M)
             ## the adapt_* variables are initialized in before_chain()
