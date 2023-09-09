@@ -467,3 +467,133 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
 
 })
+
+test_that('burnin/warmup are handled correctly', {
+    
+  code <- nimbleCode({
+    a[1] ~ dnorm(0, 1)
+    a[2] ~ dnorm(a[1]+1, 1)
+    a[3] ~ dnorm(a[2]+1, 1)
+    d ~ dnorm(a[3], sd=2)
+  })
+  constants <- list()
+  data <- list(d = 5)
+  inits <- list(a = rep(0, 3))
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  ## 'default'
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS")
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  expect_output(out <- runMCMC(Cmcmc, nburnin = 200, niter = 1000),
+         regex = "using 200 warmup iterations.*all samples returned will be post-warmup")
+
+  expect_output(out <- runMCMC(Cmcmc, niter = 1000),
+         regex = "using 500 warmup iterations.*so the first half of the samples returned are from the warmup period")
+
+  ## 'burnin'
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'burnin'))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, niter = 1000),
+         regex = "using 0 warmup iterations.*no adaptation is being done")
+
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'burnin'))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, nburnin = 200, niter = 1000),
+         regex = "using 200 warmup iterations.*all samples returned will be post-warmup")
+
+  ## 'fraction'
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'fraction', warmup = 0.25))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, niter = 1000),
+                regex = "using 250 warmup iterations.*some of the samples returned will be collected during the warmup period")
+  
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'fraction', warmup = 0.25))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, nburnin = 100, niter = 1000),
+                regex = "using 250 warmup iterations.*some of the samples returned will be collected during the warmup period")
+
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'fraction', warmup = 0.25))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, nburnin = 250, niter = 1000),
+                regex = "using 250 warmup iterations.*all samples returned will be post-warmup")
+
+  ## 'iterations'
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 500))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, niter = 1000),
+                regex = "using 500 warmup iterations.*some of the samples returned will be collected during the warmup period")
+
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 500))
+  
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
+  expect_output(out <- runMCMC(Cmcmc, nburnin = 500, niter = 1000),
+                regex = "using 500 warmup iterations.*all samples returned will be post-warmup")
+
+  ## no adaptation
+  Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  Cmodel <- compileNimble(Rmodel)
+
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS", control = list(adaptive = FALSE))
+
+  Rmcmc <- buildMCMC(conf)
+  Cmcmc <- compileNimble(Rmcmc, project = Rmodel, resetFunctions = TRUE)
+
+  expect_output(out <- runMCMC(Cmcmc, niter = 1000),
+         regex = "has adaptation turned off")
+
+})
+
+
