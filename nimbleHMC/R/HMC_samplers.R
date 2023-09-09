@@ -152,7 +152,7 @@ hmc_setWarmup <- nimbleFunction(
             } else {          ## adaptive = TRUE
                 if(warmupMode == 'default') {
                     if(MCMCnburnin > 0)          print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'default' and nburnin > 0, the number of warmup iterations is equal to nburnin.  The burnin samples will be discarded, and all samples returned will be post-warmup.")
-                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'default' and nburnin = 0, the number of warmup iterations is equal to niter/2 but warmup samples are not discarded.  The first half of the samples returned will be collected during the warmup period, and the second half of the samples returned will be post-warmup.")
+                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'default' and nburnin = 0, the number of warmup iterations is equal to niter/2.  No samples will be discarded, so the first half of the samples returned are from the warmup period, and the second half of the samples are post-warmup.")
                 }
                 if(warmupMode == 'burnin')       print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.  Since warmupMode is 'burnin', the number of warmup iterations is equal to nburnin.  The burnin samples will be discarded, and all samples returned will be post-warmup.")
                 if(warmupMode == 'fraction') {
