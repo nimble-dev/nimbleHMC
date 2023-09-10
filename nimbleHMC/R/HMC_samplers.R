@@ -196,7 +196,7 @@ hmc_setWarmup <- nimbleFunction(
 #' 
 #' \itemize{
 #' \item messages. A logical argument, specifying whether to print informative messages. (default = TRUE)
-#' \item numWarnings. A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). See additional details below. (default = 0)
+#' \item numWarnings. A numeric argument, specifying how many warnings messages to emit (for example, when \code{NaN} values are encountered). See additional details below. (default = 0)
 #' \item epsilon. A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
 #' \item gamma. A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 #' \item t0. A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
@@ -205,7 +205,7 @@ hmc_setWarmup <- nimbleFunction(
 #' \item deltaMax. A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent and will not proceed further. (default = 1000)
 #' \item M. A vector of positive real numbers, with length equal to the number of dimensions being sampled. Elements of \code{M} specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling. Sampling may be improved if the elements of \code{M} approximate the marginal inverse variance (precision) of the (potentially transformed) parameters. (default: a vector of ones).
 #' \item warmupMode. A character string, specifying the behavior for choosing the number of warmup iterations. Four values are possible. The value 'default' (the default) sets the number of warmup iterations as the number of burnin iterations (if a positive value for \code{nburnin} is used) or half the number of MCMC iterations in each chain (if \code{nburnin = 0}). The value 'burnin' sets the number of warmup iterations as the number of burnin iterations regardless of the length of the burnin period. The value 'fraction' sets the number of warmup iterations as \code{fraction*niter}, where \code{fraction} is the value of the \code{warmup} control argument, and \code{niter} is the number of MCMC iterations in each chain; in this case, the value of the \code{warmup} control argument must be between 0 and 1. The value 'iterations' sets the number of warmup iterations as the value of the \code{warmup} control argumnet, regardless of the length of the burnin period or the number of MCMC iterations; in this case the value of \code{warmup} must be a non-negative integer. In all cases, the number of (pre-thinning) samples discarded equals \code{nburnin}, as is always the case for MCMC in NIMBLE.
-#' item warmup. Numeric value used in determining the number of warmup iterations. This control argument is only used when \code{warmupMode} is 'fraction' or 'iterations'. 
+#' \item warmup. Numeric value used in determining the number of warmup iterations. This control argument is only used when \code{warmupMode} is 'fraction' or 'iterations'. 
 #' \item maxTreeDepth. The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
 #' \item adaptWindow. Number of iterations in the first adaptation window used for adapting the mass matrix (M). Subsequent adaptation windows double in length, so long as enough warmup iterations are available. (default = 25)
 #' \item initBuffer. Number of iterations in the initial warmup window, which occurs prior to the first adaptation of the metric M. (default = 75)
@@ -562,7 +562,7 @@ sampler_NUTS_classic <- nimbleFunction(
                         if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
                                                       'is too small for even one cycle of standard adaptation. Using 15% ',
                                                       'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
-                                                      'adaptatation, and 10% for final stepsize adaptation.')
+                                                      'adaptation, and 10% for final stepsize adaptation.')
                         initBuffer <<- round(nwarmup * 0.15)
                         termBuffer <<- round(nwarmup * 0.10)
                         adaptWindow <<- nwarmup - initBuffer - termBuffer
@@ -661,7 +661,7 @@ treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = doub
 #' 
 #' \itemize{
 #' \item messages. A logical argument, specifying whether to print informative messages (default = TRUE)
-#' \item numWarnings. A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). See additional details below. (default = 0)
+#' \item numWarnings. A numeric argument, specifying how many warnings messages to emit (for example, when \code{NaN} values are encountered). See additional details below. (default = 0)
 #' \item epsilon. A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
 #' \item gamma. A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
 #' \item t0. A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
@@ -670,18 +670,18 @@ treebranchNL_NUTS <- nimbleList(p_beg = double(1), p_end = double(1), rho = doub
 #' \item deltaMax. A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
 #' \item M. A vector of positive real numbers, with length equal to the number of dimensions being sampled. Elements of \code{M} specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling. Sampling may be improved if the elements of \code{M} approximate the marginal inverse variance (precision) of the (potentially transformed) parameters. (default: a vector of ones).
 #' \item warmupMode. A character string, specifying the behavior for choosing the number of warmup iterations. Four values are possible. The value 'default' (the default) sets the number of warmup iterations as the number of burnin iterations (if a positive value for \code{nburnin} is used) or half the number of MCMC iterations in each chain (if \code{nburnin = 0}). The value 'burnin' sets the number of warmup iterations as the number of burnin iterations regardless of the length of the burnin period. The value 'fraction' sets the number of warmup iterations as \code{fraction*niter}, where \code{fraction} is the value of the \code{warmup} control argument, and \code{niter} is the number of MCMC iterations in each chain; in this case, the value of the \code{warmup} control argument must be between 0 and 1. The value 'iterations' sets the number of warmup iterations as the value of the \code{warmup} control argumnet, regardless of the length of the burnin period or the number of MCMC iterations; in this case the value of \code{warmup} must be a non-negative integer. In all cases, the number of (pre-thinning) samples discarded equals \code{nburnin}, as is always the case for MCMC in NIMBLE.
-#' item warmup. Numeric value used in determining the number of warmup iterations. This control argument is only used when \code{warmupMode} is 'fraction' or 'iterations'. 
+#' \item warmup. Numeric value used in determining the number of warmup iterations. This control argument is only used when \code{warmupMode} is 'fraction' or 'iterations'. 
 #' \item maxTreeDepth. The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
 #' \item adaptWindow. Number of iterations in the first adaptation window used for adapting the mass matrix (M). Subsequent adaptation windows double in length, so long as enough warmup iterations are available. (default = 25)
 #' \item initBuffer. Number of iterations in the initial warmup window, which occurs prior to the first adaptation of the metric M. (default = 75)
 #' \item termBuffer. Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
-#' \item adaptive. A logical argument, specifying whether to do any adaptation whatsoever. When \code{TRUE}, specific adaptation routines are controled by the \code{adaptEpsilon} and \code{adaptM} control list elements. (default = TRUE)
+#' \item adaptive. A logical argument, specifying whether to do any adaptation whatsoever. When \code{TRUE}, specific adaptation routines are controlled by the \code{adaptEpsilon} and \code{adaptM} control list elements. (default = TRUE)
 #' \item adaptEpsilon. A logical argument, specifying whether to perform stepsize adaptation. Only used when \code{adaptive = TRUE}. (default = TRUE)
 #' \item adaptM. A logical argument, specifying whether to perform adaptation of the mass matrix (metric) M. Only used when \code{adaptive = TRUE}. (default = TRUE)
 #' \item initializeEpsilon. A logical argument, specifying whether to perform the epsilon (stepsize) initialization routine at the onset of each adaptation window. (default = TRUE)
 #' }
 #'
-#' NaN vales may be encountered in the course of the leapfrog procedure. In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation. These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
+#' \code{NaN} values may be encountered in the course of the leapfrog procedure. In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a \code{NaN} value in the likelihood evaluation or in the gradient calculation. These situation are handled by the sampler by rejecting the \code{NaN} value, and reducing the stepsize.
 #' 
 #' @import nimble
 #' 
@@ -1164,7 +1164,10 @@ sampler_NUTS <- nimbleFunction(
                     ## https://colcarroll.github.io/hmc_tuning_talk/
                     ## approach follows Stan code
                     if(initBuffer + adaptWindow + termBuffer > nwarmup) {
-                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS sampler is too small for even one cycle of standard adaptation. Using 15% for initial stepsize adaptation, 75% for mass matrix and stepsize adaptatation, and 10% for final stepsize adaptation.')
+                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
+                                                      'is too small for even one cycle of standard adaptation. Using 15% ',
+                                                      'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
+                                                      'adaptation, and 10% for final stepsize adaptation.')
                         adapt_initBuffer <<- round(nwarmup * 0.15)
                         adapt_termBuffer <<- round(nwarmup * 0.10)
                         adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer
