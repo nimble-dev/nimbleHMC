@@ -478,11 +478,12 @@ test_that('burnin/warmup are handled correctly', {
   
   Rmcmc <- buildMCMC(conf)
   Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+  
   expect_output(out <- runMCMC(Cmcmc, nburnin = 200, niter = 1000),
          regex = "using 200 warmup iterations.*all samples returned will be post-warmup")
 
   expect_output(out <- runMCMC(Cmcmc, niter = 1000),
-         regex = "using 500 warmup iterations.*so the first half of the samples returned are from the warmup period")
+         regex = "using 500 warmup iterations.*so the first half of the samples returned.*are from the warmup period")
 
   ## 'burnin'
   Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
@@ -495,7 +496,7 @@ test_that('burnin/warmup are handled correctly', {
   Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
   
   expect_output(out <- runMCMC(Cmcmc, niter = 1000),
-         regex = "using 0 warmup iterations.*no adaptation is being done")
+         regex = "using 0 warmup iterations.*No adaptation is being done")
 
   Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
   Cmodel <- compileNimble(Rmodel)
