@@ -6,7 +6,6 @@
 \alias{nuts}
 \alias{HMC}
 \alias{hmc}
-\alias{samspler_NUTS}
 \title{No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) Sampler}
 \usage{
 sampler_NUTS(model, mvSaved, target, control)
@@ -18,40 +17,40 @@ sampler_NUTS(model, mvSaved, target, control)
 
 \item{target}{A character vector of node names on which the sampler will operate.}
 
-\item{control}{A named list that controls the precise behavior of the sampler.  The default values for control list elements are specified in the setup code of the sampler.  A description of the possible control list elements appear in the details section.}
+\item{control}{A named list that controls the precise behavior of the sampler. The default values for control list elements are specified in the setup code of the sampler. A description of the possible control list elements appear in the details section.}
 }
 \value{
 A object of class `sampler_NUTS`.
 }
 \description{
-The NUTS sampler implements No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) sampling following the algorithm of version 2.32.2 of Stan.  Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space.  In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand tuning or trial runs.
+The NUTS sampler implements No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) sampling following the algorithm of version 2.32.2 of Stan. Internally, any posterior dimensions with bounded support are transformed, so sampling takes place on an unconstrained space. In contrast to standard HMC (Neal, 2011), the NUTS algorithm removes the tuning parameters of the leapfrog step size and the number of leapfrog steps, thus providing a sampling algorithm that can be used without hand-tuning or trial runs.
 }
 \details{
 The NUTS sampler accepts the following control list elements:
 
 \itemize{
-\item messages.  A logical argument, specifying whether to print informative messages (default = TRUE)
-\item numWarnings.  A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered).  See additional details below.  (default = 0)
-\item epsilon.  A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
-\item initializeEpsilon.  A logical argument, specifying whether to perform the epsilon (stepsize) initialization routine at the onset of each adapatation window. (default = TRUE)
-\item gamma.  A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
-\item t0.  A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
-\item kappa.  A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
-\item delta.  A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.8)
-\item deltaMax.  A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
-\item M.  A vector of positive real numbers, with length equal to the number of dimensions being sampled.  Elements of M specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling.  Sampling may be improved if the elements of M approximate the marginal inverse-variance (precision) the posterior dimensions.  (default: a vector of ones).
-\item warmupMode.  A character string, specifying the behavior for choosing the number of warmup iterations.  Four values are possible.  The value 'default' (the default) sets the number of warmup iterations as (if a positive burnin period is specified) the number of burnin iterations (which will be discarded), or (if no burnin period is specified) half the number of MCMC iterations in each chain.  The value 'burnin' sets the number of warmup iterations as the number of burnin iterations regardless of the length of the burnin period.  The value 'fraction' sets the number of warmup iterations as fraction*niter, where fraction is the value of the warmup control argument, and niter is the number of MCMC iterations in each chain; in this case, the value of the warmup control argument must be between 0 and 1.  The value 'iterations' sets the number of warmup iterations as the value of the warmup control argumnet, regardless of the length of the burnin period or the number of MCMC iterations; in this case the value of the warmup control argument must be a non-negative integer.
-item warmup Numeric value used in determining the number of warmup iterations.  This control argument is only used when warmupMode is 'fraction' or 'iterations'.  See documentation for the warmup control argument.
-\item maxTreeDepth.  The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
-\item adaptWindow.  Number of iterations in the first adaptation window used for adapating the mass matrix (M).  Subsequent adaptation windows double in length, so long as enough warmup iterations are available.  (default = 25)
-\item initBuffer.  Number of iterations in the initial warmup window, which occurs prior to the first adapatation of the metric M.  (default = 75)
-\item termBuffer.  Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
-\item adaptive.  A logical argument, specifying whether to do any adaptation whatsoever.  When TRUE, specific adapatation routines are controled by the adaptEpsilon and adaptM control list elements.  (default = TRUE)
-\item adaptEpsilon.  A logical argument, specifying whether to perform stepsize adaptation.  Only used when adaptive = TRUE.  (default = TRUE)
-\item adaptM.  A logical argument, specifying whether to perform adaptation of the mass matrix (metric) M.  Only used when adaptive = TRUE.  (default = TRUE)
+\item messages. A logical argument, specifying whether to print informative messages (default = TRUE)
+\item numWarnings. A numeric argument, specifying how many warnings messages to emit (for example, when NaN values are encountered). See additional details below. (default = 0)
+\item epsilon. A positive numeric argument, specifying the initial step-size value. If not provided, an appropriate initial value is selected.
+\item gamma. A positive numeric argument, specifying the degree of shrinkage used during the initial period of step-size adaptation. (default = 0.05)
+\item t0. A non-negative numeric argument, where larger values stabilize (attenuate) the initial period of step-size adaptation. (default = 10)
+\item kappa. A numeric argument between zero and one, where smaller values give a higher weighting to more recent iterations during the initial period of step-size adaptation. (default = 0.75)
+\item delta. A numeric argument, specifying the target acceptance probability used during the initial period of step-size adaptation. (default = 0.8)
+\item deltaMax. A positive numeric argument, specifying the maximum allowable divergence from the Hamiltonian value. Paths which exceed this value are considered divergent, and will not proceed further. (default = 1000)
+\item M. A vector of positive real numbers, with length equal to the number of dimensions being sampled. Elements of \code{M} specify the diagonal elements of the diagonal mass matrix (or the metric) used for the auxiliary momentum variables in sampling. Sampling may be improved if the elements of \code{M} approximate the marginal inverse variance (precision) of the (potentially transformed) parameters. (default: a vector of ones).
+\item warmupMode. A character string, specifying the behavior for choosing the number of warmup iterations. Four values are possible. The value 'default' (the default) sets the number of warmup iterations as the number of burnin iterations (if a positive value for \code{nburnin} is used) or half the number of MCMC iterations in each chain (if \code{nburnin = 0}). The value 'burnin' sets the number of warmup iterations as the number of burnin iterations regardless of the length of the burnin period. The value 'fraction' sets the number of warmup iterations as \code{fraction*niter}, where \code{fraction} is the value of the \code{warmup} control argument, and \code{niter} is the number of MCMC iterations in each chain; in this case, the value of the \code{warmup} control argument must be between 0 and 1. The value 'iterations' sets the number of warmup iterations as the value of the \code{warmup} control argumnet, regardless of the length of the burnin period or the number of MCMC iterations; in this case the value of \code{warmup} must be a non-negative integer. In all cases, the number of (pre-thinning) samples discarded equals \code{nburnin}, as is always the case for MCMC in NIMBLE.
+item warmup. Numeric value used in determining the number of warmup iterations. This control argument is only used when \code{warmupMode} is 'fraction' or 'iterations'. 
+\item maxTreeDepth. The maximum allowable depth of the binary leapfrog search tree for generating candidate transitions. (default = 10)
+\item adaptWindow. Number of iterations in the first adaptation window used for adapting the mass matrix (M). Subsequent adaptation windows double in length, so long as enough warmup iterations are available. (default = 25)
+\item initBuffer. Number of iterations in the initial warmup window, which occurs prior to the first adaptation of the metric M. (default = 75)
+\item termBuffer. Number of iterations in the final (terminal) warmup window, before which the metric M is not adjusted(default = 50)
+\item adaptive. A logical argument, specifying whether to do any adaptation whatsoever. When \code{TRUE}, specific adaptation routines are controled by the \code{adaptEpsilon} and \code{adaptM} control list elements. (default = TRUE)
+\item adaptEpsilon. A logical argument, specifying whether to perform stepsize adaptation. Only used when \code{adaptive = TRUE}. (default = TRUE)
+\item adaptM. A logical argument, specifying whether to perform adaptation of the mass matrix (metric) M. Only used when \code{adaptive = TRUE}. (default = TRUE)
+\item initializeEpsilon. A logical argument, specifying whether to perform the epsilon (stepsize) initialization routine at the onset of each adaptation window. (default = TRUE)
 }
 
-NaN vales may be encountered in the course of the leapfrog procedure.  In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation.  These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
+NaN vales may be encountered in the course of the leapfrog procedure. In particular, when the stepsize (epsilon) is too large, the leapfrog procedure can step too far and arrive at an invalid region of parameter space, thus generating a NaN value in the likelihood evaluation or in the gradient calculation. These situation are handled by the sampler by rejecting the NaN value, and reducing the stepsize.
 }
 \examples{
 code <- nimbleCode({
