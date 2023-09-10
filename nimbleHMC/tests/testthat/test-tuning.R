@@ -134,7 +134,8 @@ test_that('variance (mass) adaptation windows are set correctly', {
   conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 19))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
-  expect_error(sNUTS$before_chain(2000, 0, 2))
+  expect_error(sNUTS$before_chain(2000, 0, 1))
+  sNUTS$before_chain(2000, 0, 2)
 
   conf <- configureMCMC(Rmodel, nodes = NULL)
   conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 0))
@@ -199,13 +200,15 @@ test_that('variance (mass) adaptation windows are set correctly', {
   conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 19))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
-  expect_error(sNUTS$before_chain(2000, 0, 2))
+  expect_error(sNUTS$before_chain(2000, 0, 1))
+  sNUTS$before_chain(2000, 0, 2)
 
   conf <- configureMCMC(Rmodel, nodes = NULL)
   conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 19))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
-  expect_error(sNUTS$before_chain(2000, 0, 2))
+  expect_error(sNUTS$before_chain(2000, 0, 1))
+  sNUTS$before_chain(2000, 0, 2)
 
   ## conf <- configureMCMC(Rmodel, nodes = NULL)
   ## conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 0))
@@ -232,16 +235,16 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #A
   set.seed(2)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon=TRUE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon = TRUE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
-  expect_false(sNUTS$epsilon == 1)
+  expect_true(sNUTS$epsilon == 1)
 
   #B
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
@@ -250,8 +253,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #C
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5,
-                                              initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
@@ -260,18 +262,16 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #D
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5,
-                                              initializeEpsilon=TRUE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5, initializeEpsilon = TRUE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
-  expect_false(sNUTS$epsilon == 0.5)
+  expect_true(sNUTS$epsilon == 0.5)
 
   #E
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5,
-                                              initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
@@ -280,9 +280,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #F
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 20, adaptive = TRUE, epsilon = 0.5,
-                                              adaptEpsilon = FALSE,
-                                              initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 20, adaptive = TRUE, epsilon = 0.5, adaptEpsilon = FALSE, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   expect_true(all(sNUTS$M == 1))
@@ -293,9 +291,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #G
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5,
-                                              adaptM = FALSE,
-                                              initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5, adaptM = FALSE, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   expect_true(all(sNUTS$M == 1))
@@ -310,19 +306,20 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   # we grab it here so it can be called during initEpsilon:
   is.nan.vec <- nimble:::is.nan.vec
   temporarilyAssignInGlobalEnv(is.nan.vec)
+  
   #A
   set.seed(2)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon=TRUE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon = TRUE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
-  expect_false(sNUTS$epsilon == 1)
+  expect_true(sNUTS$epsilon == 1)
 
   #B
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
@@ -331,7 +328,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #C
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5, initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
@@ -340,17 +337,16 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #D
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5, initializeEpsilon=TRUE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, epsilon = 0.5, initializeEpsilon = TRUE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
-  expect_false(sNUTS$epsilon == 0.5)
+  expect_true(sNUTS$epsilon == 0.5)
 
   #E
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5,
-                                              initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   Rmcmc$run(niter = 1)
@@ -359,7 +355,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #F
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 20, adaptive = TRUE, epsilon = 0.5, adaptEpsilon = FALSE, initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 20, adaptive = TRUE, epsilon = 0.5, adaptEpsilon = FALSE, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   expect_true(all(sNUTS$M == 1))
@@ -370,7 +366,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #G##G
   set.seed(1)
   conf <- configureMCMC(Rmodel, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5, adaptM = FALSE, initializeEpsilon=FALSE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = TRUE, epsilon = 0.5, adaptM = FALSE, initializeEpsilon = FALSE))
   Rmcmc <- buildMCMC(conf)
   sNUTS <- Rmcmc$samplerFunctions[[1]]
   expect_true(all(sNUTS$M == 1))
@@ -382,9 +378,10 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   # These may turn out to be redundant with above.
   nimbleOptions(buildInterfacesForCompiledNestedNimbleFunctions = TRUE)
   Rmodel2 <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+  
   # temporarilyAssignInGlobalEnv(Rmodel2)
   conf <- configureMCMC(Rmodel2, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon=TRUE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon = TRUE))
   Rmcmc <- buildMCMC(conf)
   Cmodel <- compileNimble(Rmodel2)
   Cmcmc <- compileNimble(Rmcmc, project=Rmodel2)
@@ -392,7 +389,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   #A
   set.seed(1)
   Cmcmc$run(niter = 1)
-  expect_false(Cmcmc$samplerFunctions[[1]]$epsilon == 1)
+  expect_true(Cmcmc$samplerFunctions[[1]]$epsilon == 1)
 
   #B
   Cmcmc$samplerFunctions[[1]]$epsilon <- 1
@@ -415,7 +412,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   Cmcmc$samplerFunctions[[1]]$epsilonOrig <- 0.5
   set.seed(1)
   Cmcmc$run(niter = 1)
-  expect_false(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
+  expect_true(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
 
   #E
   Cmcmc$samplerFunctions[[1]]$adaptive <- TRUE
