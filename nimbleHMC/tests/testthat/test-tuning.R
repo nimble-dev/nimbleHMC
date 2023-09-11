@@ -381,7 +381,7 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   
   # temporarilyAssignInGlobalEnv(Rmodel2)
   conf <- configureMCMC(Rmodel2, nodes = NULL)
-  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 1000, adaptive = FALSE, initializeEpsilon = TRUE))
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'default', adaptive = FALSE, initializeEpsilon = TRUE))
   Rmcmc <- buildMCMC(conf)
   Cmodel <- compileNimble(Rmodel2)
   Cmcmc <- compileNimble(Rmcmc, project=Rmodel2)
@@ -420,42 +420,37 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   Cmcmc$samplerFunctions[[1]]$epsilon <- 0.5
   Cmcmc$samplerFunctions[[1]]$epsilonOrig <- 0.5
   set.seed(1)
-  Cmcmc$run(niter = 1)
+  Cmcmc$run(niter = 40)
   expect_false(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
 
   ###F
-  ##Cmcmc$samplerFunctions[[1]]$nwarmup <- 20
-  ##Cmcmc$samplerFunctions[[1]]$nwarmupOrig <- 20
-  ##Cmcmc$samplerFunctions[[1]]$adaptive <- TRUE
-  ##Cmcmc$samplerFunctions[[1]]$initializeEpsilon <- FALSE
-  ##Cmcmc$samplerFunctions[[1]]$epsilon <- 0.5
-  ##Cmcmc$samplerFunctions[[1]]$epsilonOrig <- 0.5
-  ##Cmcmc$samplerFunctions[[1]]$adaptEpsilon <- FALSE
-  ##Cmcmc$samplerFunctions[[1]]$M <- rep(1, 3)
-  ##Cmcmc$samplerFunctions[[1]]$sqrtM <- rep(1, 3)
-  ##set.seed(1)
-  ##expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
-  ##Cmcmc$run(niter = 20)
-  ##expect_true(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
-  ##expect_false(all(Cmcmc$samplerFunctions[[1]]$M == 1))
+  Cmcmc$samplerFunctions[[1]]$adaptive <- TRUE
+  Cmcmc$samplerFunctions[[1]]$initializeEpsilon <- FALSE
+  Cmcmc$samplerFunctions[[1]]$epsilon <- 0.5
+  Cmcmc$samplerFunctions[[1]]$epsilonOrig <- 0.5
+  Cmcmc$samplerFunctions[[1]]$adaptEpsilon <- FALSE
+  Cmcmc$samplerFunctions[[1]]$M <- rep(1, 3)
+  Cmcmc$samplerFunctions[[1]]$sqrtM <- rep(1, 3)
+  set.seed(1)
+  expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
+  Cmcmc$run(niter = 40)
+  expect_true(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
+  expect_false(all(Cmcmc$samplerFunctions[[1]]$M == 1))
   ##
   ###G
-  ##Cmcmc$samplerFunctions[[1]]$nwarmup <- 20
-  ##Cmcmc$samplerFunctions[[1]]$nwarmupOrig <- 20
-  ##Cmcmc$samplerFunctions[[1]]$adaptive <- TRUE
-  ##Cmcmc$samplerFunctions[[1]]$initializeEpsilon <- FALSE
-  ##Cmcmc$samplerFunctions[[1]]$epsilon <- 0.5
-  ##Cmcmc$samplerFunctions[[1]]$epsilonOrig <- 0.5
-  ##Cmcmc$samplerFunctions[[1]]$adaptEpsilon <- TRUE
-  ##Cmcmc$samplerFunctions[[1]]$adaptM <- FALSE
-  ##Cmcmc$samplerFunctions[[1]]$M <- rep(1, 3)
-  ##Cmcmc$samplerFunctions[[1]]$sqrtM <- rep(1, 3)
-  ##set.seed(1)
-  ##expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
-  ##Cmcmc$run(niter = 20)
-  ##expect_false(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
-  ##expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
-
+  Cmcmc$samplerFunctions[[1]]$adaptive <- TRUE
+  Cmcmc$samplerFunctions[[1]]$initializeEpsilon <- FALSE
+  Cmcmc$samplerFunctions[[1]]$epsilon <- 0.5
+  Cmcmc$samplerFunctions[[1]]$epsilonOrig <- 0.5
+  Cmcmc$samplerFunctions[[1]]$adaptEpsilon <- TRUE
+  Cmcmc$samplerFunctions[[1]]$adaptM <- FALSE
+  Cmcmc$samplerFunctions[[1]]$M <- rep(1, 3)
+  Cmcmc$samplerFunctions[[1]]$sqrtM <- rep(1, 3)
+  set.seed(1)
+  expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
+  Cmcmc$run(niter = 40)
+  expect_false(Cmcmc$samplerFunctions[[1]]$epsilon == 0.5)
+  expect_true(all(Cmcmc$samplerFunctions[[1]]$M == 1))
 })
 
 test_that('burnin/warmup are handled correctly', {
