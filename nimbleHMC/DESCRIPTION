@@ -1,12 +1,12 @@
 Package: nimbleHMC
 Title: Hamiltonian Monte Carlo and Other Gradient-Based MCMC Sampling Algorithms for 'nimble'
-Version: 0.1.1
-Date: 2023-07-07
+Version: 0.2.0
+Date: 2023-09-11
 Authors@R: c(person("Daniel", "Turek", role = c("aut", "cre"), email = "danielturek@gmail.com"),
 	     person("Perry", "de Valpine", role = "aut"),
 	     person("Christopher", "Paciorek", role = "aut"))
 Maintainer: Daniel Turek <danielturek@gmail.com>
-Description: Provides gradient-based MCMC sampling algorithms for use with the MCMC engine provided by the 'nimble' package.  This includes Hamiltonian Monte Carlo (HMC) and (under development) Langevin samplers.  The HMC sampler dynamically determines step size and number of leapfrog steps using the No-U-Turn (NUTS) algorithm as described in Hoffman and Gelman (2014) <arXiv:1111.4246>.  In addition, convenience functions are provided for generating and modifying MCMC configuration objects which employ HMC sampling.
+Description: Provides gradient-based MCMC sampling algorithms for use with the MCMC engine provided by the 'nimble' package.  This includes two versions of Hamiltonian Monte Carlo (HMC) No-U-Turn (NUTS) sampling, and (under development) Langevin samplers.  The `NUTS_classic` sampler implements the original HMC-NUTS algorithm as described in Hoffman and Gelman (2014) <arXiv:1111.4246>.  The `NUTS` sampler is a modern version of HMC-NUTS sampling matching the HMC sampler available in version 2.32.2 of Stan (Stan Development Team, 2023). In addition, convenience functions are provided for generating and modifying MCMC configuration objects which employ HMC sampling.
 Depends: R (>= 3.5.0), nimble (>= 1.0.0)
 Imports: methods
 Suggests: testthat

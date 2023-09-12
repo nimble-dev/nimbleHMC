@@ -29,6 +29,7 @@ q('no')
 
 
 library(nimbleHMC)
+library(testthat)
 
 library(help=nimbleHMC)
 sampler_langevin   ## no longer exported, no documentation either
