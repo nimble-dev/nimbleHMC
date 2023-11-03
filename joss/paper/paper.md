@@ -41,7 +41,7 @@ fitting hierarchical models to data.
 MCMC is the predominant tool used in Bayesian
 analyses to generate samples from the posterior
 distribution of model parameters conditional on observed data.
-MCMC is not a single algorithm, but actually a framework which admits any assignment of sampling
+MCMC is not a single algorithm, but actually a framework that admits assignment of a variety of sampling
 techniques to unobserved parameters.
 There exists a vast set of valid samplers to draw upon,
 which differ in complexity, autocorrelation of samples
@@ -67,9 +67,11 @@ computation  and quality of the samples, the
 effectiveness of the MCMC algorithms will vary depending on the
 software and model.
 
+[NOTE: current list is R-centric - we might cite numpyro and tensorflow probability, though with the explosion in PPLs recently, hard to be complete.]
+
 Among MCMC software packages, only `nimble` opens the hood of
 the sampler assignment process. Users may select any
-valid assignment of samplers to each parameter,
+valid assignment of one or more samplers to each parameter,
 selecting from the suite of samplers
 provided with `nimble`.  These include
 random walk Metropolis-Hastings sampling [@robert1999metropolis],
@@ -99,8 +101,10 @@ We use the European Dipper \emph{Cinclus cinclus)} dataset drawn from ecological
 capture-recapture
 [\emph{e.g.}, @lebreton1992modeling; @turek2016efficient].
 Modelling includes both continuous parameters to undergo HMC
-sampling and discrete parameters which cannot be sampled via HMC.
-This combination is not supported by software other than `nimbleHMC`.
+sampling and discrete parameters that cannot be sampled via HMC.
+As far as we know, this combination is not supported by software other than `nimbleHMC`.
+
+[NOTE: we should probably look at tensorflow prob and numpyro regarding this claim. I have the feeling it is mostly true but there might be an exception or two.]
 
 Individual birds are captured, tagged, and potentially recaptured on
 subsequent sighting occasions.  Data is a $294 \times 7$
@@ -140,7 +144,7 @@ code <- nimbleCode({
 ```
 
 A `nimble` model object is now built.
-The argument `buildDerivs = TRUE` affects derivatives of likelihood calculations
+The argument `buildDerivs = TRUE` allows derivatives of likelihood calculations
 to be built into the model object to support
 derivative-based algorithms -- here, HMC sampling.
 
@@ -244,9 +248,9 @@ the presence of unobserved categorical data [@bartolucci2022discrete].
 In contrast, other mainstream MCMC packages
 (`WinBUGS`, `OpenBUGS` and `jags`) can sample discrete parameters,
 but provide no facilities for HMC sampling.  This leaves a gap, as there is no support
-for HMC sampling of hierarchical models which also contain discrete parameters.
+for HMC sampling of hierarchical models that also contain discrete parameters.
 
-`nimbleHMC` fills this gap, by providing two HMC samplers which operate
+`nimbleHMC` fills this gap, by providing two HMC samplers that operate
  inside `nimble`'s  MCMC engine.  The base `nimble` package provides
 a variety of MCMC sampling algorithms, as well as the
 ability to customize MCMC sampler assignments. `nimbleHMC` augments the set
