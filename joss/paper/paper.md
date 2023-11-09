@@ -60,14 +60,13 @@ sampler tuning parameters upon which the overall performance is highly dependent
 
 Many software packages offer implementations of MCMC, such as
 `nimble` [@de2017programming], `WinBUGS` [@lunn2000winbugs], `jags` [@plummer2003jags], `pyMC`
-[@fonnesbeck2015pymc], and `Stan` [@carpenter2017stan].
+[@fonnesbeck2015pymc], `NumPyro` [@phan2019composable], `TensorFlow
+Probability` [@pang2020deep], and `Stan` [@carpenter2017stan], among others.
 These packages differ, however, in their approaches to sampler
 assignments.  As sampling techniques vary in
 computation  and quality of the samples, the
 effectiveness of the MCMC algorithms will vary depending on the
 software and model.
-
-[NOTE: current list is R-centric - we might cite numpyro and tensorflow probability, though with the explosion in PPLs recently, hard to be complete.]
 
 Among MCMC software packages, only `nimble` opens the hood of
 the sampler assignment process. Users may select any
@@ -103,8 +102,6 @@ capture-recapture
 Modelling includes both continuous parameters to undergo HMC
 sampling and discrete parameters that cannot be sampled via HMC.
 As far as we know, this combination is not supported by software other than `nimbleHMC`.
-
-[NOTE: we should probably look at tensorflow prob and numpyro regarding this claim. I have the feeling it is mostly true but there might be an exception or two.]
 
 Individual birds are captured, tagged, and potentially recaptured on
 subsequent sighting occasions.  Data is a $294 \times 7$
