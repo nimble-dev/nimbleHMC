@@ -41,8 +41,9 @@ fitting hierarchical models to data.
 MCMC is the predominant tool used in Bayesian
 analyses to generate samples from the posterior
 distribution of model parameters conditional on observed data.
-MCMC is not a single algorithm, but actually a framework that admits assignment of a variety of sampling
-techniques to unobserved parameters.
+MCMC is not a single algorithm, but rather a framework in which
+various sampling methods (samplers) are assigned to operate on
+subsets of unobserved parameters.
 There exists a vast set of valid samplers to draw upon,
 which differ in complexity, autocorrelation of samples
 produced, and applicability.
@@ -54,9 +55,12 @@ the gradients to generate large transitions in parameter space.  The
 resulting samples have low
 autocorrelation, and therefore have high information content,
 relative for example to an equal-length sequence of highly
-autocorrelated samples.  The No-U-Turn (NUTS) variety of HMC sampling
-[HMC-NUTS; @hoffman2014no] greatly increases the usability of HMC by self-adapting key
-sampler tuning parameters upon which the overall performance is highly dependent.
+autocorrelated samples. The No-U-Turn (NUTS) variety of HMC sampling
+[HMC-NUTS; @hoffman2014no] greatly increases the usability of HMC by
+introducing a recursive tree of numerical integration steps that makes
+it unnecessary to pre-specify a fixed number of steps.
+@hoffman2014no also introduce a self-tuning scheme for the
+step size, resulting in a fully automated HMC sampler with no need for manual tuning.
 
 Many software packages offer implementations of MCMC, such as
 `nimble` [@de2017programming], `WinBUGS` [@lunn2000winbugs], `jags` [@plummer2003jags], `pyMC`
@@ -64,24 +68,22 @@ Many software packages offer implementations of MCMC, such as
 Probability` [@pang2020deep], and `Stan` [@carpenter2017stan], among others.
 These packages differ, however, in their approaches to sampler
 assignments.  As sampling techniques vary in
-computation  and quality of the samples, the
+computation and quality of the samples, the
 effectiveness of the MCMC algorithms will vary depending on the
 software and model.
 
-Among MCMC software packages, only `nimble` opens the hood of
-the sampler assignment process. Users may select any
-valid assignment of one or more samplers to each parameter,
-selecting from the suite of samplers
-provided with `nimble`.  These include
-random walk Metropolis-Hastings sampling [@robert1999metropolis],
+Among MCMC software packages, `nimble` is distinct in allowing easy
+customization of sampler assignments from a high-level interface.
+Users may assign any valid samplers to each parameter or group of parameters, selecting from samplers provided with `nimble` or samplers they have written in `nimble`'s algorithm programming system.
+Samplers provided with `nimble` include random walk Metropolis-Hastings sampling [@robert1999metropolis],
 slice sampling [@neal2003slice], elliptical slice sampling
 [@murray2010elliptical], automated factor slice sampling [@tibbits2014automated],
 conjugate sampling [@george1993conjugate], and others.
 
-The `nimbleHMC` package provides two implementations of HMC-NUTS sampling
-for use within `nimble`.  Specifically, `nimbleHMC`
-provides an implementation of the original ("classic") HMC-NUTS
-algorithm as developed in
+The `nimbleHMC` package provides implementations of two versions of
+HMC-NUTS sampling for use within `nimble`, both written in `nimble`'s
+algorithm programming system within R. Specifically, `nimbleHMC`
+provides the original ("classic") HMC-NUTS algorithm as developed in
 @hoffman2014no, and a modern version of
 HMC-NUTS sampling matching the HMC sampler available in version 2.32.2 of `Stan`
 [@stan2023stan].  The samplers provided in `nimbleHMC` can be assigned
@@ -96,19 +98,19 @@ samplers provided with `nimble`.
 
 The following example demonstrates fitting a hierarchical
 model to data using `nimbleHMC`.
-We use the European Dipper \emph{Cinclus cinclus)} dataset drawn from ecological
+We use the European Dipper \emph{(Cinclus cinclus)} dataset drawn from ecological
 capture-recapture
 [\emph{e.g.}, @lebreton1992modeling; @turek2016efficient].
 Modelling includes both continuous parameters to undergo HMC
 sampling and discrete parameters that cannot be sampled via HMC.
-As far as we know, this combination is not supported by software other than `nimbleHMC`.
+We are not aware of other software that supports this combination other than `nimbleHMC`.
 
 Individual birds are captured, tagged, and potentially recaptured on
 subsequent sighting occasions.  Data is a $294 \times 7$
 binary-valued array of capture histories of 294 uniquely tagged birds
 over 7 years.  Model parameters are detection
-probability $p$, and annual survival rates on non-flood years $\phi_1$
-and flood years $\phi_2$.  Data is provided in the R package `mra` [@mcdonald2018mra].
+probability ($p$), and annual survival rates on non-flood years ($\phi_1$)
+and flood years ($\phi_2$).  Data is provided in the R package `mra` [@mcdonald2018mra].
 
 ```
 library(mra) 
@@ -141,9 +143,9 @@ code <- nimbleCode({
 ```
 
 A `nimble` model object is now built.
-The argument `buildDerivs = TRUE` allows derivatives of likelihood calculations
-to be built into the model object to support
-derivative-based algorithms -- here, HMC sampling.
+The argument `buildDerivs = TRUE` results in under-the-hood support for obtaining
+derivatives from model calculations, as necessary for derivative-based
+HMC sampling.
 
 ```
 Rmodel <- nimbleModel(
@@ -188,8 +190,8 @@ conf$printSamplers(byType = TRUE)
 ##   - x[]  (848 elements)
 ```
 
-Alternatively, the convenience function `configureHMC(Rmodel)`
-may be used to create an identical MCMC configuration, applying
+Alternatively, the convenience function `configureHMC`
+could be used to create an identical MCMC configuration, applying
 HMC-NUTS sampling to $\phi_1$, $\phi_2$ and $p$, and default binary
 samplers for discrete parameters.
 
@@ -235,7 +237,7 @@ basicMCMCplots::samplesPlot(samples, legend.location = "topleft")
 # Statement of need
 
 HMC is recognized as a state-of-the-art MCMC sampling algorithm.
-A testimony to this, software packages such as
+As testimony to this, software packages such as
 `Stan` exclusively employ HMC sampling.
 Consequently, such software cannot operate on models
 containing discrete parameters (upon which HMC cannot operate).  Models with
@@ -248,7 +250,7 @@ but provide no facilities for HMC sampling.  This leaves a gap, as there is no s
 for HMC sampling of hierarchical models that also contain discrete parameters.
 
 `nimbleHMC` fills this gap, by providing two HMC samplers that operate
- inside `nimble`'s  MCMC engine.  The base `nimble` package provides
+ inside `nimble`'s MCMC engine.  The base `nimble` package provides
 a variety of MCMC sampling algorithms, as well as the
 ability to customize MCMC sampler assignments. `nimbleHMC` augments the set
 of sampling algorithms provided in `nimble` with two options for
@@ -256,14 +258,14 @@ HMC sampling, which can be used alongside any other samplers.  The example prese
 demonstrates precisely that: HMC sampling operating
 alongside discrete samplers, which is not possible without the use of `nimbleHMC`.
 
-It's an open question of what combination of
-samplers will optimize MCMC efficiency.
+Which combination of samplers will optimize MCMC efficiency for any particular problem is an open question.
 One metric of comparison is the effective sample size of the
-samples generated per unit
-runtime of the algorithm.  That is, how quickly an MCMC algorithm generates
- information about the parameters.  This
-metric is studied in @turek2017automated and
-@ponisio2020one, but without any conclusive result.  For that reason, the ability to mix-and-match
+samples generated per unit runtime of the algorithm, which quantifies
+how quickly an MCMC algorithm 
+generates information about parameter posteriors.
+ This metric is studied in @turek2017automated and
+@ponisio2020one, with the conclusion that the best sampling strategy
+is problem-specific rather than universal.  For that reason, the ability to mix-and-match
 samplers from a large pool of candidates is
 important from both practical and theoretical standpoints.
 Indeed, packages such as `compareMCMCs`
