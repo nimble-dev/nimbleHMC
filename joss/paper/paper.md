@@ -49,10 +49,9 @@ which differ in complexity, autocorrelation of samples
 produced, and applicability.
 
 Hamiltonian Monte Carlo
-[HMC; @brooks2011handbook] sampling is one such technique, applicable
-to continuous-valued parameters, which uses
-the gradients to generate large transitions in parameter space.  The
-resulting samples have low
+[HMC; @neal2011mcmc] sampling is one such technique, applicable
+to continuous-valued parameters, which uses gradients to generate 
+large transitions in parameter space.  The resulting samples have low
 autocorrelation, and therefore have high information content,
 relative for example to an equal-length sequence of highly
 autocorrelated samples. The No-U-Turn (NUTS) variety of HMC sampling
