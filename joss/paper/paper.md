@@ -1,5 +1,5 @@
 ---
-title: "nimbleHMC: An R package for Hamiltonian Monte Carlo sampling in nimble"
+title: "`nimbleHMC`: An R package for Hamiltonian Monte Carlo sampling in `nimble`"
 tags:
   - R
   - hierarchical model
@@ -24,7 +24,7 @@ affiliations:
    index: 1
  - name: University of California, USA
    index: 2
-date: NEW DATE HERE (18 July 2023)
+date: 14 January 2024
 bibliography: paper.bib
 output: pdf_document
 ---
