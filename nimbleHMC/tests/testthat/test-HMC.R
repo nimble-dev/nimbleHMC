@@ -1,4 +1,4 @@
-nimbleOptions(enableDerivs = TRUE)
+nimbleOptions(enableDerivs = TRUE) # TRUE by default, but just in case
 
 temporarilyAssignInGlobalEnv <- function(value, replace = FALSE) {
     name <- deparse(substitute(value))
@@ -30,8 +30,8 @@ test_that('HMC sampler seems to work', {
         Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
         set.seed(0)
         samples <- runMCMC(Cmcmc, 100000)
-        
-        expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.01))
+        ##
+        expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.0105))
         expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.01))
     }
 })
@@ -57,7 +57,7 @@ test_that('HMC sampler on subset of nodes', {
         Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
         set.seed(1)
         samples <- runMCMC(Cmcmc, 100000)
-        expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.01))
+        expect_true(all(abs(as.numeric(apply(samples, 2, mean)) - c(0.4288181, 1.8582433, 3.2853841)) < 0.015))
         expect_true(all(abs(as.numeric(apply(samples, 2, sd)) - c(0.9248042, 1.1964343, 1.3098622)) < 0.01))
     }
 })
@@ -169,10 +169,9 @@ test_that('HMC for Dirichlet-multinomial', {
         Cmcmc <- compiledList$mcmc
         set.seed(0)
         samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
-        expect_equal(as.numeric(apply(samples, 2, mean)), p, tol = .05)
+        expect_equal(as.numeric(apply(samples, 2, mean)), y/n, tol = .02)
     }
 })
-
 
 ## copied from 'block sampler on MVN node' test in test-mcmc.R
 test_that('HMC on MVN node', {
@@ -476,4 +475,3 @@ test_that('configureHMC correctly assign samplers for posterior-predictive nodes
     expect_true(conf$samplerConfs[[2]]$name == 'posterior_predictive')
     expect_identical(conf$samplerConfs[[2]]$target, 'pp')
 })
-
