@@ -559,10 +559,10 @@ sampler_NUTS_classic <- nimbleFunction(
                 if(nwarmup > 0) {
                     ## need to deal with exceptions such as nwarmup < 100
                     if(initBuffer + adaptWindow + termBuffer > nwarmup) {
-                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
-                                                      'is too small for even one cycle of standard adaptation. Using 15% ',
-                                                      'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
-                                                      'adaptation, and 10% for final stepsize adaptation.')
+                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler \n',
+                                                      '            is too small for even one cycle of standard adaptation. Using 15% \n',
+                                                      '            for initial stepsize adaptation, 75% for mass matrix and stepsize \n',
+                                                      '            adaptation, and 10% for final stepsize adaptation.')
                         initBuffer <<- round(nwarmup * 0.15)
                         termBuffer <<- round(nwarmup * 0.10)
                         adaptWindow <<- nwarmup - initBuffer - termBuffer
@@ -1164,10 +1164,10 @@ sampler_NUTS <- nimbleFunction(
                     ## https://colcarroll.github.io/hmc_tuning_talk/
                     ## approach follows Stan code
                     if(initBuffer + adaptWindow + termBuffer > nwarmup) {
-                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
-                                                      'is too small for even one cycle of standard adaptation. Using 15% ',
-                                                      'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
-                                                      'adaptation, and 10% for final stepsize adaptation.')
+                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS sampler \n',
+                                                      '            is too small for even one cycle of standard adaptation. Using 15% \n',
+                                                      '            for initial stepsize adaptation, 75% for mass matrix and stepsize \n',
+                                                      '            adaptation, and 10% for final stepsize adaptation.')
                         adapt_initBuffer <<- round(nwarmup * 0.15)
                         adapt_termBuffer <<- round(nwarmup * 0.10)
                         adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer
