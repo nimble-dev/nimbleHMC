@@ -107,6 +107,44 @@ test_that('HMC sampler error messages for transformations with non-constant boun
 })
 
 
+test_that('hmc_checkTarget catches all invalid cases', {
+    code <- nimbleCode({
+        x[1]   ~ dbern(0.5)
+        x[2]   ~ dbin(size = 4, prob = 0.5)
+        x[3]   ~ dcat(prob = p[1:3])
+        x[4]   ~ dpois(2)
+        x[5:7] ~ dmulti(prob = p[1:3], size = 3)
+        x[8]   ~ T(dnorm(0, 1), 0,  )
+        x[9]   ~ T(dnorm(0, 1),  , 2)
+        x[10]  ~ T(dnorm(0, 1), 0, 2)
+        ##
+        a[1] ~ dnorm(0, 1)
+        b[1] ~ T(dnorm(a[1], 1), 0, 2)
+        ##
+        a[2] ~ dnorm(0, 1)
+        b[2] ~ dconstraint(a[2] > 0)
+        ##
+        a[3] ~ dnorm(0, 1)
+        b[3] ~ dinterval(a[3], 0)
+    })
+    constants <- list(p = rep(1/3,3))
+    inits <- list(x = rep(1, 10), a = rep(1,  3))
+    data <- list(b = rep(1, 3))
+    Rmodel <- nimbleModel(code, constants, data, inits)
+    ##
+    conf <- configureMCMC(Rmodel, nodes = NULL, print = FALSE)
+    ##
+    for(node in Rmodel$expandNodeNames(c('x', 'a'))) {
+        conf$setSamplers()
+        conf$addSampler(target = node, type = 'NUTS_classic')
+        expect_error(buildMCMC(conf))
+        conf$setSamplers()
+        conf$addSampler(target = node, type = 'NUTS')
+        expect_error(buildMCMC(conf))
+    }
+})
+
+
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     code <- nimbleCode({
         for(i in 1:5)    x[i] ~ dnorm(0, 1)
