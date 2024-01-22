@@ -123,11 +123,12 @@ sampler_langevin <- nimbleFunction(
 
 
 
-hmc_checkTarget <- function(model, targetNodes, calcNodes, hmcType) {
+hmc_checkTarget <- function(model, targetNodes, hmcType) {
     ## checks for:
     ## - target with discrete or truncated distribution
     ## - target with user-defined distribution (without AD support)
     ## - dependencies with truncated, dinterval, or dconstraint distribution
+    calcNodes <- model$getDependencies(targetNodes, stochOnly = TRUE)
     if(any(model$isDiscrete(targetNodes)))
         stop(paste0(hmcType, ' sampler cannot operate on discrete-valued nodes: ', paste0(targetNodes[model$isDiscrete(targetNodes)], collapse = ', ')))
     if(any(model$isTruncated(targetNodes)))
@@ -311,7 +312,7 @@ sampler_NUTS_classic <- nimbleFunction(
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
         ## check validity of target and dependent nodes (early, before parameterTransform is specialized)
-        hmc_checkTarget(model, targetNodes, calcNodes, 'NUTS_classic')
+        hmc_checkTarget(model, targetNodes, 'NUTS_classic')
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
         d <- my_parameterTransform$getTransformedLength()
@@ -778,7 +779,7 @@ sampler_NUTS <- nimbleFunction(
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
         ## check validity of target and dependent nodes (early, before parameterTransform is specialized)
-        hmc_checkTarget(model, targetNodes, calcNodes, 'NUTS')
+        hmc_checkTarget(model, targetNodes, 'NUTS')
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
         d <- my_parameterTransform$getTransformedLength()

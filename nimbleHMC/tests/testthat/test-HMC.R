@@ -106,7 +106,6 @@ test_that('HMC sampler error messages for transformations with non-constant boun
     expect_error(Rmcmc <- buildMCMC(conf))
 })
 
-
 test_that('hmc_checkTarget catches all invalid cases', {
     code <- nimbleCode({
         x[1]   ~ dbern(0.5)
@@ -144,7 +143,6 @@ test_that('hmc_checkTarget catches all invalid cases', {
     }
 })
 
-
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     code <- nimbleCode({
         for(i in 1:5)    x[i] ~ dnorm(0, 1)
@@ -175,7 +173,6 @@ test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     conf$addSampler('x[1:3]', 'NUTS', M = c(1,2,3))
     expect_no_error(Rmcmc <- buildMCMC(conf))
 })
-
 
 ## copied from 'Dirichlet-multinomial conjugacy' test in test-mcmc.R
 test_that('HMC for Dirichlet-multinomial', {
@@ -249,7 +246,6 @@ test_that('HMC on MVN node', {
     expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .065)
 })
 
-
 ## copied from 'test of conjugate Wishart' test in test-mcmc.R
 test_that('HMC on conjugate Wishart', {
     set.seed(0)
@@ -294,7 +290,6 @@ test_that('HMC on conjugate Wishart', {
     expect_equal(as.numeric(apply(samples, 2, mean)), as.numeric(OmegaTrueMean), tol = 0.1)
     expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.02)
 })
-
 
 test_that('HMC on LKJ', {
     R <- matrix(c(
@@ -362,8 +357,6 @@ test_that('HMC on LKJ', {
     expect_lt(max(abs(stan_means[cols] - nim_means_block[cols])),  0.005)
     expect_lt(max(abs(stan_sds[cols] - nim_sds_block[cols])), 0.005)
 })
-
-
  
 test_that('testing HMC configuration functions', {
     code <- nimbleCode({
@@ -425,7 +418,6 @@ test_that('testing HMC configuration functions', {
     ##
 })
 
-
 test_that('error trap discrete latent nodes', {
     code <- nimbleCode({
         y ~ dnorm(z, 1)
@@ -446,7 +438,6 @@ test_that('error trap discrete latent nodes', {
     expect_error(addHMC(conf, target = c('mu','z')), 'HMC sampler cannot be applied')
     expect_error(addHMC(conf, target = 'mu', type = 'wrong'))
 })
-
 
 test_that('correctly assign samplers for discrete and continuous nodes', {
     code <- nimbleCode({
