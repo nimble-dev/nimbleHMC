@@ -143,6 +143,35 @@ test_that('hmc_checkTarget catches all invalid cases', {
     }
 })
 
+test_that('hmc_checkTarget catches non-AD support for custom distributions', {
+    ddistNoAD <- nimbleFunction(
+        run = function(x = double(0), log = integer(0, default = 0)) {
+            returnType(double(0)); return(1)
+        }
+    )
+    code <- nimbleCode({
+        x ~ ddistNoAD()
+        y ~ dnorm(x, 1)
+    })
+    Rmodel <- nimbleModel(code, data = list(y=0), inits = list(x=0), buildDerivs = TRUE)
+    conf <- configureHMC(Rmodel)
+    expect_error(buildMCMC(conf))
+    ##
+    ddistAD <- nimbleFunction(
+        run = function(x = double(0), log = integer(0, default = 0)) {
+            returnType(double(0)); return(1)
+        },
+        buildDerivs = TRUE
+    )
+    code <- nimbleCode({
+        x ~ ddistAD()
+        y ~ dnorm(x, 1)
+    })
+    Rmodel <- nimbleModel(code, data = list(y=0), inits = list(x=0), buildDerivs = TRUE)
+    conf <- configureHMC(Rmodel)
+    expect_no_error(buildMCMC(conf))
+})
+
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
     code <- nimbleCode({
         for(i in 1:5)    x[i] ~ dnorm(0, 1)
