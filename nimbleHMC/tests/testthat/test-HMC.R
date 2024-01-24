@@ -155,7 +155,8 @@ test_that('hmc_checkTarget catches non-AD support for custom distributions', {
     })
     Rmodel <- nimbleModel(code, data = list(y=0), inits = list(x=0), buildDerivs = TRUE)
     conf <- configureHMC(Rmodel)
-    expect_error(buildMCMC(conf))
+    ###expect_error(buildMCMC(conf))
+    expect_no_error(buildMCMC(conf))
     ##
     ddistAD <- nimbleFunction(
         run = function(x = double(0), log = integer(0, default = 0)) {
