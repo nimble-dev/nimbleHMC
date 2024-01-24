@@ -169,9 +169,7 @@ test_that('hmc_checkTarget catches non-AD support for custom distributions', {
     })
     Rmodel <- nimbleModel(code, data = list(y=0), inits = list(x=0), buildDerivs = TRUE)
     conf <- configureHMC(Rmodel)
-    e <- try(Rmcmc <- buildMCMC(conf), silent = TRUE)
-    ## expect_no_error(buildMCMC(conf))
-    expect_true(class(e) == 'MCMC')
+    expect_no_error(buildMCMC(conf))
 })
 
 test_that('HMC sampler error messages for invalid M mass matrix arguments', {
