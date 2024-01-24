@@ -140,15 +140,15 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
     if(any(model$getDistribution(calcNodes) == 'dconstraint'))
         stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dconstraint')], collapse = ', ')))
     ##
-    dists <- model$getDistribution(targetNodes)
-    ADok <- sapply(dists,
-                   function(dist) {
-                       if(!is.null(environment(get(dist))$nfMethodRCobject))   ## user-defined:
-                           return(!isFALSE(environment(get(dist))$nfMethodRCobject[['buildDerivs']]))
-                       else return(TRUE)   ## non-user-defined
-                   })
-    if(!all(ADok))
-        stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
+    ####dists <- model$getDistribution(targetNodes)
+    ####ADok <- sapply(dists,
+    ####               function(dist) {
+    ####                   if(!is.null(environment(get(dist))$nfMethodRCobject))   ## user-defined:
+    ####                       return(!isFALSE(environment(get(dist))$nfMethodRCobject[['buildDerivs']]))
+    ####                   else return(TRUE)   ## non-user-defined
+    ####               })
+    ####if(!all(ADok))
+    ####    stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
 }
 
 
