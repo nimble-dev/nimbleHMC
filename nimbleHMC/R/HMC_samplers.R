@@ -140,21 +140,21 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
         stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dconstraint')], collapse = ', ')))
     ## next, check for:
     ## - target with user-defined distribution (without AD support)
-    ####dists <- model$getDistribution(targetNodes)
-    ####ADok <- rep(TRUE, length(dists))
-    ####for(i in seq_along(dists)) {
-    ####    ## these distributions get re-named to a nimble-version, and won't be found:
-    ####    if(dists[i] %in% c('dweib', 'dmnorm', 'dmvt', 'dwish', 'dinvwish'))   next
-    ####    ## find the function or this distribution:
-    ####    nfObj <- get(dists[i], envir = parent.frame(4))    ## this took a bit of an investigation to make work
-    ####    ## is a user-defined distribution:
-    ####    if(!is.null(environment(nfObj)$nfMethodRCobject)) {
-    ####        ## check for AD support:
-    ####        ADok[i] <- !isFALSE(environment(nfObj)$nfMethodRCobject[['buildDerivs']])
-    ####    }
-    ####}
-    ####if(!all(ADok))
-    ####    stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
+    dists <- model$getDistribution(targetNodes)
+    ADok <- rep(TRUE, length(dists))
+    for(i in seq_along(dists)) {
+        ## these distributions get re-named to a nimble-version, and won't be found:
+        if(dists[i] %in% c('dweib', 'dmnorm', 'dmvt', 'dwish', 'dinvwish'))   next
+        ## find the function or this distribution:
+        nfObj <- get(dists[i], envir = parent.frame(4))    ## this took a bit of an investigation to make work
+        ## is a user-defined distribution:
+        if(!is.null(environment(nfObj)$nfMethodRCobject)) {
+            ## check for AD support:
+            ADok[i] <- !isFALSE(environment(nfObj)$nfMethodRCobject[['buildDerivs']])
+        }
+    }
+    if(!all(ADok))
+        stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
 }
 
 
