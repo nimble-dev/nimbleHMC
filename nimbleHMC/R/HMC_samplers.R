@@ -442,7 +442,7 @@ sampler_NUTS_classic <- nimbleFunction(
                 if(v ==  1) gradSaveR <<- grad
                 if(v == -1) gradSaveL <<- grad
             }
-            if(warningInd < numWarnings) if(is.nan.vec(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
+            if(warningInd < numWarnings) if(any_nan(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
             returnType(qpNLDef());   return(qpNLDef$new(q = q2, p = p3))
         },
         initEpsilon = function() {
@@ -452,7 +452,7 @@ sampler_NUTS_classic <- nimbleFunction(
             p <<- numeric(d)        ## keep, sets 'p' to size d on first iteration
             drawMomentumValues()    ## draws values for p
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
-            while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
+            while(any_nan(qpNL$q) | any_nan(qpNL$p)) {              ## my addition
                 ##if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
                 ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
                 epsilon <<- epsilon / 2                                   ## my addition
@@ -530,7 +530,7 @@ sampler_NUTS_classic <- nimbleFunction(
                 ##           if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a divergent path on iteration ', timesRan, ', with divergence = ', logu - qpLogH)
                 ##                                 numWarnings <<- numWarnings - 1 } }
                 a <- min(1, exp(qpLogH - logH0))
-                if(is.nan.vec(q) | is.nan.vec(p) | is.nan(a)) { n <- 0; s <- 0; a <- 0 }     ## my addition
+                if(any_nan(q) | any_nan(p) | is.nan(a)) { n <- 0; s <- 0; a <- 0 }     ## my addition
                 return(btNLDef$new(q1 = q, p1 = p, q2 = q, p2 = p, q3 = q, n = n, s = s, a = a, na = 1))
             } else {        ## recursively build left and right subtrees
                 btNL1 <- buildtree(qArg, pArg, logu, v, j-1, eps, logH0, 0)
