@@ -532,3 +532,127 @@ test_that('configureHMC correctly assign samplers for posterior-predictive nodes
     expect_true(conf$samplerConfs[[2]]$name == 'posterior_predictive')
     expect_identical(conf$samplerConfs[[2]]$target, 'pp')
 })
+
+test_that('HMC runs with various non-differentiable constructs', {
+    code <- nimbleCode({
+        for(i in 1:3) {
+            w[i] ~ dconstraint(theta[i] > 0)
+            cens[i] ~ dinterval(t[i], c[i])
+            z[i] ~ dcat(p[1:2])
+            t[i] ~ dweib(r, 1)
+            y[i] ~ dnorm(theta[i], 1)
+            theta[i] ~ dnorm(theta0, 1)
+        }
+        p[1] ~ dunif(0,1)
+        p[2] <- 1-p[1]
+        r ~ dunif(0,5)
+        theta0 ~ dnorm(0,1)
+    })
+    m <- nimbleModel(code, data = list(w = rep(1,3), t = c(NA,NA,0.5), cens = c(1,1,0), y = rnorm(3), z = c(1,1,2)),
+                     constants = list(c=rep(1.5,3)), inits = list(t=c(2,3,NA), theta = runif(3,0,3), r = 1),
+                     buildDerivs = TRUE)
+    conf <- configureMCMC(m)
+    conf$removeSampler('theta0')
+    conf$removeSampler('r')
+    conf$removeSampler('p[1]')
+    conf$addSampler(c('theta0','r','p[1]'), 'NUTS')
+    mcmc <- buildMCMC(conf)
+    cm <- compileNimble(m)
+    cmcmc <- compileNimble(mcmc, project = m)
+    out <- runMCMC(cmcmc, niter = 100)
+    expect_identical(nrow(out), 100L)    
+})
+
+test_that('HMC results for CAR match non-HMC', {
+   set.seed(1)
+   code <- nimbleCode({
+        S[1:N] ~ dcar_normal(adj[1:L], weights[1:L], num[1:N], tau)
+        tau ~ dunif(0, 5)
+        for(i in 1:N)
+            mu[i] <- S[i]
+        for(i in 1:N) {
+            log(lambda[i]) <- mu[i]
+            Y[i] ~ dpois(lambda[i])
+        }
+    })
+    
+    constants <- list(N = 6,
+                      num = c(1,2,2,2,2,1),
+                      adj = c(2, 1,3, 2,4, 3,5, 4,6, 5),
+                      weights = rep(1, 10),
+                      L = 10)
+    data <- list(Y = c(1,0,2,1,4,3))
+    inits <- list(tau = 1, S = c(0,0,0,0,0,0))
+    
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    conf <- configureMCMC(Rmodel, monitors = c('tau','S'))
+    Rmcmc <- buildMCMC(conf)
+    Cmodel <- compileNimble(Rmodel)
+    Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+    out <- runMCMC(Cmcmc, niter = 505000, nburnin = 5000, thin = 500)
+
+    Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+    conf <- configureHMC(Rmodel, monitors = c('tau','S'))
+    Rmcmc <- buildMCMC(conf)
+    Cmodel <- compileNimble(Rmodel)
+    Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+    outHMC <- runMCMC(Cmcmc, niter = 22000, nburnin=2000, thin=20)
+
+    expect_equal(apply(out[,1:6],2,mean), apply(outHMC[,1:6],2,mean), tolerance = .06)
+    expect_equal(mean(out[,7]),mean(outHMC[,7]), tolerance = .15)
+
+    expect_equal(apply(out,2,quantile,c(.1,.9)), apply(outHMC,2,quantile,c(.1,.9)), tolerance = 0.15)
+})
+
+
+test_that('HMC results for mixture model match non-HMC', {
+    set.seed(1)
+    code <- nimbleCode({
+        for(i in 1:n) {
+            y[i] ~ dnorm(mu[k[i]],1)
+            k[i] ~ dcat(p[1:K])
+        }
+        for(i in 1:K)
+            mu[i] ~ dnorm(mu0,1)
+        p[1:K] ~ ddirch(alpha[1:K])
+        mu0 ~ dflat()
+    })
+    ##
+    n <- 500
+    K <- 3
+    constants <- list(n=n, K=K, alpha = rep(1,K))
+    mu <- c(0,2,4)
+    data <- list(y=sample(c(rnorm(50,mu[1],.35), rnorm(250,mu[2],.35), rnorm(200,mu[3],.35)), n, replace=FALSE))
+    inits <- list(k=sample(1:K,n,replace=T),mu=c(-1,2,6),mu0=1)
+
+    m <- nimbleModel(code, constants = constants, data = data,
+                     inits = inits, buildDerivs = TRUE)
+    conf <- configureMCMC(m, monitors=c('mu','mu0','p'))
+    mcmc <- buildMCMC(conf)
+    cm <- compileNimble(m)
+    cmcmc <- compileNimble(mcmc)
+    out <- runMCMC(cmcmc, niter=50000, nburnin=10000, thin=40)
+
+    m <- nimbleModel(code, constants = constants, data = data,
+                     inits = inits, buildDerivs = TRUE)
+    conf <- configureMCMC(m, nodes=c('k'), monitors=c('mu','mu0','p'))
+    conf$addSampler(c('mu0','mu','p'),'NUTS')
+    mcmc <- buildMCMC(conf)
+    cm <- compileNimble(m)
+    cmcmc <- compileNimble(mcmc)
+    outHMC <- runMCMC(cmcmc, niter=22000, nburnin=2000, thin=20)
+
+    ## Deal with label switching.
+    sorter <- function(row) {
+        ord <- order(row[1:3])
+        return(c(row[1:3][ord], row[4], row[5:7][ord]))
+    }
+    out <- t(apply(out, 1, sorter))
+    outHMC <- t(apply(outHMC, 1, sorter))
+
+    expect_equal(apply(out,2,mean), apply(outHMC,2,mean), tolerance = .1)
+    expect_equal(apply(out,2,quantile,c(.1,.9)), apply(outHMC,2,quantile,c(.1,.9)), tolerance = 0.1)
+
+})
+
+
