@@ -21,9 +21,9 @@ suppressMessages(try(remove.packages('nimbleHMC'), silent = TRUE))
 (tarFiles <- grep('\\.tar\\.gz', list.files(), value = TRUE))
 (lastTarFile <- tarFiles[length(tarFiles)])
 message('installing package version ', gsub('\\.tar\\.gz$', '', lastTarFile))
-##system(paste0('R CMD install ', lastTarFile))
+system(paste0('R CMD install ', lastTarFile))
 
-devtools::install('nimbleHMC')
+##devtools::install('nimbleHMC')
 
 q('no')
 

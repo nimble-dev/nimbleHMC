@@ -210,13 +210,12 @@ test_that('variance (mass) adaptation windows are set correctly', {
   expect_error(sNUTS$before_chain(2000, 0, 1))
   sNUTS$before_chain(2000, 0, 2)
 
-  ## conf <- configureMCMC(Rmodel, nodes = NULL)
-  ## conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 0))
-  ## Rmcmc <- buildMCMC(conf)
-  ## sNUTS <- Rmcmc$samplerFunctions[[1]]
-  ## sNUTS$before_chain(2000, 0, 2)
-  ## Rmcmc$run(niter = 1)
-  ## Errors out due to is.nan.vec: not a nimbleHMC issue
+  conf <- configureMCMC(Rmodel, nodes = NULL)
+  conf$addSampler('a', "NUTS_classic", control = list(warmupMode = 'iterations', warmup = 0))
+  Rmcmc <- buildMCMC(conf)
+  sNUTS <- Rmcmc$samplerFunctions[[1]]
+  sNUTS$before_chain(2000, 0, 2)
+  Rmcmc$run(niter = 1)
 })
 
 test_that('epsilon and M adaptation vs not cases are handled correctly', {
@@ -299,14 +298,6 @@ test_that('epsilon and M adaptation vs not cases are handled correctly', {
   expect_false(sNUTS$epsilon == 0.5)
   expect_true(all(sNUTS$M == 1))
 
-  # NUTS_classic
-  # At the time of this writing,
-  # a bug in nimble waiting to be fixed is that is.nan.vec
-  # is not exported for uncompild execution. For these tests,
-  # we grab it here so it can be called during initEpsilon:
-  is.nan.vec <- nimble:::is.nan.vec
-  temporarilyAssignInGlobalEnv(is.nan.vec)
-  
   #A
   set.seed(2)
   conf <- configureMCMC(Rmodel, nodes = NULL)
