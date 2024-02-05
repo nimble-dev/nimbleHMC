@@ -560,7 +560,7 @@ test_that('HMC results for mixture model match non-HMC', {
         p[1:K] ~ ddirch(alpha[1:K])
         mu0 ~ dflat()
     })
-
+    ##
     n <- 500
     K <- 3
     constants <- list(n=n, K=K, alpha = rep(1,K))
