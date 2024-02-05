@@ -452,7 +452,7 @@ sampler_NUTS_classic <- nimbleFunction(
             p <<- numeric(d)        ## keep, sets 'p' to size d on first iteration
             drawMomentumValues()    ## draws values for p
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
-            while(any_nan(qpNL$q) | any_nan(qpNL$p)) {              ## my addition
+            while(any_nan(qpNL$q) | any_nan(qpNL$p)) {            ## my addition
                 ##if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
                 ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
                 epsilon <<- epsilon / 2                                   ## my addition
