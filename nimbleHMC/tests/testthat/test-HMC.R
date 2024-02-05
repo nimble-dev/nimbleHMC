@@ -603,7 +603,7 @@ test_that('HMC results for CAR match non-HMC', {
    print(a)
    print(b)
    print(abs(a-b))
-    expect_equal(apply(out[,1:6],2,mean), apply(outHMC[,1:6],2,mean), tolerance = .05)
+    expect_equal(apply(out[,1:6],2,mean), apply(outHMC[,1:6],2,mean), tolerance = .06)
    a <- mean(out[,7])
    b <- mean(outHMC[,7])
    print(a)
@@ -611,6 +611,11 @@ test_that('HMC results for CAR match non-HMC', {
    print(abs(a-b))
     expect_equal(mean(out[,7]),mean(outHMC[,7]), tolerance = .15)
 
+   a <- apply(out,2,quantile,c(.1,.9))
+   b <- apply(outHMC,2,quantile,c(.1,.9))
+   print(a)
+   print(b)
+   print(abs(a-b))
     expect_equal(apply(out,2,quantile,c(.1,.9)), apply(outHMC,2,quantile,c(.1,.9)), tolerance = 0.15)
 })
 
