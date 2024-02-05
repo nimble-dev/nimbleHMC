@@ -130,7 +130,6 @@ test_that('hmc_checkTarget catches all invalid cases', {
     inits <- list(x = rep(1, 10), a = rep(1,  3))
     data <- list(b = rep(1, 3))
     Rmodel <- nimbleModel(code, constants, data, inits)
-    ##
     conf <- configureMCMC(Rmodel, nodes = NULL, print = FALSE)
     ##
     for(node in Rmodel$expandNodeNames(c('x', 'a'))) {
