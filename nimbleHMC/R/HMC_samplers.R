@@ -127,19 +127,60 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
     ## checks for:
     ## - target with discrete or truncated distribution
     ## - dependencies with truncated, dinterval, or dconstraint distribution
-    calcNodes <- model$getDependencies(targetNodes, stochOnly = TRUE)
-    if(any(model$isDiscrete(targetNodes)))
-        stop(paste0(hmcType, ' sampler cannot operate on discrete-valued nodes: ', paste0(targetNodes[model$isDiscrete(targetNodes)], collapse = ', ')))
-    if(any(model$isTruncated(targetNodes)))
-        stop(paste0(hmcType, ' sampler cannot operate on nodes with truncated prior distributions: ', paste0(targetNodes[model$isTruncated(targetNodes)], collapse = ', ')))
-    if(any(model$isTruncated(calcNodes)))
-        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have truncated distributions, which do not support AD calculations: ', paste0(calcNodes[model$isTruncated(calcNodes)], collapse = ', ')))
-    if(any(model$getDistribution(calcNodes) == 'dinterval'))
-        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dinterval distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dinterval')], collapse = ', ')))
-    if(any(model$getDistribution(calcNodes) == 'dconstraint'))
-        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dconstraint')], collapse = ', ')))
+    ##
+    targetDeclInfo <- model$getDeclInfo(targetNodes)
+    ##
+    ##if(any(model$isDiscrete(targetNodes)))
+    ##    stop(paste0(hmcType, ' sampler cannot operate on discrete-valued nodes: ', paste0(targetNodes[model$isDiscrete(targetNodes)], collapse = ', ')))
+    targetDists <- unique(sapply(targetDeclInfo, function(x) x$getDistributionName()))
+    if(any(isDiscrete(targetDists))) {
+        stop(paste0(hmcType, ' sampler cannot operate on nodes with discrete-valued distributions: ', paste0(targetDists[isDiscrete(targetDists)], collapse = ', ')))
+    }
+    ##
+    ##if(any(model$isTruncated(targetNodes)))
+    ##    stop(paste0(hmcType, ' sampler cannot operate on nodes with truncated prior distributions: ', paste0(targetNodes[model$isTruncated(targetNodes)], collapse = ', ')))
+    targetTruncatedBool <- any(sapply(targetDeclInfo, function(x) x$isTruncated()))
+    if(any(targetIsTruncated)) {
+        targetExpanded <- model$expandNodeNames(targetNodes)
+        stop(paste0(hmcType, ' sampler cannot operate on nodes with truncated prior distributions: ', paste0(targetNodes[targetTruncatedBool], collapse = ', ')))
+    }
+    ##
+    ##calcNodes <- model$getDependencies(targetNodes, stochOnly = TRUE)
+    depNodes <- model$getDependencies(targetNodes, self = FALSE, stochOnly = TRUE)
+    depDeclInfo <- model$getDeclInfo(depNodes)
+    ##
+    ##if(any(model$isTruncated(calcNodes)))
+    ##    stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have truncated distributions, which do not support AD calculations: ', paste0(calcNodes[model$isTruncated(calcNodes)], collapse = ', ')))
+    depTruncatedBool <- any(sapply(depDeclInfo, function(x) x$isTruncated()))
+    if(any(depTruncatedBool)) {
+        depExpanded <- model$expandNodeNames(depNodes)
+        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have truncated distributions, which do not support AD calculations: ', paste0(depExpanded[depTruncatedBool], collapse = ', ')))
+    }
+    ##
+    depDistsAll <- sapply(depDeclInfo, function(x) x$getDistributionName())
+    ##
+    ##if(any(model$getDistribution(calcNodes) == 'dinterval'))
+    ##    stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dinterval distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dinterval')], collapse = ', ')))
+    depIntervalBool <- (depDistsAll == 'dinterval')
+    if(any(depIntervalBool)) {
+        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dinterval distributions, which do not support AD calculations: ', paste0(depNodes[which(depIntervalBool)], collapse = ', ')))
+    }
+    ##
+    ##if(any(model$getDistribution(calcNodes) == 'dconstraint'))
+    ##    stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dconstraint')], collapse = ', ')))
+    depConstraintBool <- (depDistsAll == 'dconstraint')
+    if(any(depConstraintBool)) {
+        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(depNodes[which(depConstraintBool)], collapse = ', ')))
+    }
+    ##
     ## next, check for:
     ## - target with user-defined distribution (without AD support)
+    ##
+    
+    
+    
+    
+    
     dists <- model$getDistribution(targetNodes)
     ADok <- rep(TRUE, length(dists))
     for(i in seq_along(dists)) {
