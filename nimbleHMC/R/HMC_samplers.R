@@ -134,7 +134,7 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
     ##if(any(model$isDiscrete(targetNodes)))
     ##    stop(paste0(hmcType, ' sampler cannot operate on discrete-valued nodes: ', paste0(targetNodes[model$isDiscrete(targetNodes)], collapse = ', ')))
     targetDists_unique <- unique(sapply(targetDeclInfo_unique, function(x) x$getDistributionName()))
-    targetDiscreteBool <- isDiscrete(targetDists_unique)
+    targetDiscreteBool <- sapply(targetDists_unique, isDiscrete)
     if(any(targetDiscreteBool)) {
         stop(paste0(hmcType, ' sampler cannot operate on nodes with discrete-valued distributions: ', paste0(targetDists_unique[targetDiscreteBool], collapse = ', ')))
     }
