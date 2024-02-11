@@ -184,6 +184,11 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
     for(i in seq_along(dists)) {
         ## these distributions get re-named to a nimble-version, and won't be found:
         if(dists[i] %in% c('dweib', 'dmnorm', 'dmvt', 'dwish', 'dinvwish'))   next
+        ##
+        ## if/when modelDef$checkADsupportForDistribution() is added to core nimble,
+        ## change the following code to instead be:
+        ## ADoak[i] <- model$getModelDef()$checkADsupportForDistribution(dists[i])   ## or something like that
+        ##
         ## find the function or this distribution:
         nfObj <- get(dists[i], envir = parent.frame(4))    ## this took a bit of an investigation to make work
         ## is a user-defined distribution:
