@@ -8,7 +8,9 @@ Provides derivative-based MCMC sampling algorithms and convenence functions, for
 - Historical implementation of the original No-U-Turn HMC (`NUTS_classic`) sampler
 - Langevin sampler (*under development*)
 
-See the [nimble user manual](https://r-nimble.org/html_manual/cha-mcmc.html#subsec:HMC) for more information and examples.
+See the HMC section of the [nimble user manual](https://r-nimble.org/html_manual/cha-mcmc.html#subsec:HMC) for more information and examples.
+
+[General package information](https://cran.r-project.org/web/packages/nimbleHMC/) about `nimbleHMC`, and the [complete API for package functions](https://cran.r-project.org/web/packages/nimbleHMC/nimbleHMC.pdf) are available on CRAN.
 
 Additional information about the `nimble`package itself is available at the [nimble website](https://r-nimble.org/).
 
