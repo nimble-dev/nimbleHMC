@@ -61,6 +61,11 @@ dmy_distribution <- nimbleFunction(
 ```
 
 
+### Contributing and Support
 
+Contributions to the `nimbleHMC` package are welcome, and should be submitted via pull request on GitHub.  For additional guideliens on making contributions, please see the [contributing guidelines for the `nimble` package](https://github.com/nimble-dev/nimble/blob/devel/CONTRIBUTING.md).
 
+Issues, feature requests, or bugs should be reported using GitHub issues submitted to the `nimbleHMC` repository.
+
+For additional support using `nimble` or `nimbleHMC`, please see the [nimble user manual](https://r-nimble.org/html_manual/cha-welcome-nimble.html), or questions can be submitted to the [nimble-users Google group](https://groups.google.com/g/nimble-users).
 
