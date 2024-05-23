@@ -11,14 +11,24 @@ See the [nimble user manual](https://r-nimble.org/html_manual/cha-mcmc.html#subs
 
 Additional information about the `nimble`package itself is available at the [nimble website](https://r-nimble.org/).
 
-<!--
-The nimbleHMC package must be used with nimble version XXXX or 
-higher. To check the current version number of nimble use `packageVersion("nimble")`. 
--->
 
-### Package Requirements
 
-`nimbleHMC` must be used with version `1.0.0` or higher of the `nimble` package.
+### Installation and Package Requirements
+
+Use of `nimbleHMC` requires installation of the core `nimble` package.  Detailed instructions for installing `nimble` are available in the [`nimble` package README](https://github.com/nimble-dev/nimble/blob/devel/README.md).
+
+`nimbleHMC` must be used with version `1.0.0` or higher of `nimble`, or the latest version available on CRAN.  To check the version number of the currently installed version of `nimble`, use:
+
+```r
+packageVersion("nimble")
+```
+
+The `nimbleHMC` package itself can be installed directly from CRAN, using:
+
+```r
+install.packages("nimbleHMC")
+```
+
 
 <!--
 library(remotes)
