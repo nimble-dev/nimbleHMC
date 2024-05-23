@@ -2,9 +2,10 @@
 
 [![tests](https://github.com/nimble-dev/nimbleHMC/workflows/tests/badge.svg)](https://github.com/nimble-dev/nimbleHMC/actions)
 
-Provides derivative-based MCMC sampling algorithms for use in conjunction with the `nimble` package.  These include:
+Provides derivative-based MCMC sampling algorithms and convenence functions, for use in conjunction with the MCMC engine avaialble in the `nimble` package.  Sampling algorithms include:
 
-- Hamiltonian Monte Carlo (HMC-NUTS) sampler
+- No-U-Turn Hamiltonian Monte Carlo (`NUTS`) sampler
+- Historical implementation of the original No-U-Turn HMC (`NUTS_classic`) sampler
 - Langevin sampler (*under development*)
 
 See the [nimble user manual](https://r-nimble.org/html_manual/cha-mcmc.html#subsec:HMC) for more information and examples.
