@@ -182,7 +182,7 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
     dists <- targetDists_unique
     ADok <- rep(TRUE, length(dists))
     for(i in seq_along(dists)) {
-        ADoak[i] <- model$getModelDef()$checkADsupportForDistribution(dists[i])
+        ADok[i] <- model$getModelDef()$checkADsupportForDistribution(dists[i])
     }
     if(!all(ADok))
         stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
