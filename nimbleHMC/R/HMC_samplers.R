@@ -122,18 +122,101 @@ sampler_langevin <- nimbleFunction(
 )
 
 
-hmc_checkWarmup <- function(warmupMode, warmup, samplerName) {
-    if(!(warmupMode %in% c('default', 'burnin', 'fraction', 'iterations')))   stop('`warmupMode` control argument of ', samplerName, ' sampler must have value "default", "burnin", "fraction", or "iterations".  The value provided was: ', warmupMode, '.', call. = FALSE)
+
+hmc_checkTarget <- function(model, targetNodes, hmcType) {
+    ## checks for:
+    ## - target with discrete or truncated distribution
+    ## - dependencies with truncated, dinterval, or dconstraint distribution
+    ##
+    targetDeclIDs_unique <- unique(model$getDeclID(targetNodes))
+    targetDeclInfo_unique <- model$getModelDef()$declInfo[targetDeclIDs_unique]
+    ##
+    ##if(any(model$isDiscrete(targetNodes)))
+    ##    stop(paste0(hmcType, ' sampler cannot operate on discrete-valued nodes: ', paste0(targetNodes[model$isDiscrete(targetNodes)], collapse = ', ')))
+    targetDists_unique <- unique(sapply(targetDeclInfo_unique, function(x) x$getDistributionName()))
+    targetDiscreteBool <- sapply(targetDists_unique, isDiscrete)
+    if(any(targetDiscreteBool)) {
+        stop(paste0(hmcType, ' sampler cannot operate on nodes with discrete-valued distributions: ', paste0(targetDists_unique[targetDiscreteBool], collapse = ', ')))
+    }
+    ##
+    ##if(any(model$isTruncated(targetNodes)))
+    ##    stop(paste0(hmcType, ' sampler cannot operate on nodes with truncated prior distributions: ', paste0(targetNodes[model$isTruncated(targetNodes)], collapse = ', ')))
+    targetTruncatedBool <- any(sapply(targetDeclInfo_unique, function(x) x$isTruncated()))
+    if(any(targetTruncatedBool)) {
+        targetExpanded <- model$expandNodeNames(targetNodes)
+        stop(paste0(hmcType, ' sampler cannot operate on nodes with truncated prior distributions: ', paste0(targetExpanded[model$isTruncated(targetExpanded)], collapse = ', ')))
+    }
+    ##
+    ##calcNodes <- model$getDependencies(targetNodes, stochOnly = TRUE)
+    depNodes <- model$getDependencies(targetNodes, self = FALSE, stochOnly = TRUE)
+    depDeclIDs_unique <- unique(model$getDeclID(depNodes))
+    depDeclInfo_unique <- model$getModelDef()$declInfo[depDeclIDs_unique]
+    ##
+    ##if(any(model$isTruncated(calcNodes)))
+    ##    stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have truncated distributions, which do not support AD calculations: ', paste0(calcNodes[model$isTruncated(calcNodes)], collapse = ', ')))
+    depTruncatedBool <- any(sapply(depDeclInfo_unique, function(x) x$isTruncated()))
+    if(any(depTruncatedBool)) {
+        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have truncated distributions, which do not support AD calculations: ', paste0(depNodes[model$isTruncated(depNodes)], collapse = ', ')))
+    }
+    ##
+    depDists_unique <- sapply(depDeclInfo_unique, function(x) x$getDistributionName())
+    ##
+    ##if(any(model$getDistribution(calcNodes) == 'dinterval'))
+    ##    stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dinterval distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dinterval')], collapse = ', ')))
+    depIntervalBool <- (depDists_unique == 'dinterval')
+    if(any(depIntervalBool)) {
+        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dinterval distributions, which do not support AD calculations: ', paste0(depNodes[which(model$getDistribution(depNodes) == 'dinterval')], collapse = ', ')))
+    }
+    ##
+    ##if(any(model$getDistribution(calcNodes) == 'dconstraint'))
+    ##    stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(calcNodes[which(model$getDistribution(calcNodes) == 'dconstraint')], collapse = ', ')))
+    depConstraintBool <- (depDists_unique == 'dconstraint')
+    if(any(depConstraintBool)) {
+        stop(paste0(hmcType, ' sampler cannot operate since these dependent nodes have dconstraint distributions, which do not support AD calculations: ', paste0(depNodes[which(model$getDistribution(depNodes) == 'dconstraint')], collapse = ', ')))
+    }
+    ##
+    ## next, check for:
+    ## - target with user-defined distribution (without AD support)
+    ##
+    ##dists <- model$getDistribution(targetNodes)
+    dists <- targetDists_unique
+    ADok <- rep(TRUE, length(dists))
+    for(i in seq_along(dists)) {
+        ##
+        ## if/when modelDef$checkADsupportForDistribution() is added to core nimble,
+        ## change the entire body of this for-loop to instead be:
+        ## ADoak[i] <- model$getModelDef()$checkADsupportForDistribution(dists[i])
+        ##
+        ## these distributions get re-named to a nimble-version, and won't be found:
+        if(dists[i] %in% c('dweib', 'dmnorm', 'dmvt', 'dwish', 'dinvwish'))   next
+        ##
+        ##
+        ## find the function or this distribution:
+        nfObj <- get(dists[i], envir = parent.frame(4))    ## this took a bit of an investigation to make work
+        ## is a user-defined distribution:
+        if(!is.null(environment(nfObj)$nfMethodRCobject)) {
+            ## check for AD support:
+            ADok[i] <- !isFALSE(environment(nfObj)$nfMethodRCobject[['buildDerivs']])
+        }
+    }
+    if(!all(ADok))
+        stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
+}
+
+
+
+hmc_checkWarmup <- function(warmupMode, warmup, hmcType) {
+    if(!(warmupMode %in% c('default', 'burnin', 'fraction', 'iterations')))   stop('`warmupMode` control argument of ', hmcType, ' sampler must have value "default", "burnin", "fraction", or "iterations".  The value provided was: ', warmupMode, '.', call. = FALSE)
     if(warmupMode == 'fraction')
-        if(!is.numeric(warmup) | warmup < 0 | warmup > 1)   stop('When the `warmupMode` control argument of ', samplerName, ' sampler is "fraction", the `warmup` control argument must be a number between 0 and 1, which will specify the fraction of the total MCMC iterations to use as warmup.  The value provided for the `warmup` control argument was: ', warmup, '.', call. = FALSE)
+        if(!is.numeric(warmup) | warmup < 0 | warmup > 1)   stop('When the `warmupMode` control argument of ', hmcType, ' sampler is "fraction", the `warmup` control argument must be a number between 0 and 1, which will specify the fraction of the total MCMC iterations to use as warmup.  The value provided for the `warmup` control argument was: ', warmup, '.', call. = FALSE)
     if(warmupMode == 'iterations')
-        if(!is.numeric(warmup) | warmup < 0 | floor(warmup) != warmup)   stop('When the `warmupMode` control argument of ', samplerName, ' sampler is "iterations", the `warmup` control argument must be a non-negative integer, which will specify the number MCMC iterations to use as warmup.  The value provided for the `warmup` control argument was: ', warmup, '.', call. = FALSE)
+        if(!is.numeric(warmup) | warmup < 0 | floor(warmup) != warmup)   stop('When the `warmupMode` control argument of ', hmcType, ' sampler is "iterations", the `warmup` control argument must be a non-negative integer, which will specify the number MCMC iterations to use as warmup.  The value provided for the `warmup` control argument was: ', warmup, '.', call. = FALSE)
 }
 
 
 
 hmc_setWarmup <- nimbleFunction(
-    setup = function(warmupMode, warmup, messages, samplerName, targetNodesToPrint) {},
+    setup = function(warmupMode, warmup, messages, hmcType, targetNodesToPrint) {},
     run = function(MCMCniter = double(), MCMCnburnin = double(), adaptive = logical()) {
         ##
         ## set nwarmup
@@ -148,29 +231,29 @@ hmc_setWarmup <- nimbleFunction(
         ## informative message
         if(messages) {
             if(!adaptive) {   ## adaptive = FALSE
-                print('  [Note] ', samplerName, ' sampler (nodes: ', targetNodesToPrint, ') has adaptation turned off,\n         so no warmup period will be used.')
+                print('  [Note] ', hmcType, ' sampler (nodes: ', targetNodesToPrint, ') has adaptation turned off,\n         so no warmup period will be used.')
             } else {          ## adaptive = TRUE
                 if(warmupMode == 'default') {
-                    if(MCMCnburnin > 0)          print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'default' and `nburnin` > 0,\n         the number of warmup iterations is equal to `nburnin`.\n         The burnin samples will be discarded, and all samples returned will be post-warmup.")
-                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'default' and `nburnin` = 0,\n         the number of warmup iterations is equal to `niter/2`.\n         No samples will be discarded, so the first half of the samples returned\n         are from the warmup period, and the second half of the samples are post-warmup.")
+                    if(MCMCnburnin > 0)          print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'default' and `nburnin` > 0,\n         the number of warmup iterations is equal to `nburnin`.\n         The burnin samples will be discarded, and all samples returned will be post-warmup.")
+                    else                         print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'default' and `nburnin` = 0,\n         the number of warmup iterations is equal to `niter/2`.\n         No samples will be discarded, so the first half of the samples returned\n         are from the warmup period, and the second half of the samples are post-warmup.")
                 }
                 if(warmupMode == 'burnin')
-                    if(MCMCnburnin > 0)           print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'burnin', the number of warmup iterations is equal to `nburnin`.\n         The burnin samples will be discarded, and all samples returned will be post-warmup.")
+                    if(MCMCnburnin > 0)           print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'burnin', the number of warmup iterations is equal to `nburnin`.\n         The burnin samples will be discarded, and all samples returned will be post-warmup.")
                     else
-                        print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using 0 warmup iterations.\n         No adaptation is being done, apart from initialization of epsilon\n         (if `initializeEpsilon` is TRUE).")
+                        print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using 0 warmup iterations.\n         No adaptation is being done, apart from initialization of epsilon\n         (if `initializeEpsilon` is TRUE).")
                 if(warmupMode == 'fraction') {
-                    if(MCMCnburnin < nwarmup)    print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'fraction', the number of warmup iterations is equal to\n         `niter*fraction`, where `fraction` is the value of the `warmup` control argument.\n         Because `nburnin` is less than the number of warmup iterations,\n         some of the samples returned will be collected during the warmup period,\n         and the remainder of the samples returned will be post-warmup.")
-                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'fraction', the number of warmup iterations is equal to\n          `niter*fraction`, where `fraction` is the value of the warmup `control` argument.\n         Because `nburnin` exceeds the number of warmup iterations,\n         all samples returned will be post-warmup.")
+                    if(MCMCnburnin < nwarmup)    print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'fraction', the number of warmup iterations is equal to\n         `niter*fraction`, where `fraction` is the value of the `warmup` control argument.\n         Because `nburnin` is less than the number of warmup iterations,\n         some of the samples returned will be collected during the warmup period,\n         and the remainder of the samples returned will be post-warmup.")
+                    else                         print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'fraction', the number of warmup iterations is equal to\n          `niter*fraction`, where `fraction` is the value of the warmup `control` argument.\n         Because `nburnin` exceeds the number of warmup iterations,\n         all samples returned will be post-warmup.")
                 }
                 if(warmupMode == 'iterations')
-                    if(MCMCnburnin < nwarmup)    print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'iterations', the number of warmup iterations\n         is the value of the `warmup` control argument.\n         Because `nburnin` is less than the number of warmup iterations,\n         some of the samples returned will be collected during the warmup period,\n         and the remainder of the samples returned will be post-warmup.")
-                    else                         print("  [Note] ", samplerName, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'iterations', the number of warmup iterations\n         is the value of the `warmup` control argument.\n         Because `nburnin` exceeds the number of warmup iterations,\n         all samples returned will be post-warmup.")
+                    if(MCMCnburnin < nwarmup)    print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'iterations', the number of warmup iterations\n         is the value of the `warmup` control argument.\n         Because `nburnin` is less than the number of warmup iterations,\n         some of the samples returned will be collected during the warmup period,\n         and the remainder of the samples returned will be post-warmup.")
+                    else                         print("  [Note] ", hmcType, " sampler (nodes: ", targetNodesToPrint, ") is using ", nwarmup, " warmup iterations.\n         Since `warmupMode` is 'iterations', the number of warmup iterations\n         is the value of the `warmup` control argument.\n         Because `nburnin` exceeds the number of warmup iterations,\n         all samples returned will be post-warmup.")
             }
         }
         ##
         ## hard check that nwarmup >= 20
         if(adaptive & nwarmup > 0 & nwarmup < 20) {
-            print('  [Error] ', samplerName, ' sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 20 warmup iterations.')
+            print('  [Error] ', hmcType, ' sampler (nodes: ', targetNodesToPrint, ') requires a minimum of 20 warmup iterations.')
             stop()
         }
         ##
@@ -290,8 +373,8 @@ sampler_NUTS_classic <- nimbleFunction(
         targetNodesToPrint <- paste(targetNodes, collapse = ', ')
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
-        ## check for discrete nodes (early, before parameterTransform is specialized)
-        if(any(model$isDiscrete(targetNodesAsScalars))) stop(paste0('NUTS_classic sampler cannot operate on discrete-valued nodes: ', paste0(targetNodesAsScalars[model$isDiscrete(targetNodesAsScalars)], collapse = ', ')))
+        ## check validity of target and dependent nodes (early, before parameterTransform is specialized)
+        hmc_checkTarget(model, targetNodes, 'NUTS_classic')
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
         d <- my_parameterTransform$getTransformedLength()
@@ -442,7 +525,7 @@ sampler_NUTS_classic <- nimbleFunction(
                 if(v ==  1) gradSaveR <<- grad
                 if(v == -1) gradSaveL <<- grad
             }
-            if(warningInd < numWarnings) if(is.nan.vec(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
+            if(warningInd < numWarnings) if(any_nan(c(q2, p3))) { warningInd <<- warningInd + 1; warningCodes[warningInd,1] <<- 1; warningCodes[warningInd,2] <<- timesRan } ## message code 1: print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a NaN value in leapfrog routine, with timesRan = ', timesRan)
             returnType(qpNLDef());   return(qpNLDef$new(q = q2, p = p3))
         },
         initEpsilon = function() {
@@ -452,7 +535,7 @@ sampler_NUTS_classic <- nimbleFunction(
             p <<- numeric(d)        ## keep, sets 'p' to size d on first iteration
             drawMomentumValues()    ## draws values for p
             qpNL <- leapfrog(q, p, epsilon, 1, 2)            ## v = 2 is a special case for initializeEpsilon routine
-            while(is.nan.vec(qpNL$q) | is.nan.vec(qpNL$p)) {              ## my addition
+            while(any_nan(qpNL$q) | any_nan(qpNL$p)) {            ## my addition
                 ##if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered NaN while initializing step-size; recommend better initial values')
                 ##                      print('            reducing initial step-size'); numWarnings <<- numWarnings - 1 }
                 epsilon <<- epsilon / 2                                   ## my addition
@@ -530,7 +613,7 @@ sampler_NUTS_classic <- nimbleFunction(
                 ##           if(numWarnings > 0) { print('  [Warning] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered a divergent path on iteration ', timesRan, ', with divergence = ', logu - qpLogH)
                 ##                                 numWarnings <<- numWarnings - 1 } }
                 a <- min(1, exp(qpLogH - logH0))
-                if(is.nan.vec(q) | is.nan.vec(p) | is.nan(a)) { n <- 0; s <- 0; a <- 0 }     ## my addition
+                if(any_nan(q) | any_nan(p) | is.nan(a)) { n <- 0; s <- 0; a <- 0 }     ## my addition
                 return(btNLDef$new(q1 = q, p1 = p, q2 = q, p2 = p, q3 = q, n = n, s = s, a = a, na = 1))
             } else {        ## recursively build left and right subtrees
                 btNL1 <- buildtree(qArg, pArg, logu, v, j-1, eps, logH0, 0)
@@ -559,10 +642,10 @@ sampler_NUTS_classic <- nimbleFunction(
                 if(nwarmup > 0) {
                     ## need to deal with exceptions such as nwarmup < 100
                     if(initBuffer + adaptWindow + termBuffer > nwarmup) {
-                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
-                                                      'is too small for even one cycle of standard adaptation. Using 15% ',
-                                                      'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
-                                                      'adaptation, and 10% for final stepsize adaptation.')
+                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler \n',
+                                                      '            is too small for even one cycle of standard adaptation. Using 15% \n',
+                                                      '            for initial stepsize adaptation, 75% for mass matrix and stepsize \n',
+                                                      '            adaptation, and 10% for final stepsize adaptation.')
                         initBuffer <<- round(nwarmup * 0.15)
                         termBuffer <<- round(nwarmup * 0.10)
                         adaptWindow <<- nwarmup - initBuffer - termBuffer
@@ -757,10 +840,8 @@ sampler_NUTS <- nimbleFunction(
         targetNodesToPrint <- paste(targetNodes, collapse = ', ')
         if(nchar(targetNodesToPrint) > 100)   targetNodesToPrint <- paste0(substr(targetNodesToPrint, 1, 97), '...')
         calcNodes <- model$getDependencies(targetNodes)
-        ## check for discrete nodes (early, before parameterTransform is specialized)
-        if(any(model$isDiscrete(targetNodesAsScalars)))
-            stop(paste0('NUTS sampler cannot operate on discrete-valued nodes: ',
-                        paste0(targetNodesAsScalars[model$isDiscrete(targetNodesAsScalars)], collapse = ', ')))
+        ## check validity of target and dependent nodes (early, before parameterTransform is specialized)
+        hmc_checkTarget(model, targetNodes, 'NUTS')
         ## processing of bounds and transformations
         my_parameterTransform <- parameterTransform(model, targetNodesAsScalars)
         d <- my_parameterTransform$getTransformedLength()
@@ -1164,10 +1245,10 @@ sampler_NUTS <- nimbleFunction(
                     ## https://colcarroll.github.io/hmc_tuning_talk/
                     ## approach follows Stan code
                     if(initBuffer + adaptWindow + termBuffer > nwarmup) {
-                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS_classic sampler ',
-                                                      'is too small for even one cycle of standard adaptation. Using 15% ',
-                                                      'for initial stepsize adaptation, 75% for mass matrix and stepsize ',
-                                                      'adaptation, and 10% for final stepsize adaptation.')
+                        if(messages & adaptive) print('  [Warning] Number of warmup iterations for NUTS sampler \n',
+                                                      '            is too small for even one cycle of standard adaptation. Using 15% \n',
+                                                      '            for initial stepsize adaptation, 75% for mass matrix and stepsize \n',
+                                                      '            adaptation, and 10% for final stepsize adaptation.')
                         adapt_initBuffer <<- round(nwarmup * 0.15)
                         adapt_termBuffer <<- round(nwarmup * 0.10)
                         adaptWindow_size <<- nwarmup - adapt_initBuffer - adapt_termBuffer

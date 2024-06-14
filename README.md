@@ -2,21 +2,36 @@
 
 [![tests](https://github.com/nimble-dev/nimbleHMC/workflows/tests/badge.svg)](https://github.com/nimble-dev/nimbleHMC/actions)
 
-Provides derivative-based MCMC sampling algorithms for use in conjunction with the `nimble` package.  These include:
+Provides derivative-based MCMC sampling algorithms and convenence functions, for use in conjunction with the MCMC engine avaialble in the `nimble` package.  Sampling algorithms include:
 
-- Hamiltonian Monte Carlo (HMC-NUTS) sampler
+- No-U-Turn Hamiltonian Monte Carlo (`NUTS`) sampler
+- Historical implementation of the original No-U-Turn HMC (`NUTS_classic`) sampler
 - Langevin sampler (*under development*)
 
-See the [nimble website](https://r-nimble.org/) for more information and examples.
+See the HMC section of the [nimble user manual](https://r-nimble.org/html_manual/cha-mcmc.html#subsec:HMC) for more information and examples.
 
-<!--
-The nimbleHMC package must be used with nimble version XXXX or 
-higher. To check the current version number of nimble use `packageVersion("nimble")`. 
--->
+[General package information](https://cran.r-project.org/web/packages/nimbleHMC/) about `nimbleHMC`, and the [complete API for package functions](https://cran.r-project.org/web/packages/nimbleHMC/nimbleHMC.pdf) are available on CRAN.
 
-### Package Requirements
+Additional information about the `nimble`package itself is available at the [nimble website](https://r-nimble.org/).
 
-`nimbleHMC` must be used with version `1.0.0` or higher of the `nimble` package.
+
+
+### Installation and Package Requirements
+
+Use of `nimbleHMC` requires installation of the core `nimble` package.  Detailed instructions for installing `nimble` are available in the [`nimble` package README](https://github.com/nimble-dev/nimble/blob/devel/README.md).
+
+`nimbleHMC` must be used with version `1.0.0` or higher of `nimble`, or the latest version available on CRAN.  To check the version number of the currently installed version of `nimble`, use:
+
+```r
+packageVersion("nimble")
+```
+
+The `nimbleHMC` package itself can be installed directly from CRAN, using:
+
+```r
+install.packages("nimbleHMC")
+```
+
 
 <!--
 library(remotes)
@@ -61,6 +76,11 @@ dmy_distribution <- nimbleFunction(
 ```
 
 
+### Contributing and Support
 
+Contributions to the `nimbleHMC` package should be submitted via pull request on GitHub.  For additional guideliens on making contributions, please see the [contributing guidelines for the `nimble` package](https://github.com/nimble-dev/nimble/blob/devel/CONTRIBUTING.md).
 
+Issues, feature requests, or bugs should be reported using GitHub issues, submitted to the `nimbleHMC` repository.
+
+For additional support using `nimble` or `nimbleHMC`, please see the [nimble user manual](https://r-nimble.org/html_manual/cha-welcome-nimble.html).  Any additional questions can be submitted to the [nimble-users Google group](https://groups.google.com/g/nimble-users).
 

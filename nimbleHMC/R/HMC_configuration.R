@@ -5,7 +5,7 @@
 #' Add a No-U-Turn (NUTS) Hamiltonian Monte Carlo (HMC) sampler to an existing nimble MCMC configuration object
 #'
 #' @param conf A nimble MCMC configuration object, as returned by `configureMCMC`.
-#' @param target A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.
+#' @param target A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.  If this argument is omitted, then no HMC sampler is added.
 #' @param type A character string specifying the type of HMC sampler to add, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.  The default sampler type is "NUTS".
 #' @param control Optional named list of control parameters to be passed as the `control` argument to the HMC sampler.  See `help(NUTS)` or `help(NUTS_classic)` for details of the control list elements accepted by each sampler.
 #' @param replace Logical argument.  If `TRUE`, any existing samplers operating on the specified nodes will be removed, prior to adding the HMC sampler.  Default value is `FALSE`.
@@ -46,11 +46,14 @@
 #'
 #' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 #'
-#' ## create MCMC configuration object
-#' conf <- configureMCMC(Rmodel, nodes = NULL)
+#' ## create default MCMC configuration object
+#' conf <- configureMCMC(Rmodel)
 #'
-#' ## add HMC sampler operating on all stochastic model nodes
-#' addHMC(conf)
+#' ## remove default samplers operating on b0 and b1
+#' conf$removeSamplers(c("b0", "b1"))
+#'
+#' ## add an HMC sampler operating on b0 and b1
+#' addHMC(conf, target = c("b0", "b1"))
 #'
 #' Rmcmc <- buildMCMC(conf)
 #' 
