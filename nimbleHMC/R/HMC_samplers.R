@@ -182,22 +182,7 @@ hmc_checkTarget <- function(model, targetNodes, hmcType) {
     dists <- targetDists_unique
     ADok <- rep(TRUE, length(dists))
     for(i in seq_along(dists)) {
-        ##
-        ## if/when modelDef$checkADsupportForDistribution() is added to core nimble,
-        ## change the entire body of this for-loop to instead be:
-        ## ADoak[i] <- model$getModelDef()$checkADsupportForDistribution(dists[i])
-        ##
-        ## these distributions get re-named to a nimble-version, and won't be found:
-        if(dists[i] %in% c('dweib', 'dmnorm', 'dmvt', 'dwish', 'dinvwish'))   next
-        ##
-        ##
-        ## find the function or this distribution:
-        nfObj <- get(dists[i], envir = parent.frame(4))    ## this took a bit of an investigation to make work
-        ## is a user-defined distribution:
-        if(!is.null(environment(nfObj)$nfMethodRCobject)) {
-            ## check for AD support:
-            ADok[i] <- !isFALSE(environment(nfObj)$nfMethodRCobject[['buildDerivs']])
-        }
+        ADok[i] <- model$getModelDef()$checkADsupportForDistribution(dists[i])
     }
     if(!all(ADok))
         stop(paste0(hmcType, ' sampler cannot operate on user-defined distributions which do not support AD calculations.  Try using buildDerivs = TRUE in the definition the distributions: ', paste0(dists[!ADok], collapse = ', ')))
@@ -936,7 +921,6 @@ sampler_NUTS <- nimbleFunction(
         divergent <<- FALSE
         branch <- treebranchNL$new()
         done <- FALSE
-        old_stepsize <- epsilon
         old_M <- M
         while((depth < maxTreeDepth) & (!done)) {
             checkInterrupt()
@@ -1186,7 +1170,6 @@ sampler_NUTS <- nimbleFunction(
         adapt_stepsize = function(adapt_stat = double()) {
             ## following Stan code, this is the same as what we have from Hoffman and Gelman, but with adapt_stat instead of a/na
             if(adapt_stat > 1)   adapt_stat <- 1
-            old_epsilon <- epsilon
             stepsizeCounter <<- stepsizeCounter + 1
             eta <- 1/(stepsizeCounter + t0)
             Hbar <<- (1-eta) * Hbar + eta * (delta - adapt_stat)          ## s_bar in Stan
