@@ -936,7 +936,6 @@ sampler_NUTS <- nimbleFunction(
         divergent <<- FALSE
         branch <- treebranchNL$new()
         done <- FALSE
-        old_stepsize <- epsilon
         old_M <- M
         while((depth < maxTreeDepth) & (!done)) {
             checkInterrupt()
@@ -1186,7 +1185,6 @@ sampler_NUTS <- nimbleFunction(
         adapt_stepsize = function(adapt_stat = double()) {
             ## following Stan code, this is the same as what we have from Hoffman and Gelman, but with adapt_stat instead of a/na
             if(adapt_stat > 1)   adapt_stat <- 1
-            old_epsilon <- epsilon
             stepsizeCounter <<- stepsizeCounter + 1
             eta <- 1/(stepsizeCounter + t0)
             Hbar <<- (1-eta) * Hbar + eta * (delta - adapt_stat)          ## s_bar in Stan
