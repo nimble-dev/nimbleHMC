@@ -123,7 +123,8 @@ Binary-valued latent states $x_{i,t}$ represent the true alive (1) or dead (0)
 state of individual $i$ on year $t$.  Doing so allows the survival
 process to be modelled as $x_{i,t+1}~\sim~\text{Bernoulli}(\phi_{f_t} \cdot
 x_{i,t})$ where $f_t$ indicates the flood/non-flood history of year
-$t$, and observations are modelled as $y_{i,t}~\sim~\text{Bernoulli}(p \cdot x_{i,t})$.
+$t$.  The model structure conditions on the first observation of each individual, where $\text{first}_i$ is the first observation period of individual $i$, and $x_{i,\text{first}_i}$ is assigned the value one.
+Observations are modelled as $y_{i,t}~\sim~\text{Bernoulli}(p \cdot x_{i,t})$.
 
 ```
 library(nimbleHMC) 
@@ -133,6 +134,7 @@ code <- nimbleCode({
     phi[2] ~ dunif(0, 1)
     p ~ dunif(0, 1)
     for(i in 1:N) {
+        x[i,first[i]] <- 1
         for(t in (first[i]+1):T) {
             x[i,t] ~ dbern(phi[f[t]] * x[i,t-1])
             y[i,t] ~ dbern(p * x[i,t])
