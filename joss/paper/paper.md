@@ -71,7 +71,7 @@ computation and quality of the samples, the
 effectiveness of the MCMC algorithms will vary depending on the
 software and model.
 
-Among MCMC software packages, `nimble` is distinct in allowing easy
+A key design feature of `nimble`'s MCMC is to allow easy
 customization of sampler assignments from a high-level interface.
 Users may assign any valid samplers to each parameter or group of parameters, selecting from samplers provided with `nimble` or samplers they have written in `nimble`'s algorithm programming system.
 Samplers provided with `nimble` include random walk Metropolis-Hastings sampling [@robert1999metropolis],
@@ -102,7 +102,6 @@ capture-recapture
 [\emph{e.g.}, @lebreton1992modeling; @turek2016efficient].
 Modelling includes both continuous parameters to undergo HMC
 sampling and discrete parameters that cannot be sampled via HMC.
-We are not aware of other software that supports this combination other than `nimbleHMC`.
 
 Individual birds are captured, tagged, and potentially recaptured on
 subsequent sighting occasions.  Data is a $294 \times 7$
@@ -239,16 +238,17 @@ HMC is recognized as a state-of-the-art MCMC sampling algorithm.
 As testimony to this, software packages such as
 `Stan` exclusively employ HMC sampling.
 Consequently, such software cannot operate on models
-containing discrete parameters (upon which HMC cannot operate).  Models with
+containing discrete parameters (upon which HMC cannot operate), or would require marginalization 
+of the likelihood to remove these discrete dimensions from the sampling problem.  Models with
 discrete parameters arise in a range of statistical motifs
 including hidden Markov models, finite mixture models, and generally in
 the presence of unobserved categorical data [@bartolucci2022discrete].
 In contrast, other mainstream MCMC packages
 (`WinBUGS`, `OpenBUGS` and `jags`) can sample discrete parameters,
-but provide no facilities for HMC sampling.  This leaves a gap, as there is no support
-for HMC sampling of hierarchical models that also contain discrete parameters.
+but provide no facilities for HMC sampling.  This leaves the use case of 
+HMC sampling of hierarchical models that also contain discrete parameters.
 
-`nimbleHMC` fills this gap, by providing two HMC samplers that operate
+`nimbleHMC` accomplishes this, by providing two HMC samplers that operate
  inside `nimble`'s MCMC engine.  The base `nimble` package provides
 a variety of MCMC sampling algorithms, as well as the
 ability to customize MCMC sampler assignments. `nimbleHMC` augments the set
