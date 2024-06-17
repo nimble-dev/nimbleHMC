@@ -105,16 +105,19 @@ sampling and discrete parameters that cannot be sampled via HMC.
 We are not aware of other software that supports this combination other than `nimbleHMC`.
 
 Individual birds are captured, tagged, and potentially recaptured on
-subsequent sighting occasions.  Data is a $294 \times 7$
-binary-valued array of capture histories of 294 uniquely tagged birds
+subsequent sighting occasions.  Data is a $255 \times 7$
+binary-valued array of capture histories of 255 uniquely tagged birds
 over 7 years.  Model parameters are detection
 probability ($p$), and annual survival rates on non-flood years ($\phi_1$)
-and flood years ($\phi_2$).  Data is provided in the R package `mra` [@mcdonald2018mra].
+and flood years ($\phi_2$).  Data is provided in the R package `mra` [@mcdonald2018mra],
+and individuals which are first sighted on the final (7$^{th}$) sighting occasion do not contribute 
+to inference, and are removed from the sighting histories.
 
 ```
 library(mra) 
 data(dipper.data) 
-y <- dipper.data[,1:7]
+dipper <- dipper.data[,1:7]
+y <- dipper[apply(dipper, 1, which.max) < 7, ]
 ```
 
 We specify the hierarchical model using uniform priors on the interval
@@ -216,9 +219,9 @@ Finally, posterior summary statistics are calculated for the model parameters.
 samplesSummary(samples, round = 2)
 
 ##        Mean Median St.Dev. 95%CI_low 95%CI_upp
-## p      0.89   0.90    0.03      0.83      0.94
+## p      0.90   0.90    0.03      0.84      0.95
 ## phi[1] 0.58   0.58    0.03      0.52      0.63
-## phi[2] 0.50   0.50    0.06      0.39      0.60
+## phi[2] 0.50   0.50    0.06      0.39      0.61
 ```
 
 Traceplots and posterior density plots are generated using
