@@ -896,6 +896,7 @@ sampler_NUTS <- nimbleFunction(
         if(d  > 1) if(length(M) != d) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
         if(maxTreeDepth < 1) stop('NUTS maxTreeDepth must be at least one', call. = FALSE)
         hmc_checkWarmup(warmupMode, warmup, 'NUTS')
+        init_epsilon_next_iter <- FALSE
     },
     run = function() {
         ## No-U-Turn Sampler based on Stan
@@ -909,6 +910,14 @@ sampler_NUTS <- nimbleFunction(
             if(epsilon <= 0) epsilon <<- 1
             mu <<- log(10*epsilon)    ## curiously, Stan sets this for the first round *before* init_stepsize
             if(initializeEpsilon & adaptive)   initEpsilon()
+        }
+        if(init_epsilon_next_iter) {
+          if(initializeEpsilon)   initEpsilon()
+          Hbar <<- 0
+          logEpsilonBar <<- 0
+          stepsizeCounter <<- 0
+          mu <<- log(10*epsilon)
+          init_epsilon_next_iter <<- FALSE
         }
         timesRan <<- timesRan + 1
         if(printTimesRan) print('============ times ran = ', timesRan)
@@ -1003,11 +1012,7 @@ sampler_NUTS <- nimbleFunction(
             update <- FALSE
             if(adaptM)   update <- adapt_M()
             if(update & adaptEpsilon) {
-                if(initializeEpsilon)   initEpsilon()
-                Hbar <<- 0
-                logEpsilonBar <<- 0
-                stepsizeCounter <<- 0
-                mu <<- log(10*epsilon)
+              init_epsilon_next_iter <<- TRUE
             }
         }
     },
@@ -1265,6 +1270,7 @@ sampler_NUTS <- nimbleFunction(
                     Hbar <<- 0
                     logEpsilonBar <<- 0
                     stepsizeCounter <<- 0
+                    init_epsilon_next_iter <<- FALSE
                     setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
                 }
             }
@@ -1306,6 +1312,7 @@ sampler_NUTS <- nimbleFunction(
             adaptWindow_counter <<- 0
             adaptWindow_iter    <<- 0
             stepsizeCounter     <<- 0
+            init_epsilon_next_iter <<- FALSE
         }
     ),
     buildDerivs = list(
