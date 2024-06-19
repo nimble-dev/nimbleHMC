@@ -62,7 +62,7 @@ it unnecessary to pre-specify a fixed number of steps.
 step size, resulting in a fully automated HMC sampler with no need for manual tuning.
 
 Many software packages offer implementations of MCMC, such as
-`nimble` [@de2017programming], `WinBUGS` [@lunn2000winbugs], `jags` [@plummer2003jags], `pyMC`
+`nimble` [@de2017programming], `WinBUGS` [@lunn2000winbugs], `JAGS` [@plummer2003jags], `PyMC`
 [@fonnesbeck2015pymc], `NumPyro` [@phan2019composable], `TensorFlow
 Probability` [@pang2020deep], and `Stan` [@carpenter2017stan], among others.
 These packages differ, however, in their approaches to sampler
@@ -249,7 +249,7 @@ discrete parameters arise in a range of statistical motifs
 including hidden Markov models, finite mixture models, and generally in
 the presence of unobserved categorical data [@bartolucci2022discrete].
 In contrast, other mainstream MCMC packages
-(`WinBUGS`, `OpenBUGS` and `jags`) can sample discrete parameters,
+(`WinBUGS`, `OpenBUGS` and `JAGS`) can sample discrete parameters,
 but provide no facilities for HMC sampling.  This leaves the use case of 
 HMC sampling of hierarchical models that also contain discrete parameters.
 
