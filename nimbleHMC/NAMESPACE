@@ -6,6 +6,8 @@ export(configureHMC)
 export(nimbleHMC)
 export(sampler_NUTS)
 export(sampler_NUTS_classic)
+export(save_histories) # added by hand.
+export(Rsave_histories) # added by hand.
 export(stateNL_NUTS)
 export(treebranchNL_NUTS)
 import(nimble)

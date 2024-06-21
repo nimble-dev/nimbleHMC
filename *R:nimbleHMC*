@@ -1,0 +1,301 @@
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin20 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> setwd('/Users/perry/Projects/GitHub/nimble-dev/nimbleHMC/')
+> code <- nimbleCode({
++         a[1] ~ dnorm(0, 1)
++         a[2] ~ dnorm(a[1]+1, 1)
++         a[3] ~ dnorm(a[2]+1, 1)
++         d ~ dnorm(a[3], sd=2)
++     })
++     constants <- list()
++     data <- list(d = 5)
++     inits <- list(a = rep(0, 3))
+Error in nimbleCode({ : could not find function "nimbleCode"
+> > > > library(nimble)
+nimble version 1.2.0 is loaded.
+For more information on NIMBLE and a User Manual,
+please visit https://R-nimble.org.
+
+Note for advanced users who have written their own MCMC samplers:
+  As of version 0.13.0, NIMBLE's protocol for handling posterior
+  predictive nodes has changed in a way that could affect user-defined
+  samplers in some situations. Please see Section 15.5.1 of the User Manual.
+
+Attaching package: ‘nimble’
+
+The following object is masked from ‘package:stats’:
+
+    simulate
+
+Warning message:
+package ‘nimble’ was built under R version 4.3.3 
+> code <- nimbleCode({
++         a[1] ~ dnorm(0, 1)
++         a[2] ~ dnorm(a[1]+1, 1)
++         a[3] ~ dnorm(a[2]+1, 1)
++         d ~ dnorm(a[3], sd=2)
++     })
++     constants <- list()
++     data <- list(d = 5)
++     inits <- list(a = rep(0, 3))
+> type <- 'NUTS'
+> cat(paste0('testing ', type, ' sampler\n'))
+testing NUTS sampler
+> Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+Defining model
+Building model
+Setting data and initial values
+Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.
+Checking model sizes and dimensions
+> Rmodel$calculate()
+[1] -8.493901
+> conf <- configureMCMC(Rmodel, nodes = NULL)
+===== Monitors =====
+thin = 1: a
+===== Samplers =====
+(no samplers assigned)
+===== Comments =====
+  [Warning] No samplers assigned for 3 nodes, use conf$getUnsampledNodes() for node names.
+> conf$addSampler('a', type, control = list(nwarmup = 1000))
+Error in conf$addSampler("a", type, control = list(nwarmup = 1000)) : 
+  cannot find sampler type 'NUTS'
+> library(nimbleHMC)
+> conf$addSampler('a', type, control = list(nwarmup = 1000))
+> Rmcmc <- buildMCMC(conf)
+> Cmodel <- compileNimble(Rmodel)
+Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
+> Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
+Error: Error, wrong number of indices provided for adaptWindow_counter[timesRan].
+ This occurred for: adaptWindow_counter[timesRan]
+ This was part of the call:  adaptWindow_counter[timesRan] <<- adaptWindow_counter
+> q('no')
+
+Process R finished at Thu Jun 20 20:07:01 2024
+
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin20 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> setwd('/Users/perry/Projects/GitHub/nimble-dev/nimbleHMC/')
+> library(nimble)
+nimble version 1.2.0 is loaded.
+For more information on NIMBLE and a User Manual,
+please visit https://R-nimble.org.
+
+Note for advanced users who have written their own MCMC samplers:
+  As of version 0.13.0, NIMBLE's protocol for handling posterior
+  predictive nodes has changed in a way that could affect user-defined
+  samplers in some situations. Please see Section 15.5.1 of the User Manual.
+
+Attaching package: ‘nimble’
+
+The following object is masked from ‘package:stats’:
+
+    simulate
+
+Warning message:
+package ‘nimble’ was built under R version 4.3.3 
+> library(nimbleHMC)
+> code <- nimbleCode({
++         a[1] ~ dnorm(0, 1)
++         a[2] ~ dnorm(a[1]+1, 1)
++         a[3] ~ dnorm(a[2]+1, 1)
++         d ~ dnorm(a[3], sd=2)
++     })
++     constants <- list()
++     data <- list(d = 5)
++     inits <- list(a = rep(0, 3))
+> type <- 'NUTS'
+> cat(paste0('testing ', type, ' sampler\n'))
+testing NUTS sampler
+> Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+Defining model
+Building model
+Setting data and initial values
+Running calculate on model
+  [Note] Any error reports that follow may simply reflect missing values in model variables.
+Checking model sizes and dimensions
+> Rmodel$calculate()
+[1] -8.493901
+> conf <- configureMCMC(Rmodel, nodes = NULL)
+===== Monitors =====
+thin = 1: a
+===== Samplers =====
+(no samplers assigned)
+===== Comments =====
+  [Warning] No samplers assigned for 3 nodes, use conf$getUnsampledNodes() for node names.
+> conf$addSampler('a', type, control = list(nwarmup = 1000))
+> Rmcmc <- buildMCMC(conf)
+> Cmodel <- compileNimble(Rmodel)
+Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
+> Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
+Compiling
+  [Note] This may take a minute.
+  [Note] Use 'showCompilerOutput = TRUE' to see C++ compilation details.
+Error: Failed to create the shared library. Run 'printErrors()' to see the compilation errors.
+> printErrors()
+using C++ compiler: ‘Apple clang version 15.0.0 (clang-1500.3.9.4)’
+using SDK: ‘MacOSX14.4.sdk’
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:1:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Core:382:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:2:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/LU:45:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:3:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Cholesky:12:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Jacobi:29:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:3:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Cholesky:43:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:4:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/QR:15:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Householder:27:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:4:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/QR:48:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:5:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/SVD:48:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:6:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Geometry:57:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+In file included from P_1_MCMC.cpp:8:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/nimble/EigenTypedefs.h:24:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Dense:7:
+In file included from /Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/Eigenvalues:58:
+/Library/Frameworks/R.framework/Versions/4.3-x86_64/Resources/library/nimble/include/Eigen/src/Core/util/ReenableStupidWarnings.h:14:30: warning: pragma diagnostic pop could not pop, no matching push [-Wunknown-pragmas]
+    #pragma clang diagnostic pop
+                             ^
+P_1_MCMC.cpp:2350:1: error: use of undeclared identifier 'save_histories'
+save_histories(epsilon_history, Hbar_history, logEpsilonBar_history, sum_metropolis_prob_history, n_leapfrog_history, depth_history, logProb_history, adaptWindow_iter_history, adaptWindow_counter_history);
+^
+9 warnings and 1 error generated.
+make: *** [P_1_MCMC.o] Error 1
+> q('no')
+
+Process R finished at Thu Jun 20 20:08:58 2024
+
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin20 (64-bit)
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> setwd('/Users/perry/Projects/GitHub/nimble-dev/nimbleHMC/')
+> library(nimble)
+nimble version 1.2.0 is loaded.
+For more information on NIMBLE and a User Manual,
+please visit https://R-nimble.org.
+
+Note for advanced users who have written their own MCMC samplers:
+  As of version 0.13.0, NIMBLE's protocol for handling posterior
+  predictive nodes has changed in a way that could affect user-defined
+  samplers in some situations. Please see Section 15.5.1 of the User Manual.
+
+Attaching package: ‘nimble’
+
+The following object is masked from ‘package:stats’:
+
+    simulate
+
+Warning message:
+package ‘nimble’ was built under R version 4.3.3 
+> library(nimbleHMC)
+> code <- nimbleCode({
++         a[1] ~ dnorm(0, 1)
++         a[2] ~ dnorm(a[1]+1, 1)
++         a[3] ~ dnorm(a[2]+1, 1)
++         d ~ dnorm(a[3], sd=2)
++     })
++     constants <- list()
++     data <- list(d = 5)
++     inits <- list(a = rep(0, 3))
+> type <- 'NUTS'

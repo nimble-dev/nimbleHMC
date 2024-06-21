@@ -704,6 +704,47 @@ sampler_NUTS_classic <- nimbleFunction(
     )
 )
 
+#' @export
+Rsave_histories <- function(epsilon_history, Hbar_history, logEpsilonBar_history,
+                            sum_metropolis_prob_history, n_leapfrog_history,
+                            depth_history, logProb_history, adaptWindow_iter_history,
+                            adaptWindow_counter_history) {
+  success <- try({
+    file <- .GlobalEnv[["hmc_history_file"]]
+    if(is.null(file)) file <- "hmc_history_file"
+    file <- paste0(file, ".Rds")
+    obj <- list(
+      epsilon = epsilon_history,
+      Hbar = Hbar_history,
+      logEpsilonBar = logEpsilonBar_history,
+      sum_metropolis_prob = sum_metropolis_prob_history,
+      n_leapfrog = n_leapfrog_history,
+      depth = depth_history,
+      logProb = logProb_history,
+      adaptWindow_iter = adaptWindow_iter_history,
+      adaptWindow_counter = adaptWindow_counter_history
+    )
+    saveRDS(obj, file = file)
+  })
+  if(inherits(success, "try-error")) {
+    message("some problem saving hmc histories. Going to browser().")
+    browser()
+  }
+}
+
+#' @export
+save_histories <- nimbleRcall(function(epsilon_history = double(1),
+                                       Hbar_history = double(1),
+                                       logEpsilonBar_history = double(1),
+                                       sum_metropolis_prob_history = double(1),
+                                       n_leapfrog_history = double(1),
+                                       depth_history = double(1),
+                                       logProb_history = double(1),
+                                       adaptWindow_iter_history = double(1),
+                                       adaptWindow_counter_history = double(1)
+                                       ) {},
+                              void(),
+                              "Rsave_histories")
 
 
 #' nimbleList definition used internally in NUTS sampler.
@@ -881,6 +922,17 @@ sampler_NUTS <- nimbleFunction(
         if(d  > 1) if(length(M) != d) stop('length of NUTS sampler M must match length of NUTS target nodes', call. = FALSE)
         if(maxTreeDepth < 1) stop('NUTS maxTreeDepth must be at least one', call. = FALSE)
         hmc_checkWarmup(warmupMode, warmup, 'NUTS')
+      # debugging logs:
+      V <- rep(0,2)
+      epsilon_history <- V
+      Hbar_history <- V
+      logEpsilonBar_history <- V
+      sum_metropolis_prob_history <- V
+      n_leapfrog_history <- V
+      depth_history <- V
+      logProb_history <- V
+      adaptWindow_iter_history <- V
+      adaptWindow_counter_history <- V
     },
     run = function() {
         ## No-U-Turn Sampler based on Stan
@@ -995,6 +1047,17 @@ sampler_NUTS <- nimbleFunction(
                 mu <<- log(10*epsilon)
             }
         }
+      if(timesRan <= length(epsilon_history)) { # should always be true, but just being cautious
+        epsilon_history[timesRan] <<- epsilon
+        Hbar_history[timesRan] <<- Hbar
+        logEpsilonBar_history[timesRan] <<- logEpsilonBar
+        sum_metropolis_prob_history[timesRan] <<- sum_metropolis_prob
+        n_leapfrog_history[timesRan] <<- n_leapfrog
+        depth_history[timesRan] <<- depth
+        logProb_history[timesRan] <<- state_current$logProb
+        adaptWindow_iter_history[timesRan] <<- adaptWindow_iter
+        adaptWindow_counter_history[timesRan] <<- adaptWindow_counter
+      }
     },
     methods = list(
         copy_state = function(to = stateNL(), from = stateNL()) {
@@ -1253,8 +1316,21 @@ sampler_NUTS <- nimbleFunction(
                     setSize(warmupSamples, adaptWindow_size, d, fillZeros = FALSE)
                 }
             }
+            epsilon_history <<- numeric(length = MCMCniter, value = 0)
+            Hbar_history <<- numeric(length = MCMCniter, value = 0)
+            logEpsilonBar_history <<- numeric(length = MCMCniter, value = 0)
+            sum_metropolis_prob_history <<- numeric(length = MCMCniter, value = 0)
+            n_leapfrog_history <<- numeric(length = MCMCniter, value = 0)
+            depth_history <<- numeric(length = MCMCniter, value = 0)
+            logProb_history <<- numeric(length = MCMCniter, value = 0)
+            adaptWindow_iter_history <<- numeric(length = MCMCniter, value = 0)
+            adaptWindow_counter_history <<- numeric(length = MCMCniter, value = 0)
         },
         after_chain = function() {
+          save_histories(epsilon_history, Hbar_history, logEpsilonBar_history,
+                         sum_metropolis_prob_history, n_leapfrog_history,
+                         depth_history, logProb_history, adaptWindow_iter_history,
+                         adaptWindow_counter_history)
             if(messages) {
                 if(numDivergences == 1)        print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent path.')
                 if(numDivergences  > 1)        print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
