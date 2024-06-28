@@ -63,9 +63,12 @@ code <- nimbleCode({
     }
 })
 
-N <- 10
-constants <- list(N = N, x = 1:N)
-data <- list(y = 1:N)
+set.seed(0)
+N <- 100
+x <- rnorm(N)
+y <- 1 + 0.3*x + rnorm(N)
+constants <- list(N = N, x = x)
+data <- list(y = y)
 inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
 
 Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
