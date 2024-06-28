@@ -26,7 +26,7 @@
 #'
 #' @return Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
 #'
-#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
+#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' code <- nimbleCode({
