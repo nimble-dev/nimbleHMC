@@ -26,7 +26,7 @@
 #'
 #' @return Invisibly returns an object of class `MCMCconf`, but this function is primary called for its side effect.
 #'
-#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
+#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' code <- nimbleCode({
@@ -101,7 +101,7 @@ addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), 
 #'
 #' @return An object of class `MCMCconf`.
 #'
-#' @seealso \code{\link{addHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
+#' @seealso \code{\link{addHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' code <- nimbleCode({
@@ -174,7 +174,7 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
 #'
 #' @author Daniel Turek
 #' 
-#' @seealso \code{\link{addHMC}} \code{\link{configureHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
+#' @seealso \code{\link{addHMC}} \code{\link{configureHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 #' 
 #' @examples
 #' code <- nimbleCode({
@@ -289,7 +289,7 @@ buildHMC <- function(model, nodes = character(), type = 'NUTS', control = list()
 #'                          summary = TRUE, WAIC = TRUE)
 #' }
 #'
-#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{buildMCMC}} \code{\link{runMCMC}}
+#' @seealso \code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{buildMCMC}} \code{\link[nimble]{runMCMC}}
 #' 
 #' @author Daniel Turek
 #'
