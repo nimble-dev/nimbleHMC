@@ -17,7 +17,7 @@ addHMC(
 \arguments{
 \item{conf}{A nimble MCMC configuration object, as returned by `configureMCMC`.}
 
-\item{target}{A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no sampler is added.}
+\item{target}{A character vector of continuous-valued stochastic node names to sample.  If this argument contains any discrete-valued nodes, an error is produced and no HMC sampler is added.  If this argument is omitted, then no HMC sampler is added.}
 
 \item{type}{A character string specifying the type of HMC sampler to add, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.  The default sampler type is "NUTS".}
 
@@ -60,11 +60,14 @@ inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
 
 Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
 
-## create MCMC configuration object
-conf <- configureMCMC(Rmodel, nodes = NULL)
+## create default MCMC configuration object
+conf <- configureMCMC(Rmodel)
 
-## add HMC sampler operating on all stochastic model nodes
-addHMC(conf)
+## remove default samplers operating on b0 and b1
+conf$removeSamplers(c("b0", "b1"))
+
+## add an HMC sampler operating on b0 and b1
+addHMC(conf, target = c("b0", "b1"))
 
 Rmcmc <- buildMCMC(conf)
 
@@ -73,7 +76,7 @@ Rmcmc <- buildMCMC(conf)
 # samples <- runMCMC(Cmcmc)
 }
 \seealso{
-\code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
+\code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 }
 \author{
 Daniel Turek
