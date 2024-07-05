@@ -24,7 +24,7 @@ affiliations:
    index: 1
  - name: University of California, USA
    index: 2
-date: 17 June 2024
+date: 5 July 2024
 bibliography: paper.bib
 output: pdf_document
 ---
