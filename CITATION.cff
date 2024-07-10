@@ -1,0 +1,41 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Turek
+  given-names: Daniel
+  orcid: "https://orcid.org/0000-0002-1453-1908"
+- family-names: Valpine
+  given-names: Perry
+  name-particle: de
+  orcid: "https://orcid.org/0000-0002-8329-6796"
+- family-names: Paciorek
+  given-names: Christopher J.
+contact:
+- family-names: Turek
+  given-names: Daniel
+  orcid: "https://orcid.org/0000-0002-1453-1908"
+doi: 10.5281/zenodo.12658544
+message: If you use this software, please cite our article in the Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Turek
+    given-names: Daniel
+    orcid: "https://orcid.org/0000-0002-1453-1908"
+  - family-names: Valpine
+    given-names: Perry
+    name-particle: de
+    orcid: "https://orcid.org/0000-0002-8329-6796"
+  - family-names: Paciorek
+    given-names: Christopher J.
+  date-published: 2024-07-10
+  doi: 10.21105/joss.06745
+  issn: 2475-9066
+  issue: 99
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 6745
+  title: "nimbleHMC: An R package for Hamiltonian Monte Carlo sampling in nimble"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.06745"
+  volume: 9
+title: "nimbleHMC: An R package for Hamiltonian Monte Carlo sampling in nimble"
