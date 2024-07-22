@@ -4,17 +4,10 @@ requirements <- c(
     'igraph',
     'coda',
     'R6',
-##    'nimble',    ## XXXXXX add this line back in
+    'nimble',
     'testthat')
 
 for(package in requirements) {
     install.packages(package)
 }
-
-## XXXXXXXXXXXXXXXXX remove below
-install.packages('devtools')
-library(devtools)
-devtools::install_github('nimble-dev/nimble', ref = 'devel', subdir = 'packages/nimble')
-## XXXXXXXXXXXXXXXX remove until here
-
 
