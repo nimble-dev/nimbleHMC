@@ -10,7 +10,7 @@ Provides derivative-based MCMC sampling algorithms and convenence functions, for
 - Historical implementation of the original No-U-Turn HMC (`NUTS_classic`) sampler
 - Langevin sampler (*under development*)
 
-See the HMC section of the [nimble user manual](https://r-nimble.org/html_manual/cha-mcmc.html#subsec:HMC) for more information and examples.
+See the HMC section of the [Nimble User Manual](https://r-nimble.org/html_manual/cha-mcmc.html#subsec:HMC) for more information and examples.
 
 [General package information](https://cran.r-project.org/web/packages/nimbleHMC/) about `nimbleHMC`, and the [complete API for package functions](https://cran.r-project.org/web/packages/nimbleHMC/nimbleHMC.pdf) are available on CRAN.
 
@@ -54,7 +54,7 @@ remotes::install_github("nimble-dev/nimbleHMC", ref="master", subdir = "nimbleHM
 
 ### Automatic Differentiation
 
-`nimbleHMC` makes use of the automatic differentiation (AD) feature of `nimble`, which is currently available as a beta release.  See [nimble AD beta release](https://r-nimble.org/ad-beta) for more information about models and algorithms that make use of the AD features of `nimble`.
+`nimbleHMC` makes use of the automatic differentiation (AD) feature of `nimble`, which was released in `nimble` version 1.0.0.  See [Chapter 16: Automatic Derivatives](https://r-nimble.org/html_manual/cha-AD.html) of the Nimble User Manual for more information about the capabilities of the AD system, and how to use the AD system to calculate derivatives of functions written as `nimble` algorithms, as well as derivatives of model calculations.
 
 <!--
 In order to use HMC sampling (and other derivative-based algorithms), derivatives need to be enabled for `nimble` using the setting:
@@ -84,5 +84,5 @@ Contributions to the `nimbleHMC` package should be submitted via pull request on
 
 Issues, feature requests, or bugs should be reported using GitHub issues, submitted to the `nimbleHMC` repository.
 
-For additional support using `nimble` or `nimbleHMC`, please see the [nimble user manual](https://r-nimble.org/html_manual/cha-welcome-nimble.html).  Any additional questions can be submitted to the [nimble-users Google group](https://groups.google.com/g/nimble-users).
+For additional support using `nimble` or `nimbleHMC`, please see the [Nimble User Manual](https://r-nimble.org/html_manual/cha-welcome-nimble.html).  Any additional questions can be submitted to the [nimble-users Google group](https://groups.google.com/g/nimble-users).
 
