@@ -1310,3 +1310,187 @@ sampler_NUTS <- nimbleFunction(
 )
 
 
+
+
+## #' Barker Sampler
+## #'
+## #' [REVISE] The Barker variation on the Langevin sampler implements a special case of Hamiltonian Monte Carlo (HMC) sampling where only a single leapfrog step is taken on each sampling iteration, and the leapfrog step-size is adapted to match the scale of the posterior distribution (independently for each dimension being sampled). The single leapfrog step is done by introducing auxiliary momentum variables, and using first-order derivatives to simulate Hamiltonian dynamics on this augmented paramter space (Neal, 2011). Langevin sampling can operate on one or more continuous-valued posterior dimensions. This sampling technique is also known as Langevin Monte Carlo (LMC), and the Metropolis-Adjusted Langevin Algorithm (MALA).
+## #'
+## #' @param model An uncompiled nimble model object on which the MCMC will operate.
+## #' @param mvSaved A nimble \code{modelValues} object to be used to store MCMC samples.
+## #' @param target A character vector of node names on which the sampler will operate.
+## #' @param control A named list that controls the precise behavior of the sampler. The default values for control list elements are specified in the setup code of the sampler. A description of the possible control list elements appear in the details section.
+## #'
+## #' @details
+## #'
+## #' The Barker Langevin sampler accepts the following control list elements:
+## #'
+## #' \itemize{
+## #' \item scale. An optional multiplier, to scale the step-size of the proposal steps. If adaptation is turned off, this uniquely determines the step-size (default = 1)
+## #' \item sigma. Sigma in the bimodal proposal.
+## #' \item adaptive. A logical argument, specifying whether the sampler will adapt the leapfrog step-size (scale) throughout the course of MCMC execution. The scale is adapted independently for each dimension being sampled. (default = TRUE)
+## #' \item adaptInterval. The interval on which to perform adaptation. (default = 200)
+## #' }
+## #' 
+## #' @import nimble
+## #' @import methods
+## #' 
+## #' @aliases Barker barket
+## #' 
+## #' @author Christopher Paciorek
+## #' 
+## #' @examples
+## #' code <- nimbleCode({
+## #'     b0 ~ dnorm(0, 0.001)
+## #'     b1 ~ dnorm(0, 0.001)
+## #'     sigma ~ dunif(0, 10000)
+## #'     for(i in 1:N) {
+## #'         mu[i] <- b0 + b1 * x[i]
+## #'         y[i] ~ dnorm(mu[i], sd = sigma)
+## #'     }
+## #' })
+## #' 
+## #' set.seed(0)
+## #' N <- 100
+## #' x <- rnorm(N)
+## #' y <- 1 + 0.3*x + rnorm(N)
+## #' constants <- list(N = N, x = x)
+## #' data <- list(y = y)
+## #' inits <- list(b0 = 1, b1 = 0.1, sigma = 1)
+## #' 
+## #' Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
+## #' 
+## #' conf <- configureMCMC(Rmodel, nodes = NULL)
+## #' 
+## #' conf$addSampler(target = c('b0', 'b1', 'sigma'), type = 'barker')
+## #' 
+## #' Rmcmc <- buildMCMC(conf)
+
+## TODOs:
+## Implement adaptInterval > 1.
+## Eigen compilation thing with pmin and log1p.
+
+sampler_barker <- nimbleFunction(
+    name = 'sampler_barker',
+    contains = sampler_BASE,
+    setup = function(model, mvSaved, target, control) {
+        ## control list extraction
+        scale <- extractControlElement(control, 'scale', 1)     # Global scale, adapted during iterations.
+        sigma <- extractControlElement(control, 'sigma', 0.1)   # sd for core bimodal proposal distribution.
+        adaptive <- extractControlElement(control, 'adaptive', TRUE)
+        adaptInterval <- extractControlElement(control, 'adaptInterval', 1)
+        adaptFactorExponent <- extractControlElement(control, 'adaptFactorExponent', 0.6)
+        diagonal <- extractControlElement(control, 'diagonal', TRUE)
+        propVar <- extractControlElement(control, 'propVar', 1) 
+        targetAcceptanceRate <- extractControlElement(control, 'targetAcceptanceRate', 0.57)
+        if(adaptInterval != 1)
+            stop("sampler_barker: values of `adaptInterval` other than one are not yet implemented")
+        if(!diagonal)
+            stop("sampler_barker: non-diagonal adaptation is not yet implemented")
+        
+        ## node list generation
+        targetAsScalar <- model$expandNodeNames(target, returnScalarComponents = TRUE)
+        calcNodes <- model$getDependencies(target)
+
+        ## numeric value generation
+        d <- length(targetAsScalar)
+
+        if(length(propVar) == 1)
+            propVar <- nimNumeric(d, value = propVar)
+        if(length(propVar) != d)
+            stop("sampler_barker: `propVar` must be a scalar or vector of length equal to number of target elements")
+        
+        scaleOriginal <- scale
+        propVarOriginal <- propVar
+        
+        means <- numeric(d)
+        sdValues <- scale * sqrt(propVar)
+        ## empirSamp <- matrix(0, nrow = adaptInterval, ncol = d)
+        timesRan <- 0
+        timesAdapted <- 0
+        zeros <- nimNumeric(d, value = 0)
+
+        first <- TRUE
+        
+        proposalMean <- sqrt(1-sigma^2)
+        grad_current <- numeric(d)
+        grad_proposed <- numeric(d)
+        ## checks
+        if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
+        if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
+        if(any(model$isDiscrete(targetAsScalar)))    stop(paste0('langevin sampler can only operate on continuous-valued nodes:', paste0(targetAsScalar[model$isDiscrete(targetAsScalar)], collapse=', ')), call. = FALSE)
+    },
+    run = function() {
+        current <- values(model, target)       
+        if(first) {  
+            means <<- current
+            first <<- FALSE
+        }
+        gradCurrent <<- jacobian()
+        z <- sample()
+        flipProb <- expit(gradCurrent*z)
+        noflip <- 2 * (runif(d) < flipProb) - 1
+        proposal <- current + noflip*z
+        values(model, target) <<- proposal
+        gradProposed <<- jacobian()
+        lpD <- model$calculateDiff(calcNodes) + calculateLogHastingsRatio(proposal-current)
+        jump <- decide(lpD) 
+        if(jump) nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
+        else     nimCopy(from = mvSaved, to = model, row = 1, nodes = calcNodes, logProb = TRUE)
+        if(adaptive)     adaptiveProcedure(min(1,exp(lpD)))
+    },
+    methods = list(
+        sample = function() {
+            sign <- 2*(runif(d) > 0.5) -1
+            return(sdValues*(rnorm(d, 0, sigma) + sign*proposalMean))
+            returnType(double(1))
+        },
+        jacobian = function() {
+            derivsOutput <- nimDerivs(model$calculate(calcNodes), order = 1, wrt = target)
+            return(derivsOutput$jacobian[1, 1:d])
+            returnType(double(1))
+        },
+        calculateLogHastingsRatio = function(diff = double(1)) {
+            beta1 <- gradProposed * diff
+            beta2 <- - gradCurrent * diff
+            test <- sum(log1p(exp(beta2)) - log1p(exp(beta1)))
+            ## Implementation of log-sum-exp trick to handle overflow in 1+exp(x).
+            result <- sum(pmax(beta2, zeros)) + sum(log1p(exp(-abs(beta2))))
+            - sum(pmax(beta1, zeros)) - sum(log1p(exp(-abs(beta1))))
+            ## some sort of Eigen compilation failure - investigate/report!
+#            return(sum(
+#                -(pmax(beta1, zeros)+log1p(exp(-abs(beta1)))) +
+#                 (pmax(beta2, zeros)+log1p(exp(-abs(beta2)))) ))
+            return(result)
+            ## return(test) # OK
+            ## return(sum(pmax(beta2,zeros))) # OK
+            ## return(sum(log1p(exp(-abs(beta1))))) # OK
+            returnType(double())
+        },
+                                        #beta1<-  c(-g_prime(y)*(x-y))
+                                        #beta2<-  c(-g_prime(x)*(y-x))
+                                        #return(sum(# compute acceptance with log_sum_exp trick for numerical stability
+                                        #  -(pmax(beta1,0)+log1p(exp(-abs(beta1))))+
+                                        #    (pmax(beta2,0)+log1p(exp(-abs(beta2))))
+        adaptiveProcedure = function(acceptProb = double()) {
+            timesRan <<- timesRan + 1
+            gammaValue <- (timesRan+2)^(-adaptFactorExponent)  # +2 follows usage in Giacomo Zanella's code.
+            current <- values(model, target)
+            scale <<- sqrt(exp( 2*log(scale) + gammaValue*(acceptProb-targetAcceptanceRate) ))
+            means <<- means + gammaValue * (current - means)
+            propVar <<- propVar + gammaValue * ((current-means)^2 - propVar)
+            sdValues <<- scale*sqrt(propVar)  
+
+        },
+        reset = function() {
+            timesRan     <<- 0
+            timesAdapted <<- 0
+            scale <<- scaleOriginal
+            propVar <<- propVarOriginal
+            means <<- numeric(d)
+            sdValues <<- scale * sqrt(propVar)
+            ## empirSamp <<- matrix(0, nrow = adaptInterval, ncol = d)
+        }
+    )
+)
+
