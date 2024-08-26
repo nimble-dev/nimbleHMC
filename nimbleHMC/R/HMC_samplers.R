@@ -1366,10 +1366,6 @@ sampler_NUTS <- nimbleFunction(
 ## #' 
 ## #' Rmcmc <- buildMCMC(conf)
 
-## TODOs:
-## Implement adaptInterval > 1.
-## Eigen compilation thing with pmin and log1p.
-
 sampler_barker <- nimbleFunction(
     name = 'sampler_barker',
     contains = sampler_BASE,
@@ -1407,14 +1403,13 @@ sampler_barker <- nimbleFunction(
         sdValues <- scale * sqrt(propVar)
         ## empirSamp <- matrix(0, nrow = adaptInterval, ncol = d)
         timesRan <- 0
-        timesAdapted <- 0
         zeros <- nimNumeric(d, value = 0)
 
         first <- TRUE
         
         proposalMean <- sqrt(1-sigma^2)
-        grad_current <- numeric(d)
-        grad_proposed <- numeric(d)
+        gradCurrent <- numeric(d)
+        gradProposed <- numeric(d)
         ## checks
         if(!isTRUE(nimbleOptions('enableDerivs')))   stop('must enable NIMBLE derivatives, set nimbleOptions(enableDerivs = TRUE)', call. = FALSE)
         if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
@@ -1455,8 +1450,8 @@ sampler_barker <- nimbleFunction(
             beta2 <- - gradCurrent * diff
             test <- sum(log1p(exp(beta2)) - log1p(exp(beta1)))
             ## Implementation of log-sum-exp trick to handle overflow in 1+exp(x).
-            result <- sum(pmax(beta2, zeros)) + sum(log1p(exp(-abs(beta2))))
-            - sum(pmax(beta1, zeros)) - sum(log1p(exp(-abs(beta1))))
+            result <- sum(pmax(beta2, zeros) - pmax(beta1, zeros)) +
+                sum(log1p(exp(-abs(beta2))) - log1p(exp(-abs(beta1))))
             ## some sort of Eigen compilation failure - investigate/report!
 #            return(sum(
 #                -(pmax(beta1, zeros)+log1p(exp(-abs(beta1)))) +
@@ -1473,18 +1468,19 @@ sampler_barker <- nimbleFunction(
                                         #  -(pmax(beta1,0)+log1p(exp(-abs(beta1))))+
                                         #    (pmax(beta2,0)+log1p(exp(-abs(beta2))))
         adaptiveProcedure = function(acceptProb = double()) {
+            if(is.nan(acceptProb))
+                acceptProb <- 0
             timesRan <<- timesRan + 1
             gammaValue <- (timesRan+2)^(-adaptFactorExponent)  # +2 follows usage in Giacomo Zanella's code.
             current <- values(model, target)
             scale <<- sqrt(exp( 2*log(scale) + gammaValue*(acceptProb-targetAcceptanceRate) ))
             means <<- means + gammaValue * (current - means)
             propVar <<- propVar + gammaValue * ((current-means)^2 - propVar)
-            sdValues <<- scale*sqrt(propVar)  
-
-        },
+            sdValues <<- scale*sqrt(propVar)
+         },
         reset = function() {
+            first <<- TRUE
             timesRan     <<- 0
-            timesAdapted <<- 0
             scale <<- scaleOriginal
             propVar <<- propVarOriginal
             means <<- numeric(d)
