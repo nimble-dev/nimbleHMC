@@ -990,8 +990,6 @@ sampler_NUTS <- nimbleFunction(
         accept_prob <- sum_metropolis_prob / n_leapfrog
         copy_state(state_current, state_sample)        ## extraneous copy? could remove?
         ##
-        inverseTransformStoreCalculate(state_sample$q)
-        nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
         if((timesRan <= nwarmup) & adaptive) {
             if(adaptEpsilon)   adapt_stepsize(accept_prob)
             update <- FALSE
@@ -1004,6 +1002,8 @@ sampler_NUTS <- nimbleFunction(
                 mu <<- log(10*epsilon)
             }
         }
+        inverseTransformStoreCalculate(state_sample$q)
+        nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
     },
     methods = list(
         copy_state = function(to = stateNL(), from = stateNL()) {
