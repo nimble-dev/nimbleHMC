@@ -14,5 +14,4 @@ License: BSD_3_clause + file LICENSE | GPL (>= 2)
 Copyright: See COPYRIGHTS file.
 Encoding: UTF-8
 LazyData: false
-RoxygenNote: 7.3.1
-
+RoxygenNote: 7.3.2
