@@ -455,9 +455,9 @@ sampler_NUTS_classic <- nimbleFunction(
             j <- j + 1
             checkInterrupt()
         }
+        if((timesRan <= nwarmup) & adaptive)   adaptiveProcedure(btNL$a, btNL$na)
         inverseTransformStoreCalculate(qNew)
         nimCopy(from = model, to = mvSaved, row = 1, nodes = calcNodes, logProb = TRUE)
-        if((timesRan <= nwarmup) & adaptive)   adaptiveProcedure(btNL$a, btNL$na)
     },
     methods = list(
         drawMomentumValues = function() {
@@ -580,6 +580,7 @@ sampler_NUTS_classic <- nimbleFunction(
                             ##for(i in 1:d)   M[i] <<- 1 / warmupCovRegularized[i,i]
                             sqrtM <<- sqrt(M)
                             if(adaptEpsilon) {
+                                inverseTransformStoreCalculate(qNew) #defensively ensure model states are up to date
                                 initEpsilon()
                                 epsilonAdaptCount <<- 0
                                 mu <<- log(10 * epsilon)
@@ -995,7 +996,10 @@ sampler_NUTS <- nimbleFunction(
             update <- FALSE
             if(adaptM)   update <- adapt_M()
             if(update & adaptEpsilon) {
-                if(initializeEpsilon)   initEpsilon()
+                if(initializeEpsilon) {
+                  inverseTransformStoreCalculate(state_sample$q) # defensively ensure model states are up to date.
+                  initEpsilon()
+                }
                 Hbar <<- 0
                 logEpsilonBar <<- 0
                 stepsizeCounter <<- 0
