@@ -580,7 +580,7 @@ sampler_NUTS_classic <- nimbleFunction(
                             ##for(i in 1:d)   M[i] <<- 1 / warmupCovRegularized[i,i]
                             sqrtM <<- sqrt(M)
                             if(adaptEpsilon) {
-                                inverseTransformStoreCalculate(qNew) #defensively ensure model states are up to date
+                                inverseTransformStoreCalculate(qNew)   ## defensively ensure model states are up to date
                                 initEpsilon()
                                 epsilonAdaptCount <<- 0
                                 mu <<- log(10 * epsilon)
@@ -997,8 +997,8 @@ sampler_NUTS <- nimbleFunction(
             if(adaptM)   update <- adapt_M()
             if(update & adaptEpsilon) {
                 if(initializeEpsilon) {
-                  inverseTransformStoreCalculate(state_sample$q) # defensively ensure model states are up to date.
-                  initEpsilon()
+                    inverseTransformStoreCalculate(state_sample$q)   ## defensively ensure model states are up to date.
+                    initEpsilon()
                 }
                 Hbar <<- 0
                 logEpsilonBar <<- 0
