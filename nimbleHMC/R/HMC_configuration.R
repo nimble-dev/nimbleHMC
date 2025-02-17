@@ -157,7 +157,7 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
 #'
 #' Build an MCMC algorithm which applies HMC sampling to continuous-valued dimensions
 #' 
-#' @param model A nimble model, as returned by `nimbleModel`
+#' @param model A nimble model, as returned by `nimbleModel`.  Alternatively, an MCMC configuration object, as returned by either `configureHMC` or `configureHMC`.  See details.
 #' @param nodes A character vector of stochastic node names to be sampled. If an empty character vector is provided (the default), then all stochastic non-data nodes will be sampled.  An HMC sampler will be applied to all continuous-valued non-data nodes, and nimble's default sampler will be assigned for all discrete-valued nodes.
 #' @param type A character string specifying the type of HMC sampling to apply, either "NUTS" or "NUTS_classic".  See `help(NUTS)` or `help(NUTS_classic)` for details of each sampler.  The default sampler type is "NUTS".
 #' @param control Optional named list of control parameters to be passed as the `control` argument to the HMC sampler.  See `help(NUTS)` or `help(NUTS_classic)` for details of the control list elements accepted by each sampler.
@@ -168,7 +168,9 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
 #'
 #' This is the most direct way to create an MCMC algorithm using HMC sampling in nimble.  This will create a compilable, executable MCMC algorithm, with HMC sampling assigned to all continuous-valued model dimensions, and nimble's default sampler assigned to all discrete-valued dimensions.  The `nodes` argument can be used to control which model nodes are assigned samplers.  Use this if you don't otherwise need to modify the MCMC configuration.
 #'
-#' Either the `NUTS_classic` or the `NUTS` samplin can be applied.  Both implement variants of No-U-Turn HMC sampling, however the `NUTS` sampler uses more modern adapatation techniques. See `help(NUTS)` or `help(NUTS_classic)` for details.
+#' Either the `NUTS_classic` or the `NUTS` sampling can be applied, which is controled by the `type` argument.  Both implement variants of No-U-Turn HMC sampling, however the `NUTS` sampler uses more modern adapatation techniques. See `help(NUTS)` or `help(NUTS_classic)` for details.
+#'
+#' Note that when an MCMC configuration object is provided as the `model` argument, then an executable MCMC algorithm is generated using the MCMC configuration that was provided - regardless of whether or not it specifies any HMC samplers.
 #'
 #' @export
 #'
@@ -201,7 +203,11 @@ configureHMC <- function(model, nodes = character(), type = 'NUTS', control = li
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
 buildHMC <- function(model, nodes = character(), type = 'NUTS', control = list(), print = TRUE, ...) {
-    conf <- configureHMC(model, nodes, type, control, print, includeConfGetUnsampledNodes = FALSE, ...)
+    if(is.model(model)) {
+        conf <- configureHMC(model, nodes, type, control, print, includeConfGetUnsampledNodes = FALSE, ...)
+    } else if(inherits(model, 'MCMCconf')) {
+        conf <- model
+    } else stop('\'model\' argument must be either a nimble model or an MCMC configuration object',  call. = FALSE)
     Rmcmc <- suppressMessages(buildMCMC(conf))
     return(Rmcmc)
 }
