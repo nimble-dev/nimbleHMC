@@ -130,6 +130,8 @@ addHMC <- function(conf, target = character(), type = 'NUTS', control = list(), 
 #' # Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
 #' # samples <- runMCMC(Cmcmc)
 configureHMC <- function(model, nodes = character(), type = 'NUTS', control = list(), print = TRUE, ...) {
+    if(!is.model(model)) stop('\'model\' argument must be a nimble model object',  call. = FALSE)
+    if(!isTRUE(model$modelDef[['buildDerivs']])) stop('must set buildDerivs = TRUE when building model',  call. = FALSE)
     nodesProvided <- !identical(nodes, character())
     if(nodesProvided) {
         nodes <- model$expandNodeNames(nodes)
