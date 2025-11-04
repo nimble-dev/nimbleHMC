@@ -115,7 +115,7 @@ mcmc.output <- nimbleHMC(code, data = data, inits = inits,
 
 }
 \seealso{
-\code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{buildMCMC}} \code{\link{runMCMC}}
+\code{\link{configureHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{buildMCMC}} \code{\link[nimble]{runMCMC}}
 }
 \author{
 Daniel Turek

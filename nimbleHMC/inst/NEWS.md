@@ -1,3 +1,7 @@
+#                            CHANGES IN VERSION 0.2.3 (December 2024)
+
+- Minor bug fix in the adapatation routines of the `NUTS` and `NUTS_classic` samplers, which could leave model in an inconsistent state.
+
 #                            CHANGES IN VERSION 0.2.1 (February 2024)
 
 - Added checks within `NUTS` and `NUTS_classic` samplers to check validity of target nodes.

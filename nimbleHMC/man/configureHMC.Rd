@@ -67,7 +67,7 @@ Rmcmc <- buildMCMC(conf)
 # samples <- runMCMC(Cmcmc)
 }
 \seealso{
-\code{\link{addHMC}} \code{\link{buildHMC}} \code{\link{configureMCMC}} \code{\link{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
+\code{\link{addHMC}} \code{\link{buildHMC}} \code{\link[nimble]{configureMCMC}} \code{\link[nimble]{addSampler}} \code{\link{sampler_NUTS}} \code{\link{sampler_NUTS_classic}}
 }
 \author{
 Daniel Turek
