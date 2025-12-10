@@ -320,11 +320,12 @@ nimbleHMC <- function(code,
                       samples = TRUE,
                       samplesAsCodaMCMC = FALSE,
                       summary = FALSE,
-                      WAIC = FALSE) {
+                      WAIC = FALSE,
+                      userEnv = parent.frame()) {
     if(missing(code) && missing(model)) stop('must provide either code or model argument')
     if(!samples && !summary && !WAIC) stop('no output specified, use samples = TRUE, summary = TRUE, or WAIC = TRUE')
     if(!missing(code) && inherits(code, 'modelBaseClass')) model <- code   ## let's handle it, if model object is provided as un-named first argument
-    Rmodel <- mcmc_createModelObject(model, inits, nchains, setSeed, code, constants, data, dimensions, check, buildDerivs = TRUE)
+    Rmodel <- mcmc_createModelObject(model, inits, nchains, setSeed, code, constants, data, dimensions, check, buildDerivs = TRUE, userEnv = userEnv)
     Rmcmc <- buildHMC(Rmodel, type = type, monitors = monitors, thin = thin, enableWAIC = WAIC, print = FALSE)
     compiledList <- compileNimble(Rmodel, Rmcmc)    ## only one compileNimble() call
     Cmcmc <- compiledList$Rmcmc
