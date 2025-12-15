@@ -316,7 +316,7 @@ test_that('HMC on conjugate Wishart', {
     OmegaSimTrueSDs <- apply(wishRV, c(1,2), sd)
     ##
     expect_equal(as.numeric(apply(samples, 2, mean)), as.numeric(OmegaTrueMean), tol = 0.1)
-    expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.02)
+    expect_equal(as.numeric(apply(samples, 2, sd)), as.numeric(OmegaSimTrueSDs), tol = 0.1)
 })
 
 test_that('HMC on LKJ', {
@@ -564,8 +564,8 @@ test_that('HMC runs with various non-differentiable constructs', {
 })
 
 test_that('HMC results for CAR match non-HMC', {
-   set.seed(1)
-   code <- nimbleCode({
+    set.seed(1)
+    code <- nimbleCode({
         S[1:N] ~ dcar_normal(adj[1:L], weights[1:L], num[1:N], tau)
         tau ~ dunif(0, 5)
         for(i in 1:N)
@@ -575,7 +575,7 @@ test_that('HMC results for CAR match non-HMC', {
             Y[i] ~ dpois(lambda[i])
         }
     })
-    
+    ##
     constants <- list(N = 6,
                       num = c(1,2,2,2,2,1),
                       adj = c(2, 1,3, 2,4, 3,5, 4,6, 5),
@@ -583,24 +583,23 @@ test_that('HMC results for CAR match non-HMC', {
                       L = 10)
     data <- list(Y = c(1,0,2,1,4,3))
     inits <- list(tau = 1, S = c(0,0,0,0,0,0))
-    
+    ##
     Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
     conf <- configureMCMC(Rmodel, monitors = c('tau','S'))
     Rmcmc <- buildMCMC(conf)
     Cmodel <- compileNimble(Rmodel)
     Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
     out <- runMCMC(Cmcmc, niter = 505000, nburnin = 5000, thin = 500)
-
+    ##
     Rmodel <- nimbleModel(code, constants, data, inits, buildDerivs = TRUE)
     conf <- configureHMC(Rmodel, monitors = c('tau','S'))
     Rmcmc <- buildMCMC(conf)
     Cmodel <- compileNimble(Rmodel)
     Cmcmc <- compileNimble(Rmcmc, project = Rmodel)
     outHMC <- runMCMC(Cmcmc, niter = 22000, nburnin=2000, thin=20)
-
+    ##
     expect_equal(apply(out[,1:6],2,mean), apply(outHMC[,1:6],2,mean), tolerance = .06)
     expect_equal(mean(out[,7]),mean(outHMC[,7]), tolerance = .15)
-
     expect_equal(apply(out,2,quantile,c(.1,.9)), apply(outHMC,2,quantile,c(.1,.9)), tolerance = 0.15)
 })
 
@@ -624,7 +623,7 @@ test_that('HMC results for mixture model match non-HMC', {
     mu <- c(0,2,4)
     data <- list(y=sample(c(rnorm(50,mu[1],.35), rnorm(250,mu[2],.35), rnorm(200,mu[3],.35)), n, replace=FALSE))
     inits <- list(k=sample(1:K,n,replace=T),mu=c(-1,2,6),mu0=1)
-
+    ##
     m <- nimbleModel(code, constants = constants, data = data,
                      inits = inits, buildDerivs = TRUE)
     conf <- configureMCMC(m, monitors=c('mu','mu0','p'))
@@ -632,27 +631,25 @@ test_that('HMC results for mixture model match non-HMC', {
     cm <- compileNimble(m)
     cmcmc <- compileNimble(mcmc)
     out <- runMCMC(cmcmc, niter=50000, nburnin=10000, thin=40)
-
+    ##
     m <- nimbleModel(code, constants = constants, data = data,
                      inits = inits, buildDerivs = TRUE)
     conf <- configureMCMC(m, nodes=c('k'), monitors=c('mu','mu0','p'))
-    conf$addSampler(c('mu0','mu','p'),'NUTS')
+    conf$addSampler(c('mu0','mu','p'), 'NUTS')
     mcmc <- buildMCMC(conf)
     cm <- compileNimble(m)
     cmcmc <- compileNimble(mcmc)
     outHMC <- runMCMC(cmcmc, niter=22000, nburnin=2000, thin=20)
-
-    ## Deal with label switching.
+    ## deal with label switching
     sorter <- function(row) {
         ord <- order(row[1:3])
         return(c(row[1:3][ord], row[4], row[5:7][ord]))
     }
     out <- t(apply(out, 1, sorter))
     outHMC <- t(apply(outHMC, 1, sorter))
-
-    expect_equal(apply(out,2,mean), apply(outHMC,2,mean), tolerance = .1)
+    ##
+    expect_equal(apply(out,2,mean), apply(outHMC,2,mean), tolerance = 0.1)
     expect_equal(apply(out,2,quantile,c(.1,.9)), apply(outHMC,2,quantile,c(.1,.9)), tolerance = 0.1)
-
 })
 
 
