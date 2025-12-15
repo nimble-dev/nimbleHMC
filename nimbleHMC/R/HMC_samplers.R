@@ -21,7 +21,6 @@
 ## #' }
 ## #' 
 ## #' @import nimble
-## #' @import methods
 ## #' 
 ## #' @aliases Langevin langevin
 ## #' 
