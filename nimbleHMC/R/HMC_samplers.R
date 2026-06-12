@@ -1078,6 +1078,7 @@ sampler_NUTS <- nimbleFunction(
                 if(is.nan(new_H))   new_H <- Inf
                 deltaH <- new_H - H0
                 if(deltaH > deltaMax)   divergent <<- TRUE
+                if(divergent) numDivergences <<- numDivergences + 1
                 branch$log_sum_wt <- log_sum_exp(branch$log_sum_wt, -deltaH)
                 if((-deltaH) > 0)   sum_metropolis_prob <<- sum_metropolis_prob + 1
                 else                sum_metropolis_prob <<- sum_metropolis_prob + exp(-deltaH)
