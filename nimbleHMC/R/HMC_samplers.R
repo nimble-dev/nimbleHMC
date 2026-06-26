@@ -985,7 +985,10 @@ sampler_NUTS <- nimbleFunction(
                 p_bf <- branch$p_beg
                 copy_state(state_b, state_current)
             }
-            if(!valid_subtree)   done <- TRUE
+            if(!valid_subtree) {
+                done <- TRUE
+                if(divergent)   numDivergences <<- numDivergences + 1
+            }
             if(!done) {
                 depth <- depth + 1
                 accept <- FALSE
