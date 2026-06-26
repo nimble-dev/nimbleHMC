@@ -682,8 +682,6 @@ sampler_NUTS_classic <- nimbleFunction(
                 if(numDivergences  > 1) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
                 if(numTimesMaxTreeDepth == 1) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
                 if(numTimesMaxTreeDepth  > 1) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
-                numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
-                numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
             }
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
@@ -1286,8 +1284,6 @@ sampler_NUTS <- nimbleFunction(
                 if(numDivergences  > 1)        print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
                 if(numTimesMaxTreeDepth == 1)  print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
                 if(numTimesMaxTreeDepth  > 1)  print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
-                numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
-                numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
             }
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
