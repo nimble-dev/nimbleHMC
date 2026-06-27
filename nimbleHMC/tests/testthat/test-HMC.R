@@ -272,6 +272,10 @@ test_that('HMC on MVN node', {
     samples <- runMCMC(Cmcmc, niter = 20000, nburnin = 10000)
     expect_equal(as.numeric(apply(samples, 2, mean)), c(10,20,30), tol = .001)
     expect_equal(as.numeric(apply(samples, 2, var)), diag(solve(Q)), tol = .075)
+    print(as.numeric(apply(samples, 2, var)))
+    print(diag(solve(Q)))
+    print(as.numeric(apply(samples, 2, var)) - diag(solve(Q)))
+    expect_true(max(abs(as.numeric(apply(samples, 2, var)) - diag(solve(Q)))) < 0.075)
 })
 
 ## copied from 'test of conjugate Wishart' test in test-mcmc.R
