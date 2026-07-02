@@ -13,6 +13,12 @@ setwd('~/github/nimble/nimbleHMC')
 
 devtools::document('nimbleHMC')
 
+## add `import(methods)` to NAMESPACE
+namespaceFilename <- 'nimbleHMC/NAMESPACE'
+namespace <- readLines(namespaceFilename)
+namespace <- c(namespace, 'import(methods)')
+writeLines(namespace, namespaceFilename)
+
 devtools::build('nimbleHMC')
 
 check('nimbleHMC')
