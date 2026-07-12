@@ -682,8 +682,6 @@ sampler_NUTS_classic <- nimbleFunction(
                 if(numDivergences  > 1) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
                 if(numTimesMaxTreeDepth == 1) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
                 if(numTimesMaxTreeDepth  > 1) print('  [Note] NUTS_classic sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
-                numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
-                numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
             }
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
@@ -1077,7 +1075,10 @@ sampler_NUTS <- nimbleFunction(
                 new_H <- state_current$H
                 if(is.nan(new_H))   new_H <- Inf
                 deltaH <- new_H - H0
-                if(deltaH > deltaMax)   divergent <<- TRUE
+                if(deltaH > deltaMax) {
+                    divergent <<- TRUE
+                    numDivergences <<- numDivergences + 1
+                }
                 branch$log_sum_wt <- log_sum_exp(branch$log_sum_wt, -deltaH)
                 if((-deltaH) > 0)   sum_metropolis_prob <<- sum_metropolis_prob + 1
                 else                sum_metropolis_prob <<- sum_metropolis_prob + exp(-deltaH)
@@ -1283,8 +1284,6 @@ sampler_NUTS <- nimbleFunction(
                 if(numDivergences  > 1)        print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') encountered ', numDivergences, ' divergent paths.')
                 if(numTimesMaxTreeDepth == 1)  print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' time.')
                 if(numTimesMaxTreeDepth  > 1)  print('  [Note] NUTS sampler (nodes: ', targetNodesToPrint, ') reached the maximum search tree depth ', numTimesMaxTreeDepth, ' times.')
-                numDivergences <<- 0           ## reset counters for numDivergences and numTimesMaxTreeDepth,
-                numTimesMaxTreeDepth <<- 0     ## even when using reset=FALSE to continue the same chain
             }
             if(warningInd > 0) {
                 for(i in 1:warningInd) {
